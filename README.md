@@ -17,9 +17,16 @@
 
 - `beta32` 以降必須（`beta33` で動作確認済み）。
 
-## 導入
+## インストール
 
-[Releases](https://github.com/azurite581/AviUtl2-GradientEditor/releases) から `GradientEditor_v{version}.au2pkg.zip` をダウンロードし、AviUtl2 のプレビューにドラッグ&ドロップしてください。
+### AviUtl2 カタログを使う
+
+本プラグインは [aviutl2-catalog](https://github.com/Neosku/aviutl2-catalog) からインストールできます。  
+メインメニュー ＞ パッケージ一覧 ＞ 汎用プラグイン ＞ GradientEditor からインストールしてください。
+
+### 手動インストール
+
+[Releases](https://github.com/azurite581/AviUtl2-GradientEditor/releases/latest) から `GradientEditor_v{version}.au2pkg.zip` をダウンロードし、AviUtl2 のプレビューにドラッグ&ドロップしてください。
 
 以下のファイルがインストールされます。
 
@@ -36,7 +43,7 @@
 - 多色グラデーション（`MutliGradient@GradientEditor`）
 - グラデーションマップ（`GradientMap@GradientEditor`）
 
-グラデーションエディタ（`GradientEditor.aux2`）自体はこれら 2 つのエフェクトを直感的に操作するためのエディタに過ぎず、単体でグラデーション加工を施すことはできません。基本的には上記のエフェクトをオブジェクトに適用し、そのエフェクトのパラメータをグラデーションエディタ上で編集するという形になります。
+グラデーションエディタ（`GradientEditor.aux2`）自体はこれら 2 つのエフェクトを直感的に操作するためのエディタに過ぎず、単体でグラデーション加工を施すことはできません。基本的には上記のエフェクトをオブジェクトに適用し、そのエフェクトのパラメータをグラデーションエディタ上で編集することになります。
 
 >[!NOTE]
 エフェクト単体でも使うことはできますが、グラデーションエディタ上で編集することを前提とした作りになっているため推奨しません。
