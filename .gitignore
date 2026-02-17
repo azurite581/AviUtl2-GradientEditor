@@ -73,8 +73,9 @@ Testing/
 # -----------------------------------------
 .vscode/
 
-# build directory
+# Build directories
 out/
+out_script/
 
 # tools
 aulua/

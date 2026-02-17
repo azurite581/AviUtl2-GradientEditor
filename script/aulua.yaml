@@ -5,7 +5,7 @@ project:
     LABEL: 色調整
 
 build:
-  out_dir: .
+  out_dir: ../out_script
 
 scripts:
   - name: "@GradientEditor.anm2"

@@ -17,7 +17,7 @@ build = "cmake --workflow release-flow"
 
 [artifacts.GradientEditor_anm2]
 build = "cd ./script && aulua build"
-source = "./script/@GradientEditor.anm2"
+source = "./out_script/@GradientEditor.anm2"
 destination = "Script/@GradientEditor.anm2"
 
 [artifacts.English_GradientEditor_aul2]
