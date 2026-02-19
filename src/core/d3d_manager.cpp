@@ -62,9 +62,17 @@ void D3DManager::cleanup()
         m_swap_chain = nullptr;
     }
 
+    // COM オブジェクトの生存状況を出力
+    reportLiveDeviceObjectsDetail();
+
     if (m_device) {
         m_device.Reset();
         m_device = nullptr;
+    }
+
+    if (m_debug) {
+        m_debug.Reset();
+        m_debug = nullptr;
     }
 }
 
@@ -87,6 +95,18 @@ void D3DManager::cleanupRenderTarget()
         m_render_target_view.Reset();
         m_render_target_view = nullptr;
     }
+}
+
+void D3DManager::reportLiveDeviceObjectsDetail()
+{
+    if (!m_device) return;
+
+    m_device->QueryInterface(
+        __uuidof(ID3D11Debug),
+        reinterpret_cast<void**>(m_debug.GetAddressOf())
+    );
+
+    m_debug->ReportLiveDeviceObjects(D3D11_RLDO_DETAIL);
 }
 
 void D3DManager::handleWindowResize()

@@ -37,6 +37,8 @@ public:
     /// @brief レンダーターゲットビューをクリーンアップ
     void cleanupRenderTarget();
 
+    void reportLiveDeviceObjectsDetail();
+
     [[nodiscard]] Microsoft::WRL::ComPtr<ID3D11Device> getDevice() const noexcept { return m_device; }
     [[nodiscard]] Microsoft::WRL::ComPtr<ID3D11DeviceContext> getDeviceContext() const noexcept { return m_device_context; }
     [[nodiscard]] Microsoft::WRL::ComPtr<IDXGISwapChain> getSwapChain() const noexcept { return m_swap_chain; }
@@ -54,6 +56,7 @@ private:
     Microsoft::WRL::ComPtr<ID3D11DeviceContext> m_device_context        = nullptr;
     Microsoft::WRL::ComPtr<IDXGISwapChain> m_swap_chain                 = nullptr;
     Microsoft::WRL::ComPtr<ID3D11RenderTargetView> m_render_target_view = nullptr;
+    Microsoft::WRL::ComPtr<ID3D11Debug> m_debug                         = nullptr;
 
     bool m_swap_chain_occluded = false;
     UINT m_resize_width        = 0;
