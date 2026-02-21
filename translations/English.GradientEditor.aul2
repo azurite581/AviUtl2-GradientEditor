@@ -45,10 +45,10 @@
 形状=Shape
 線形=Linear
 円形=Circular
-短形=Rectangular
+矩形=Rectangular
 凸形=Convex
 円形ループ=Circular Loop
-短形ループ=Rectangular Loop
+矩形ループ=Rectangular Loop
 凸形ループ=Convex Loop
 合成モード=Blending Mode
 通常=Normal

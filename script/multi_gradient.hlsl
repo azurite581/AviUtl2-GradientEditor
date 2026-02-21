@@ -221,7 +221,7 @@ float4 psmain(float4 pos : SV_Position, float2 uv : TEXCOORD) : SV_Target {
             x = length(st) / max(scale * 2.0, 1e-6);
             break;
         }
-        case 2: // 短形
+        case 2: // 矩形
         {
             float2 st = ((pos.xy - center) * 2.0 - resolution.xy) / max(resolution.x, resolution.y);
             float scale = (is_fit <= 0) ? radius / max(resolution.x, resolution.y) : min(resolution.x, resolution.y) / max(resolution.x, resolution.y);
@@ -270,7 +270,7 @@ float4 psmain(float4 pos : SV_Position, float2 uv : TEXCOORD) : SV_Target {
             x = 1.0 - abs(1.0 - saw);
             break;
         }
-        case 5: // 短形ループ
+        case 5: // 矩形ループ
         {
             float2 st = ((pos.xy - center) * 2.0 - resolution.xy) / max(resolution.x, resolution.y);
             float scale = max(radius, 1.0) / max(resolution.x, resolution.y);
