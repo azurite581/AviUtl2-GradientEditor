@@ -61,10 +61,8 @@ LRESULT CALLBACK wnd_proc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 //---------------------------------------------------------------------
 void guiThreadMain(std::promise<HWND>&& hwnd_promise)
 {
-    {
-        App app;
-        app.run(std::move(hwnd_promise));
-    }
+    App app;
+    app.run(std::move(hwnd_promise));
 }
 
 } // namespace gradient_editor
@@ -101,7 +99,6 @@ EXTERN_C __declspec(dllexport) void UninitializePlugin()
     if (hwnd) {
         ::PostMessage(hwnd, WM_QUIT, 0, 0);
     }
-
     g_app_state.cleanup();
 }
 

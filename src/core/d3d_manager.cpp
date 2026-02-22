@@ -101,12 +101,11 @@ void D3DManager::reportLiveDeviceObjectsDetail()
 {
     if (!m_device) return;
 
-    m_device->QueryInterface(
-        __uuidof(ID3D11Debug),
-        reinterpret_cast<void**>(m_debug.GetAddressOf())
-    );
-
-    m_debug->ReportLiveDeviceObjects(D3D11_RLDO_DETAIL);
+    if (SUCCEEDED(m_device->QueryInterface(__uuidof(ID3D11Debug), reinterpret_cast<void**>(m_debug.GetAddressOf())))) {
+        if (m_debug) {
+            m_debug->ReportLiveDeviceObjects(D3D11_RLDO_DETAIL);
+        }
+    }
 }
 
 void D3DManager::handleWindowResize()
