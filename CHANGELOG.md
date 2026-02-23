@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 
+## [0.1.4] - 2026-02-23
+
+### Added
+
+- 简体中文の翻訳ファイルを追加 by @nsYW in [#4](https://github.com/azurite581/AviUtl2-GradientEditor/pull/4)
+
 ## [0.1.3] - 2026-02-22
 
 ### Fixed
