@@ -37,6 +37,7 @@
 | `GradientEditor.aux2` | `Plugin` | グラデーションエディタ |
 | `@GradientEditor.anm2` | `Script` | 多色グラデーション、グラデーションマップを含むスクリプト |
 | `English.GradientEditor.aul2` | `Language` | 翻訳ファイル（英語） |
+| `简体中文.GradientEditor.aul2` | `Language` | 翻訳ファイル（簡体字中国語） |
 
 ## 付属するスクリプト
 
