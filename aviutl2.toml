@@ -24,6 +24,10 @@ destination = "Script/@GradientEditor.anm2"
 source = "./translations/English.GradientEditor.aul2"
 destination = "Language/English.GradientEditor.aul2"
 
+[artifacts.SimplifiedChinese_GradientEditor_aul2]
+source = "./translations/简体中文.GradientEditor.aul2"
+destination = "Language/简体中文.GradientEditor.aul2"
+
 [development]
 aviutl2_version = "latest"
 
@@ -34,4 +38,4 @@ package_template = "package.txt"
 profile = "release"
 output_dir = "release"
 zip_name = "{name}-v{version}"
-include = ["GradientEditor_aux2", "GradientEditor_anm2", "English_GradientEditor_aul2"]
+include = ["GradientEditor_aux2", "GradientEditor_anm2", "English_GradientEditor_aul2", "SimplifiedChinese_GradientEditor_aul2"]
