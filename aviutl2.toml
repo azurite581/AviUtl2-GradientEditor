@@ -1,6 +1,7 @@
 #:schema ./.aviutl2-cli/aviutl2.schema.json
 # 設定ファイルについては https://github.com/sevenc-nanashi/aviutl2-cli を参照してください。
 [project]
+id = "gradient-editor"
 name = "GradientEditor"
 version = "0.1.0"
 
