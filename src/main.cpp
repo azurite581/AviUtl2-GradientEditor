@@ -70,6 +70,11 @@ void guiThreadMain(std::promise<HWND>&& hwnd_promise)
 //---------------------------------------------------------------------
 //	AviUtl2 Plugin 関連
 //---------------------------------------------------------------------
+COMMON_PLUGIN_TABLE common_plugin_table = {
+	L"GradientEditor",
+	L"GradientEditor v0.1.5 by azurite",
+};
+
 EXTERN_C __declspec(dllexport) DWORD RequiredVersion() {
 	return 2003200;
 }
@@ -86,6 +91,7 @@ EXTERN_C __declspec(dllexport) void InitializeConfig(CONFIG_HANDLE* handle)
 
 EXTERN_C __declspec(dllexport) bool InitializePlugin(DWORD version)
 {
+    g_app_state.version = version;
     if (version < 2003200) {
         return false;
     }
@@ -102,9 +108,15 @@ EXTERN_C __declspec(dllexport) void UninitializePlugin()
     g_app_state.cleanup();
 }
 
+EXTERN_C __declspec(dllexport) COMMON_PLUGIN_TABLE* GetCommonPluginTable(void) {
+	return &common_plugin_table;
+}
+
 EXTERN_C __declspec(dllexport) void RegisterPlugin(HOST_APP_TABLE* host)
 {
-    host->set_plugin_information(PLUGIN_INFORMATION);
+    if (g_app_state.version < 2003500) {
+        host->set_plugin_information(PLUGIN_INFORMATION);
+    }
     g_app_state.edit_handle = host->create_edit_handle();
 
     std::promise<HWND> p;

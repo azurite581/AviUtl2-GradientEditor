@@ -22,6 +22,7 @@ struct ApplicationState {
     EDIT_HANDLE* edit_handle = nullptr;
     LOG_HANDLE* logger       = nullptr;
     CONFIG_HANDLE* config    = nullptr;
+    DWORD version;  // AviUtl2 のバージョン
 
     // マネージャー
     D3DManager d3d_manager;
