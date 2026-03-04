@@ -13,16 +13,22 @@
 #include "aviutl2_sdk.h"
 #include "d3d_manager.h"
 #include "window_manager.h"
+#include "utils/aviutl2/logger_wrapper.h"
 
 namespace gradient_editor {
 
 /// @brief アプリケーション全体の状態を管理する構造体
 struct ApplicationState {
     // AviUtl2 SDK ハンドラー
-    EDIT_HANDLE* edit_handle = nullptr;
-    LOG_HANDLE* logger       = nullptr;
-    CONFIG_HANDLE* config    = nullptr;
+    EDIT_HANDLE* edit_handle     = nullptr;
+    LOG_HANDLE* log_handle       = nullptr;
+    CONFIG_HANDLE* config_handle = nullptr;
     DWORD version;  // AviUtl2 のバージョン
+
+    LoggerWrapper logger_wrapper;
+
+    // ウィンドウの表示状態
+    bool is_window_visible = false;
 
     // マネージャー
     D3DManager d3d_manager;

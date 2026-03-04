@@ -6,6 +6,7 @@
 #include "core/constants.h"
 #include "fonts/material_symbols.cpp"
 #include "imgui.h"
+#include "imgui_internal.h"
 #include "imgui_impl_dx11.h"
 #include "imgui_impl_win32.h"
 #include "ui/style/imgui_style.h"
@@ -65,16 +66,26 @@ void App::run(std::promise<HWND>&& hwnd_promise)
         }
         if (done) break;
 
+        // ウィンドウの表示状態を取得する
+        g_app_state.is_window_visible = (::IsWindowVisible(g_app_state.window_manager.getWindowHandle()) != 0);
+
         renderFrame();
     }
 }
 
 void App::renderFrame()
 {
-    if (g_app_state.d3d_manager.isSwapChainOccluded() && g_app_state.d3d_manager.getSwapChain()->Present(0, DXGI_PRESENT_TEST) == DXGI_STATUS_OCCLUDED) {
+    static bool was_visible = true;
+    bool is_visible = g_app_state.is_window_visible;
+    bool just_hidden = (was_visible && !is_visible);
+    was_visible = is_visible;
+
+    // 非表示になった瞬間だけはオクルージョン判定を無視
+    if (!just_hidden && g_app_state.d3d_manager.isSwapChainOccluded() && g_app_state.d3d_manager.getSwapChain()->Present(0, DXGI_PRESENT_TEST) == DXGI_STATUS_OCCLUDED) {
         ::Sleep(10);
         return;
     }
+
     g_app_state.d3d_manager.setSwapChainOccluded(false);
     g_app_state.d3d_manager.handleWindowResize();
 
@@ -82,12 +93,19 @@ void App::renderFrame()
     ImGui_ImplWin32_NewFrame();
     ImGui::NewFrame();
 
-    // 本体の描画
-    m_main_view->render();
+    // 非表示になった瞬間にすべてのポップアップを閉じる
+    if (just_hidden) {
+        ImGui::ClosePopupsOverWindow(nullptr, false);
+    }
+
+    // 表示状態のときのみ描画する
+    if (is_visible) {
+        m_main_view->render();
+    }
 
     ImGui::Render();
 
-    ImVec4 clear_color                    = color_conv::u32Rgb2Vec4Rgba<ImVec4>(g_app_state.config->get_color_code(g_app_state.config, "Background"));
+    ImVec4 clear_color                    = color_conv::u32Rgb2Vec4Rgba<ImVec4>(g_app_state.config_handle->get_color_code(g_app_state.config_handle, "Background"));
     const float clear_color_with_alpha[4] = {clear_color.x * clear_color.w, clear_color.y * clear_color.w, clear_color.z * clear_color.w, clear_color.w};
 
     auto rtv = g_app_state.d3d_manager.getRenderTargetView();
@@ -160,7 +178,7 @@ void App::setupFonts()
     config1.GlyphExcludeRanges = exclude_ranges;
 
     // sytle.conf からフォント名を取得
-    FONT_INFO* font_info = g_app_state.config->get_font_info(g_app_state.config, "DefaultFamily");
+    FONT_INFO* font_info = g_app_state.config_handle->get_font_info(g_app_state.config_handle, "DefaultFamily");
     // フォント名からフォントデータを取得
     std::vector<unsigned char> font_data = getFontDataByName(font_info->name);
 
