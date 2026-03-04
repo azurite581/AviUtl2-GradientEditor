@@ -10,15 +10,15 @@
 namespace aul2 {
 inline std::string tr(const wchar_t* key)
 {
-    if (!gradient_editor::g_app_state.config) {
+    if (!gradient_editor::g_app_state.config_handle) {
         return {};
     }
-    return str_conv::wideCharToMultiByte(gradient_editor::g_app_state.config->translate(gradient_editor::g_app_state.config, key));
+    return str_conv::wideCharToMultiByte(gradient_editor::g_app_state.config_handle->translate(gradient_editor::g_app_state.config_handle, key));
 }
 
 inline uint32_t getColor(const std::string& name)
 {
-    return gradient_editor::g_app_state.config->get_color_code(gradient_editor::g_app_state.config, name.c_str());
+    return gradient_editor::g_app_state.config_handle->get_color_code(gradient_editor::g_app_state.config_handle, name.c_str());
 }
 }  // namespace aul2
 

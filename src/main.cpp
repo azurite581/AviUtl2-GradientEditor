@@ -51,7 +51,6 @@ LRESULT CALLBACK wnd_proc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
         case WM_EXITSIZEMOVE:
             g_app_state.window_manager.setResizing(false);
             return 0;
-            break;
     }
     return ::DefWindowProcW(hwnd, msg, wparam, lparam);
 }
@@ -81,12 +80,13 @@ EXTERN_C __declspec(dllexport) DWORD RequiredVersion() {
 
 EXTERN_C __declspec(dllexport) void InitializeLogger(LOG_HANDLE* handle)
 {
-    g_app_state.logger = handle;
+    g_app_state.log_handle = handle;
+    g_app_state.logger_wrapper.setLogHandle(handle);
 }
 
 EXTERN_C __declspec(dllexport) void InitializeConfig(CONFIG_HANDLE* handle)
 {
-    g_app_state.config = handle;
+    g_app_state.config_handle = handle;
 }
 
 EXTERN_C __declspec(dllexport) bool InitializePlugin(DWORD version)
@@ -124,5 +124,5 @@ EXTERN_C __declspec(dllexport) void RegisterPlugin(HOST_APP_TABLE* host)
     g_app_state.gui_thread = std::thread(guiThreadMain, std::move(p));
 
     HWND hwnd = f.get();
-    host->register_window_client(g_app_state.config->translate(g_app_state.config, WINDOW_NAME_DEFAULT), hwnd);
+    host->register_window_client(g_app_state.config_handle->translate(g_app_state.config_handle, WINDOW_NAME_DEFAULT), hwnd);
 }

@@ -28,7 +28,7 @@ static inline const char* operator""_to_char(const char8_t* str, [[maybe_unused]
 MainView::MainView()
 {
     // プリセットをファイルから読み込む
-    std::filesystem::path preset_path = str_conv::wideCharToMultiByte(g_app_state.config->app_data_path);
+    std::filesystem::path preset_path = str_conv::wideCharToMultiByte(g_app_state.config_handle->app_data_path);
     preset_path /= "Plugin";
     preset_path /= PRESET_FOLDER_NAME;
 
@@ -48,12 +48,12 @@ MainView::MainView()
     auto load_result = m_preset_manager.loadPresetFile();
     m_preset_file    = load_result.preset_file;
     if (!load_result.error.empty()) {
-        g_app_state.logger->error(g_app_state.logger, str_conv::multiByteToWideChar(load_result.error).c_str());
+        g_app_state.logger_wrapper.error(str_conv::multiByteToWideChar(load_result.error).c_str());
     }
 
-    m_object_video_color_start = color_conv::u32Rgba2u32Abgr(color_conv::u32Rgb2u32Rgba(g_app_state.config->get_color_code_index(g_app_state.config, "ObjectVideo", 0), 0xFF));
-    m_object_video_color_stop  = color_conv::u32Rgba2u32Abgr(color_conv::u32Rgb2u32Rgba(g_app_state.config->get_color_code_index(g_app_state.config, "ObjectVideo", 1), 0xFF));
-    m_frame_cursor_color       = color_conv::u32Rgba2u32Abgr(color_conv::u32Rgb2u32Rgba(g_app_state.config->get_color_code(g_app_state.config, "FrameCursor"), 0xFF));
+    m_object_video_color_start = color_conv::u32Rgba2u32Abgr(color_conv::u32Rgb2u32Rgba(g_app_state.config_handle->get_color_code_index(g_app_state.config_handle, "ObjectVideo", 0), 0xFF));
+    m_object_video_color_stop  = color_conv::u32Rgba2u32Abgr(color_conv::u32Rgb2u32Rgba(g_app_state.config_handle->get_color_code_index(g_app_state.config_handle, "ObjectVideo", 1), 0xFF));
+    m_frame_cursor_color       = color_conv::u32Rgba2u32Abgr(color_conv::u32Rgb2u32Rgba(g_app_state.config_handle->get_color_code(g_app_state.config_handle, "FrameCursor"), 0xFF));
 }
 
 void MainView::render()
