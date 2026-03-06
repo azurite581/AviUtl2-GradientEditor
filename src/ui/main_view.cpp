@@ -48,7 +48,8 @@ MainView::MainView()
     auto load_result = m_preset_manager.loadPresetFile();
     m_preset_file    = load_result.preset_file;
     if (!load_result.error.empty()) {
-        g_app_state.logger_wrapper.error(str_conv::multiByteToWideChar(load_result.error).c_str());
+        auto error_w = str_conv::multiByteToWideChar(load_result.error);
+        g_app_state.logger_wrapper.error(L"{}", error_w.c_str());  // エラーメッセージに '{' または '}' があると std::format_error になるため "{}" で受け取る
     }
 
     m_object_video_color_start = color_conv::u32Rgba2u32Abgr(color_conv::u32Rgb2u32Rgba(g_app_state.config_handle->get_color_code_index(g_app_state.config_handle, "ObjectVideo", 0), 0xFF));

@@ -93,22 +93,13 @@ private:
             "name": "black-transparent",
             "colors": [
                 "0x000000FF",
-                "0x000000BF",
-                "0x00000080",
-                "0x00000040",
                 "0x00000000"
             ],
             "positions": [
                 0.00,
-                0.25,
-                0.50,
-                0.75,
                 1.00
             ],
             "midpoints": [
-                0.50,
-                0.50,
-                0.50,
                 0.50
             ],
             "blur_width": 1.0,
@@ -228,6 +219,10 @@ public:
             result.preset_file = j.get<preset_file::GradientPresetFile>();
         } catch (const nlohmann::json::exception& e) {
             result.error = e.what();
+            result.preset_file = DEFAULT_PRESET_FILE;
+        } catch (const std::exception& e) {
+            result.error = e.what();
+            result.preset_file = DEFAULT_PRESET_FILE;
         }
 
         return result;
@@ -253,6 +248,12 @@ public:
             ofs << serialized_string;
         } catch (const nlohmann::json::exception& e) {
             result.error = e.what();
+            result.is_success = false;
+            return result;
+        } catch (const std::exception& e) {
+            result.error = e.what();
+            result.is_success = false;
+            return result;
         }
 
         result.is_success = true;
