@@ -2,6 +2,20 @@
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-03-06
+
+### Added
+
+- `MutliGradient@GradientEditor`と `GradientMap@GradientEditor` に背景の透明度を変更するための `背景透明度` パラメーターを追加。
+
+### Fixed
+
+- プリセットファイルの読み込みに失敗した際にエラーメッセージが正しく表示されない問題を修正。
+
+### Changed
+
+- デフォルトプリセットのパラメーターを一部変更。
+
 ## [0.1.6] - 2026-03-04
 
 ### Fixed

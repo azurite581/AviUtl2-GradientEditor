@@ -71,7 +71,7 @@ void guiThreadMain(std::promise<HWND>&& hwnd_promise)
 //---------------------------------------------------------------------
 COMMON_PLUGIN_TABLE common_plugin_table = {
 	L"GradientEditor",
-	L"GradientEditor v0.1.5 by azurite",
+	L"GradientEditor v0.2.0 by azurite",
 };
 
 EXTERN_C __declspec(dllexport) DWORD RequiredVersion() {
