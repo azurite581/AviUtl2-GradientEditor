@@ -6,11 +6,14 @@
 #define NOMINMAX
 #include <windows.h>
 
-#include "aviutl2_sdk.h"
 #include "core/app.h"
 #include "core/app_state.h"
 #include "core/constants.h"
 #include "utils/aviutl2/logger_wrapper.h"
+
+#include "config2.h"
+#include "logger2.h"
+#include "plugin2.h"
 
 #define STRINGIFY2(x) #x
 #define STRINGIFY(x) STRINGIFY2(x)

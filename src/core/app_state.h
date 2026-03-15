@@ -11,10 +11,13 @@
 #define NOMINMAX
 #include <windows.h>
 
-#include "aviutl2_sdk.h"
 #include "d3d_manager.h"
 #include "window_manager.h"
 #include "utils/aviutl2/logger_wrapper.h"
+
+#include "config2.h"
+#include "logger2.h"
+#include "plugin2.h"
 
 namespace gradient_editor {
 

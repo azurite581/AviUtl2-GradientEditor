@@ -9,7 +9,7 @@
 #define NOMINMAX
 #include <windows.h>
 
-#include "aviutl2_sdk.h"
+#include "logger2.h"
 
 class LoggerWrapper {
 public:

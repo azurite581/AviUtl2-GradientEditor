@@ -6,8 +6,9 @@
 #include <string>
 
 #include "alias_parser.h"
-#include "aviutl2_sdk.h"
 #include "utils/common/str_conv.h"
+
+#include "plugin2.h"
 
 namespace plugin2_utils {
 

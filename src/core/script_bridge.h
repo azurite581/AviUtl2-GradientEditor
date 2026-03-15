@@ -9,9 +9,10 @@
 #define NOMINMAX
 #include <windows.h>
 
-#include "aviutl2_sdk.h"
 #include "imgui.h"
 #include "ui/widgets/gradient_data.h"
+
+#include "plugin2.h"
 
 namespace gradient_editor {
 
