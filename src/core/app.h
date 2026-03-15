@@ -23,9 +23,6 @@ public:
     void renderFrame();
 
 private:
-    bool initialize(HWND hwnd);
-    void setupImGui(HWND hwnd);
-    void setupFonts();
     void cleanup();
 
     void readSettings();

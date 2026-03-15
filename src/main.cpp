@@ -28,7 +28,6 @@
 #endif
 
 #define PLUGIN_VERSION_STR L"v" WIDEN(STRINGIFY(PLUGIN_VERSION_CORE))
-
 #define PLUGIN_INFO    \
     WIDEN(PLUGIN_NAME) \
     L" " PLUGIN_VERSION_STR L" " WIDEN(PLUGIN_AUTHOR)
@@ -50,9 +49,7 @@ LRESULT CALLBACK wnd_proc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
             ::SetFocus(g_app_state.window_manager.getWindowHandle());
             return MA_ACTIVATE;
         case WM_CONTEXTMENU:
-            // メニューバーがホバーされている時だけ右クリックメニューを有効にする
-            if (MenuBar::isMenuBarHovered()) break;
-            else return 0;
+            return 0;
         case WM_SIZE:
             if (wparam == SIZE_MINIMIZED) return 0;
             g_app_state.d3d_manager.setResizeWidth(static_cast<UINT>(LOWORD(lparam)));

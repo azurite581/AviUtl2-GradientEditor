@@ -42,10 +42,87 @@ void App::run(std::promise<HWND>&& hwnd_promise)
     HWND hwnd = g_app_state.window_manager.getWindowHandle();
     hwnd_promise.set_value(hwnd);
 
-    // D3D、ImGui 等を初期化
-    if (!initialize(hwnd)) {
+    //
+    // D3D の初期化
+    //
+    if (!g_app_state.d3d_manager.initialize(hwnd)) {
+        g_app_state.d3d_manager.cleanup();
+        g_app_state.window_manager.unregisterClass();
         return;
     }
+
+    //
+    // ImGui の初期化
+    //
+    IMGUI_CHECKVERSION();
+    ImGui::CreateContext();
+    ImGuiIO& io = ImGui::GetIO();
+    io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard | ImGuiConfigFlags_DockingEnable | ImGuiConfigFlags_ViewportsEnable;
+
+    ImGui::StyleColorsDark();
+    ImGuiStyle& style          = ImGui::GetStyle();
+    style.GrabMinSize          = scale::absolute::GRAB_MIN_SIZE;
+    style.FrameBorderSize      = scale::absolute::FRAME_BORDER_SIZE;
+    style.TabRounding          = scale::absolute::TAB_ROUNDING;
+    style.DockingSeparatorSize = scale::absolute::DOCKING_SEPARATOR_SIZE;
+    style.ItemSpacing          = ImVec2(scale::absolute::ITEM_SPACING_X, scale::absolute::ITEM_SPACING_Y);
+    style.ItemInnerSpacing     = ImVec2(scale::absolute::ITEM_INNER_SPACING_X, style.ItemInnerSpacing.y);
+
+    style.ScaleAllSizes(main_scale);
+    style.FontScaleDpi         = main_scale;
+    io.ConfigDpiScaleFonts     = true;
+    io.ConfigDpiScaleViewports = true;
+
+    if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable) {
+        style.WindowRounding              = 0.0f;
+        style.Colors[ImGuiCol_WindowBg].w = 1.0f;
+    }
+
+    // imgui.ini を自動生成しないようにする
+    io.IniFilename = nullptr;
+    readSettings();  // 設定を読み込む
+
+    ImGui_ImplWin32_Init(hwnd);
+    ImGui_ImplDX11_Init(g_app_state.d3d_manager.getDevice().Get(), g_app_state.d3d_manager.getDeviceContext().Get());
+
+    //
+    // フォントの設定
+    //
+    static ImWchar exclude_ranges[] = {ICON_MIN_MS, ICON_MAX_MS, 0};
+    ImFontConfig config1;
+    config1.GlyphExcludeRanges = exclude_ranges;
+
+    // sytle.conf からフォント名を取得
+    FONT_INFO* font_info = g_app_state.config_handle->get_font_info(g_app_state.config_handle, "DefaultFamily");
+    // フォント名からフォントデータを取得
+    std::vector<unsigned char> font_data = getFontDataByName(font_info->name);
+
+    if (!font_data.empty()) {
+        // AddFontFromMemoryTTF() はバッファの所有権をフォントアトラスに転送し、フォントアトラス破棄時にバッファを解放する
+        // https://github.com/ocornut/imgui/blob/master/docs/FONTS.md#loading-font-data-from-memory
+        void* buffer = malloc(font_data.size());
+        memcpy(buffer, font_data.data(), font_data.size());
+        io.Fonts->AddFontFromMemoryTTF(buffer, static_cast<int>(font_data.size()), font_info->size, &config1);
+    } else {
+        io.Fonts->AddFontFromFileTTF("C:\\Windows\\Fonts\\YuGothM.ttc", DEFAULT_FONT_SIZE, &config1);
+    }
+
+    // アイコンフォントの設定
+    ImFontConfig config2;
+    config2.MergeMode        = true;
+    config2.GlyphMinAdvanceX = font_info->size;
+    config2.GlyphOffset.y += ICON_FONT_GLYPHOFFSET_Y;
+    io.Fonts->AddFontFromMemoryCompressedTTF(material_symbols_compressed_data, material_symbols_compressed_size, font_info->size, &config2);
+
+    //
+    // テーマ設定
+    //
+    applyCustomColors();
+
+    //
+    // グラデーションエディタ用の D3D を初期化
+    //
+    CustomUI::initDX11(g_app_state.d3d_manager.getDevice(), g_app_state.d3d_manager.getDeviceContext());
 
     ::ShowWindow(hwnd, SW_SHOWDEFAULT);
     ::UpdateWindow(hwnd);
@@ -125,88 +202,6 @@ void App::renderFrame()
 
     HRESULT hr = g_app_state.d3d_manager.getSwapChain()->Present(1, 0);
     g_app_state.d3d_manager.setSwapChainOccluded(hr == DXGI_STATUS_OCCLUDED);
-}
-
-bool App::initialize(HWND hwnd)
-{
-    if (!g_app_state.d3d_manager.initialize(hwnd)) {
-        g_app_state.d3d_manager.cleanup();
-        g_app_state.window_manager.unregisterClass();
-        return false;
-    }
-
-    setupImGui(hwnd);
-    setupFonts();
-    applyCustomColors();
-    CustomUI::initDX11(g_app_state.d3d_manager.getDevice(), g_app_state.d3d_manager.getDeviceContext());
-
-    return true;
-}
-
-void App::setupImGui(HWND hwnd)
-{
-    IMGUI_CHECKVERSION();
-    ImGui::CreateContext();
-    ImGuiIO& io = ImGui::GetIO();
-    io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard | ImGuiConfigFlags_DockingEnable | ImGuiConfigFlags_ViewportsEnable;
-
-    ImGui::StyleColorsDark();
-    ImGuiStyle& style          = ImGui::GetStyle();
-    style.GrabMinSize          = scale::absolute::GRAB_MIN_SIZE;
-    style.FrameBorderSize      = scale::absolute::FRAME_BORDER_SIZE;
-    style.TabRounding          = scale::absolute::TAB_ROUNDING;
-    style.DockingSeparatorSize = scale::absolute::DOCKING_SEPARATOR_SIZE;
-    style.ItemSpacing          = ImVec2(scale::absolute::ITEM_SPACING_X, scale::absolute::ITEM_SPACING_Y);
-    style.ItemInnerSpacing     = ImVec2(scale::absolute::ITEM_INNER_SPACING_X, style.ItemInnerSpacing.y);
-
-    float main_scale = ImGui_ImplWin32_GetDpiScaleForMonitor(::MonitorFromPoint(POINT{0, 0}, MONITOR_DEFAULTTOPRIMARY));
-    style.ScaleAllSizes(main_scale);
-    style.FontScaleDpi         = main_scale;
-    io.ConfigDpiScaleFonts     = true;
-    io.ConfigDpiScaleViewports = true;
-
-    if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable) {
-        style.WindowRounding              = 0.0f;
-        style.Colors[ImGuiCol_WindowBg].w = 1.0f;
-    }
-
-    // imgui.ini を自動生成しないようにする
-    io.IniFilename = nullptr;
-    // 設定を読み込む
-    readSettings();
-
-    ImGui_ImplWin32_Init(hwnd);
-    ImGui_ImplDX11_Init(g_app_state.d3d_manager.getDevice().Get(), g_app_state.d3d_manager.getDeviceContext().Get());
-}
-
-void App::setupFonts()
-{
-    ImGuiIO& io                     = ImGui::GetIO();
-    static ImWchar exclude_ranges[] = {ICON_MIN_MS, ICON_MAX_MS, 0};
-    ImFontConfig config1;
-    config1.GlyphExcludeRanges = exclude_ranges;
-
-    // sytle.conf からフォント名を取得
-    FONT_INFO* font_info = g_app_state.config_handle->get_font_info(g_app_state.config_handle, "DefaultFamily");
-    // フォント名からフォントデータを取得
-    std::vector<unsigned char> font_data = getFontDataByName(font_info->name);
-
-    if (!font_data.empty()) {
-        // AddFontFromMemoryTTF() はバッファの所有権をフォントアトラスに転送し、フォントアトラス破棄時にバッファを解放する
-        // https://github.com/ocornut/imgui/blob/master/docs/FONTS.md#loading-font-data-from-memory
-        void* buffer = malloc(font_data.size());
-        memcpy(buffer, font_data.data(), font_data.size());
-        io.Fonts->AddFontFromMemoryTTF(buffer, static_cast<int>(font_data.size()), font_info->size, &config1);
-    } else {
-        io.Fonts->AddFontFromFileTTF("C:\\Windows\\Fonts\\YuGothM.ttc", DEFAULT_FONT_SIZE, &config1);
-    }
-
-    // アイコンフォントの設定
-    ImFontConfig config2;
-    config2.MergeMode        = true;
-    config2.GlyphMinAdvanceX = font_info->size;
-    config2.GlyphOffset.y += ICON_FONT_GLYPHOFFSET_Y;
-    io.Fonts->AddFontFromMemoryCompressedTTF(material_symbols_compressed_data, material_symbols_compressed_size, font_info->size, &config2);
 }
 
 void App::cleanup()

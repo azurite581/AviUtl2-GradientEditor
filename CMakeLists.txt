@@ -33,7 +33,6 @@ add_library(${PROJECT_NAME} SHARED
     src/ui/widgets/gradient_widget.cpp
     src/ui/widgets/preset_controller.cpp
     src/ui/widgets/preset_window.cpp
-    src/ui/widgets/menu_bar.cpp
     src/main.cpp
     src/utils/imgui/imgui_utils.cpp
     ${GENERATED_CPP}

@@ -11,7 +11,6 @@
 #include "imgui_internal.h"
 #include "ui/style/imgui_style.h"
 #include "ui/widgets/gradient_widget.h"
-#include "ui/widgets/menu_bar.h"
 #include "utils/aviutl2/config2_utils.h"
 #include "utils/aviutl2/plugin2_utils.h"
 #include "utils/common/str_conv.h"
@@ -110,7 +109,15 @@ void MainView::renderGradientEditor()
     //
     // メニューバーの描画
     //
-    MenuBar::render(&m_window_visible);
+    //MenuBar::render(&m_window_visible);
+    if (ImGui::BeginMenuBar()) {
+        // 表示メニュー
+        if (ImGui::BeginMenu(aul2::tr(L"表示").c_str())) {
+            ImGui::MenuItem(aul2::tr(L"プリセット").c_str(), nullptr, m_window_visible.preset_window);
+            ImGui::EndMenu();
+        }
+        ImGui::EndMenuBar();
+    }
 
     float frame_height              = ImGui::GetFrameHeight();
     static GradientData preset_data = m_preset_window.getSelectedGradientData();

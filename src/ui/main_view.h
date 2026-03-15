@@ -4,7 +4,6 @@
 #include "core/app_state.h"
 #include "core/script_bridge.h"
 #include "ui/widgets/gradient_preset.h"
-#include "ui/widgets/menu_bar.h"
 #include "ui/widgets/preset_controller.h"
 #include "ui/widgets/preset_window.h"
 
@@ -23,6 +22,9 @@ private:
     PresetManager m_preset_manager;
     preset_file::GradientPresetFile m_preset_file;
     PresetWindow m_preset_window;
+    struct WindowVisible {
+        bool preset_window = true;
+    };
     WindowVisible m_window_visible;
 
     // UI State
