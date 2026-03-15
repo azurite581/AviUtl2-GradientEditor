@@ -1,5 +1,6 @@
 #include <future>
 #include <thread>
+#include <fstream>
 
 #define WIN32_LEAN_AND_MEAN
 #define NOMINMAX
@@ -10,6 +11,24 @@
 #include "core/app_state.h"
 #include "core/constants.h"
 #include "utils/aviutl2/logger_wrapper.h"
+
+#define STRINGIFY2(x) #x
+#define STRINGIFY(x) STRINGIFY2(x)
+#define WIDEN2(x) L##x
+#define WIDEN(x) WIDEN2(x)
+
+#define PLUGIN_NAME "Gradient Editor"
+#define PLUGIN_FILE_NAME "GradientEditor"
+#define PLUGIN_AUTHOR "azurite"
+#ifndef PLUGIN_VERSION_CORE
+#define PLUGIN_VERSION_CORE 0.2.0
+#endif
+
+#define PLUGIN_VERSION_STR L"v" WIDEN(STRINGIFY(PLUGIN_VERSION_CORE))
+
+#define PLUGIN_INFO    \
+    WIDEN(PLUGIN_NAME) \
+    L" " PLUGIN_VERSION_STR L" " WIDEN(PLUGIN_AUTHOR)
 
 using namespace gradient_editor;
 
@@ -70,8 +89,8 @@ void guiThreadMain(std::promise<HWND>&& hwnd_promise)
 //	AviUtl2 Plugin 関連
 //---------------------------------------------------------------------
 COMMON_PLUGIN_TABLE common_plugin_table = {
-	L"GradientEditor",
-	L"GradientEditor v0.2.0 by azurite",
+	WIDEN(PLUGIN_NAME),
+	PLUGIN_INFO,
 };
 
 EXTERN_C __declspec(dllexport) DWORD RequiredVersion() {
@@ -87,6 +106,17 @@ EXTERN_C __declspec(dllexport) void InitializeLogger(LOG_HANDLE* handle)
 EXTERN_C __declspec(dllexport) void InitializeConfig(CONFIG_HANDLE* handle)
 {
     g_app_state.config_handle = handle;
+
+    // 設定ファイルの作成
+    std::filesystem::path settings_file_path{g_app_state.config_handle->app_data_path};
+    settings_file_path /= "Plugin";
+    settings_file_path /= PLUGIN_FILE_NAME;
+    settings_file_path.replace_extension("ini");
+    g_app_state.settings_file_path = settings_file_path;
+
+    if (!std::filesystem::exists(settings_file_path)) {
+        std::ofstream ofs(settings_file_path);
+    }
 }
 
 EXTERN_C __declspec(dllexport) bool InitializePlugin(DWORD version)

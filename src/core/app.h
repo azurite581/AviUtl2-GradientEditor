@@ -28,6 +28,9 @@ private:
     void setupFonts();
     void cleanup();
 
+    void readSettings();
+    void writeSettings();
+
     std::unique_ptr<MainView> m_main_view;
 };
 

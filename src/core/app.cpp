@@ -1,5 +1,6 @@
 #include "core/app.h"
 
+#include <iterator>
 #include <vector>
 
 #include "IconsMaterialSymbols.h"
@@ -41,6 +42,7 @@ void App::run(std::promise<HWND>&& hwnd_promise)
     HWND hwnd = g_app_state.window_manager.getWindowHandle();
     hwnd_promise.set_value(hwnd);
 
+    // D3D、ImGui 等を初期化
     if (!initialize(hwnd)) {
         return;
     }
@@ -48,6 +50,8 @@ void App::run(std::promise<HWND>&& hwnd_promise)
     ::ShowWindow(hwnd, SW_SHOWDEFAULT);
     ::UpdateWindow(hwnd);
 
+    // メインビューの初期化
+    // コンストラクタ内でプリセットの初期化を行う
     m_main_view = std::make_unique<MainView>();
 
     // WM_SIZE で ImGui のレンダリング処理を呼び出すために保存する
@@ -166,6 +170,11 @@ void App::setupImGui(HWND hwnd)
         style.Colors[ImGuiCol_WindowBg].w = 1.0f;
     }
 
+    // imgui.ini を自動生成しないようにする
+    io.IniFilename = nullptr;
+    // 設定を読み込む
+    readSettings();
+
     ImGui_ImplWin32_Init(hwnd);
     ImGui_ImplDX11_Init(g_app_state.d3d_manager.getDevice().Get(), g_app_state.d3d_manager.getDeviceContext().Get());
 }
@@ -202,6 +211,9 @@ void App::setupFonts()
 
 void App::cleanup()
 {
+    // 設定を書き込む
+    writeSettings();
+
     g_app_state.render = nullptr;
     m_main_view.reset();
     CustomUI::cleanup();
@@ -211,6 +223,49 @@ void App::cleanup()
     ImGui::DestroyContext();
 
     g_app_state.d3d_manager.cleanup();
+}
+
+void App::readSettings()
+{
+    // 設定ファイル全体を読み込む
+    std::ifstream ifs(g_app_state.settings_file_path);
+    std::string settings_content((std::istreambuf_iterator<char>(ifs)), std::istreambuf_iterator<char>());
+
+    // [imgui] セクションを抽出
+    size_t imgui_start = settings_content.find("[imgui]");
+    if (imgui_start == std::string::npos) return;
+
+    imgui_start = settings_content.find('\n', imgui_start);
+    if (imgui_start == std::string::npos) return;
+
+    if (imgui_start != std::string::npos) {
+        size_t imgui_end = settings_content.size();  // ファイル末尾まで
+        if (imgui_end == std::string::npos) imgui_end = settings_content.size();
+
+        std::string imgui_ini = settings_content.substr(imgui_start, imgui_end - imgui_start);
+
+        // ImGui の設定を読み込む
+        ImGui::LoadIniSettingsFromMemory(imgui_ini.c_str(), imgui_ini.size());
+    }
+}
+
+void App::writeSettings()
+{
+    {
+        std::ofstream ofs(g_app_state.settings_file_path);
+        ofs.clear();
+    }
+
+    // ImGui の設定を取得
+    size_t imgui_size      = 0;
+    const char* imgui_data = ImGui::SaveIniSettingsToMemory(&imgui_size);
+    std::string imgui_data_str(imgui_data, imgui_size);
+
+    // 再書き込み
+    std::string settings_data_str = "[imgui]\n";
+    settings_data_str += imgui_data_str;
+    std::ofstream ofs(g_app_state.settings_file_path);
+    ofs << settings_data_str;
 }
 
 }  // namespace gradient_editor
