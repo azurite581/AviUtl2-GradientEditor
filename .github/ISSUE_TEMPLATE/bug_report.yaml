@@ -1,0 +1,38 @@
+name: バグ報告
+description: 不具合報告はこちら
+title: "Bug: "
+labels: [bug]
+body:
+  - type: textarea
+    id: overview
+    attributes:
+      label: 概要
+      description: |
+        不具合の概要を記載してください。
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: 再現環境
+      description: |
+        再現環境を記載してください。
+    validations:
+      required: true
+  - type: textarea
+    id: process
+    attributes:
+      label: 再現手順
+      description: 不具合を再現させる手順を記載してください。
+      value: |
+        1.
+        2.
+        3.
+        ...
+    validations:
+      required: true
+  - type: textarea
+    id: supplement
+    attributes:
+      label: 補足
+

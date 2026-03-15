@@ -1,0 +1,26 @@
+name: 機能改善・機能追加の提案
+description: 機能改善・機能追加の提案はこちら
+title: "Enhancement: "
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: 背景
+      description: どのような問題を抱えてissueを立てたのか記載してください。
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: 提案する解決方法
+      description: |
+        どのような機能や改善があれば問題が解決するのか記載してください。
+    validations:
+      required: true
+
+  - type: textarea
+    id: supplement
+    attributes:
+      label: 補足
