@@ -5,6 +5,7 @@
 
 #include <atomic>
 #include <functional>
+#include <filesystem>
 #include <thread>
 #define WIN32_LEAN_AND_MEAN
 #define NOMINMAX
@@ -39,6 +40,8 @@ struct ApplicationState {
 
     // WM_SIZE で呼ぶためのコールバック
     std::move_only_function<void()> render;
+
+    std::filesystem::path settings_file_path;
 
     void cleanup()
     {
