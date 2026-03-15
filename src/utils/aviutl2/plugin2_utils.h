@@ -6,7 +6,7 @@
 #include <string>
 
 #include "alias_parser.h"
-#include "utils/common/str_conv.h"
+#include "str_conv.h"
 
 #include "plugin2.h"
 

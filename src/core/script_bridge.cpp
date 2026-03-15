@@ -3,9 +3,9 @@
 #include <algorithm>
 #include <ranges>
 
-#include "core/constants.h"
-#include "utils/aviutl2/plugin2_utils.h"
-#include "utils/common/str_conv.h"
+#include "constants.h"
+#include "plugin2_utils.h"
+#include "str_conv.h"
 
 namespace gradient_editor {
 

@@ -5,8 +5,8 @@
 #include <iterator>
 #include <vector>
 
-#include "utils/common/color_conv.h"
-#include "utils/common/str_conv.h"
+#include "color_conv.h"
+#include "str_conv.h"
 
 namespace gradient_editor {
 

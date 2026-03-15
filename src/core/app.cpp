@@ -1,19 +1,19 @@
-#include "core/app.h"
+#include "app.h"
 
 #include <iterator>
 #include <vector>
 
 #include "IconsMaterialSymbols.h"
-#include "core/constants.h"
-#include "fonts/material_symbols.cpp"
+#include "constants.h"
+#include "material_symbols.cpp"
 #include "imgui.h"
 #include "imgui_internal.h"
 #include "imgui_impl_dx11.h"
 #include "imgui_impl_win32.h"
-#include "ui/style/imgui_style.h"
-#include "ui/widgets/gradient_widget.h"
-#include "utils/common/color_conv.h"
-#include "utils/common/font_loader.h"
+#include "imgui_style.h"
+#include "gradient_widget.h"
+#include "color_conv.h"
+#include "font_loader.h"
 
 namespace gradient_editor {
 

@@ -1,4 +1,4 @@
-#include "core/app_state.h"
+#include "app_state.h"
 
 namespace gradient_editor {
 

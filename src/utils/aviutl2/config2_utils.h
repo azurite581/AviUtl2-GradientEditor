@@ -4,8 +4,8 @@
 #include <string>
 
 #include "config2_utils.h"
-#include "core/app_state.h"
-#include "utils/common/str_conv.h"
+#include "app_state.h"
+#include "str_conv.h"
 
 namespace aul2 {
 inline std::string tr(const wchar_t* key)

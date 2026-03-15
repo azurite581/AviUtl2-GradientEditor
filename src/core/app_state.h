@@ -13,7 +13,7 @@
 
 #include "d3d_manager.h"
 #include "window_manager.h"
-#include "utils/aviutl2/logger_wrapper.h"
+#include "logger_wrapper.h"
 
 #include "config2.h"
 #include "logger2.h"

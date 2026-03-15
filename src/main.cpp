@@ -6,10 +6,10 @@
 #define NOMINMAX
 #include <windows.h>
 
-#include "core/app.h"
-#include "core/app_state.h"
-#include "core/constants.h"
-#include "utils/aviutl2/logger_wrapper.h"
+#include "app.h"
+#include "app_state.h"
+#include "constants.h"
+#include "logger_wrapper.h"
 
 #include "config2.h"
 #include "logger2.h"

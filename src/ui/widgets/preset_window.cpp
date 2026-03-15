@@ -8,7 +8,7 @@
 #include "gradient_widget.h"
 #include "imgui.h"
 #include "preset_controller.h"
-#include "utils/aviutl2/config2_utils.h"
+#include "config2_utils.h"
 
 namespace gradient_editor {
 void PresetWindow::render(bool* is_open, PresetManager& manager, preset_file::GradientPresetFile& file)

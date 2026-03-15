@@ -1,4 +1,4 @@
-#include "core/d3d_manager.h"
+#include "d3d_manager.h"
 
 #include <dxgi.h>
 #pragma comment(lib, "d3d11.lib")

@@ -12,8 +12,8 @@
 #include <vector>
 
 namespace {
-#include "shaders/pixel_shader.h"
-#include "shaders/vertex_shader.h"
+#include "pixel_shader.h"
+#include "vertex_shader.h"
 }  // namespace
 
 namespace gradient_editor {

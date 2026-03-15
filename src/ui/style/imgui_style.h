@@ -1,8 +1,8 @@
 #ifndef IMGUI_STYLE_H
 #define IMGUI_SYYLE_H
 
-#include "utils/aviutl2/config2_utils.h"
-#include "utils/common/color_conv.h"
+#include "config2_utils.h"
+#include "color_conv.h"
 
 #include "imgui.h"
 

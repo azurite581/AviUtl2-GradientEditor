@@ -10,7 +10,7 @@
 #include <windows.h>
 
 #include "imgui.h"
-#include "ui/widgets/gradient_data.h"
+#include "gradient_data.h"
 
 #include "plugin2.h"
 

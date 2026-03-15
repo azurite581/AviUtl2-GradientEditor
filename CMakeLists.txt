@@ -73,6 +73,15 @@ target_link_libraries(imgui_dx11 PUBLIC
 target_link_libraries(${PROJECT_NAME} PRIVATE imgui_dx11)
 
 target_include_directories(${PROJECT_NAME} PRIVATE src)
+target_include_directories(${PROJECT_NAME} PRIVATE src/core)
+target_include_directories(${PROJECT_NAME} PRIVATE src/fonts)
+target_include_directories(${PROJECT_NAME} PRIVATE src/shaders)
+target_include_directories(${PROJECT_NAME} PRIVATE src/ui)
+target_include_directories(${PROJECT_NAME} PRIVATE src/ui/style)
+target_include_directories(${PROJECT_NAME} PRIVATE src/ui/widgets)
+target_include_directories(${PROJECT_NAME} PRIVATE src/utils/aviutl2)
+target_include_directories(${PROJECT_NAME} PRIVATE src/utils/common)
+target_include_directories(${PROJECT_NAME} PRIVATE src/utils/imgui)
 
 # AviUtl2 SDK
 target_include_directories(${PROJECT_NAME} PRIVATE third_party/aviutl2_sdk_mirror/include/aviutl2_sdk)

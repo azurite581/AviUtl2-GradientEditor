@@ -1,11 +1,11 @@
 #ifndef MAIN_VIEW_H
 #define MAIN_VIEW_H
 
-#include "core/app_state.h"
-#include "core/script_bridge.h"
-#include "ui/widgets/gradient_preset.h"
-#include "ui/widgets/preset_controller.h"
-#include "ui/widgets/preset_window.h"
+#include "app_state.h"
+#include "script_bridge.h"
+#include "gradient_preset.h"
+#include "preset_controller.h"
+#include "preset_window.h"
 
 namespace gradient_editor {
 

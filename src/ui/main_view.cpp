@@ -1,4 +1,4 @@
-#include "ui/main_view.h"
+#include "main_view.h"
 
 #include <algorithm>
 #include <cstdio>
@@ -6,16 +6,16 @@
 #include <iostream>
 
 #include "IconsMaterialSymbols.h"
-#include "core/constants.h"
+#include "constants.h"
 #include "imgui.h"
 #include "imgui_internal.h"
-#include "ui/style/imgui_style.h"
-#include "ui/widgets/gradient_widget.h"
-#include "utils/aviutl2/config2_utils.h"
-#include "utils/aviutl2/plugin2_utils.h"
-#include "utils/common/str_conv.h"
-#include "utils/common/color_conv.h"
-#include "utils/imgui/imgui_utils.h"
+#include "imgui_style.h"
+#include "gradient_widget.h"
+#include "config2_utils.h"
+#include "plugin2_utils.h"
+#include "str_conv.h"
+#include "color_conv.h"
+#include "imgui_utils.h"
 
 namespace gradient_editor {
 

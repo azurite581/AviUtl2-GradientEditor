@@ -9,8 +9,8 @@
 #define NOMINMAX
 #include <windows.h>
 
-#include "core/app_state.h"
-#include "ui/main_view.h"
+#include "app_state.h"
+#include "main_view.h"
 
 namespace gradient_editor {
 
