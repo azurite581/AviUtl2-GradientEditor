@@ -1,4 +1,4 @@
-# AviUtl2 GradientEditor
+# AviUtl2 Gradient Editor
 
 ![GitHub License](https://img.shields.io/github/license/azurite581/AviUtl2-GradientEditor)
 [![GitHub Release](https://img.shields.io/github/v/release/azurite581/AviUtl2-GradientEditor)](https://github.com/azurite581/AviUtl2-GradientEditor/releases/latest)
@@ -15,7 +15,7 @@
 
 [AviUtl ExEdit2](https://spring-fragrance.mints.ne.jp/aviutl/)
 
-- `beta32` 以降必須（`beta33` で動作確認済み）。
+- `beta36` 以降必須（`beta37` で動作確認済み）。
 
 ## インストール
 
@@ -38,6 +38,11 @@
 | `@GradientEditor.anm2` | `Script` | 多色グラデーション、グラデーションマップを含むスクリプト |
 | `English.GradientEditor.aul2` | `Language` | 翻訳ファイル（英語） |
 | `简体中文.GradientEditor.aul2` | `Language` | 翻訳ファイル（簡体字中国語） |
+
+また、初回起動時に設定ファイルである `GradientEditor.ini` が `Plugin` フォルダ下に生成されます。
+
+> [!IMPORTANT]
+> 0.3.0 以前では `aviutl2.exe` と同階層のフォルダに `imgui.ini` が生成されていました。そのままでも特に影響はありませんが、不要であれば手動で削除してください。
 
 ## 付属するスクリプト
 
@@ -288,7 +293,7 @@ Image by <a href="https://pixabay.com/users/pavanprasad_ind-22614562/?utm_source
 
 ### その他
 
-- ウィンドウの配置メニューはメニューバー上で右クリックすることで表示できます。
+- ウィンドウの配置メニューはタイトルバー上で右クリックすることで表示できます。
 
 - 起動時にグラデーションエディタ上に表示されるグラデーションは、プリセットウィンドウ上で一番上にあるプリセットとなります。
 
@@ -298,9 +303,9 @@ Image by <a href="https://pixabay.com/users/pavanprasad_ind-22614562/?utm_source
 
 ### 環境
 
-- **Windows OS**
+- **Windows 11**
 - **CMake** 3.31 以上
-- **MSVC**
+- **MSVC 2022**
 - **Git**
 - **[aulua](https://github.com/karoterra/aviutl2-aulua)**
 - **[aviutl2-cli](https://github.com/sevenc-nanashi/aviutl2-cli)**
@@ -308,6 +313,7 @@ Image by <a href="https://pixabay.com/users/pavanprasad_ind-22614562/?utm_source
 本リポジトリをクローン後、`aviutl2.tmol` と同じ階層で
 
 ```shell
+au2 prepare
 au2 release
 ```
 
@@ -316,7 +322,6 @@ au2 release
 開発用にビルドする場合は
 
 ```shell
-au2 prepare
 au2 develop  # または au2 dev
 ```
 

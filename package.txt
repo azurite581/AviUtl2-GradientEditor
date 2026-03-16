@@ -2,6 +2,7 @@
 
 AviUtl2 用のグラデーションエディタ。
 
+
 [ インストールされるファイル ]
 
 ・GradientEditor.aux2
@@ -16,12 +17,14 @@ AviUtl2 用のグラデーションエディタ。
   ・グラデーションマップ（GradientMap@GradientEditor）
   グラデーションマップを適用するエフェクト。デフォルトでは `色調整` カテゴリの中にあります。
 
-・English.GradientEditor.aul2
-翻訳ファイル（英語）
+・English.GradientEditor.aul2、简体中文.GradientEditor.aul2
+翻訳ファイル
+
 
 [ 使い方 ]
 
 GitHub リポジトリ(https://github.com/azurite581/AviUtl2-GradientEditor) を参照してください。
+
 
 [ ライセンス ]
 
@@ -46,6 +49,7 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
+
 
 [ 使用したサードパーティライブラリ ]
 
