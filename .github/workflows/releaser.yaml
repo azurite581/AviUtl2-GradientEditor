@@ -17,7 +17,7 @@ jobs:
 
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v6
+      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       with:
         submodules: true
         fetch-depth: 0
@@ -32,14 +32,14 @@ jobs:
 
     - name: Restore aulua
       id: restore-aulua
-      uses: actions/cache/restore@v5
+      uses: actions/cache/restore@cdf6c1fa76f9f475f3d7449005a359c84ca0f306 # v5.0.3
       with:
         path: ./aulua
         key: aulua-${{ steps.aulua_latest_tag.outputs.name }}
 
     - name: Download aulua
       if: steps.restore-aulua.outputs.cache-hit != 'true'
-      uses: robinraju/release-downloader@v1
+      uses: robinraju/release-downloader@daf26c55d821e836577a15f77d86ddc078948b05 # v1.12
       with:
         repository: "karoterra/aviutl2-aulua"
         latest: true
@@ -49,7 +49,7 @@ jobs:
 
     - name: Cache aulua
       if: steps.restore-aulua.outputs.cache-hit != 'true'
-      uses: actions/cache/save@v5
+      uses: actions/cache/save@cdf6c1fa76f9f475f3d7449005a359c84ca0f306 # v5.0.3
       with:
         path: ./aulua
         key: aulua-${{ steps.aulua_latest_tag.outputs.name }}
@@ -69,14 +69,14 @@ jobs:
 
     - name: Restore aviutl2-cli
       id: restore-aviutl2-cli
-      uses: actions/cache/restore@v5
+      uses: actions/cache/restore@cdf6c1fa76f9f475f3d7449005a359c84ca0f306 # v5.0.3
       with:
         path: ./aviutl2-cli
         key: aviutl2-cli-${{ steps.aviutl2-cli_latest_tag.outputs.name }}
 
     - name: Download aviutl2-cli
       if: steps.restore-aviutl2-cli.outputs.cache-hit != 'true'
-      uses: robinraju/release-downloader@v1
+      uses: robinraju/release-downloader@daf26c55d821e836577a15f77d86ddc078948b05 # v1.12
       with:
         repository: "sevenc-nanashi/aviutl2-cli"
         latest: true
@@ -85,7 +85,7 @@ jobs:
 
     - name: Cache aviutl2-cli
       if: steps.restore-aviutl2-cli.outputs.cache-hit != 'true'
-      uses: actions/cache/save@v4
+      uses: actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
       with:
         path: ./aviutl2-cli
         key: aviutl2-cli-${{ steps.aviutl2-cli_latest_tag.outputs.name }}
@@ -99,7 +99,7 @@ jobs:
     - name: Extract version
       id: extract-version
       run: |
-        $version = "${{ github.ref_name }}".TrimStart('v')
+        $version = "$env:GITHUB_REF_NAME".TrimStart('v')
         echo "version=$version" >> $env:GITHUB_OUTPUT
 
     - name: Build
