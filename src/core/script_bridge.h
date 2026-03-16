@@ -5,14 +5,14 @@
 #include <string>
 #include <vector>
 
+#include "gradient_data.h"
+#include "imgui.h"
+
 #define WIN32_LEAN_AND_MEAN
 #define NOMINMAX
 #include <windows.h>
 
-#include "imgui.h"
-#include "gradient_data.h"
-
-#include "plugin2.h"
+#include "aviutl2_sdk/plugin2.h"
 
 namespace gradient_editor {
 

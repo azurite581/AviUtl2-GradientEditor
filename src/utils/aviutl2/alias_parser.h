@@ -34,7 +34,6 @@ inline std::string getNthToken(std::string_view src, const uint32_t index)
     return std::string(first == std::string_view::npos ? src : src.substr(0, first));
 }
 
-
 /// @brief 指定したセクションの値を置換する
 /// @param src エイリアス文字列 1 行分
 /// @param index 置換したい値のあるセクションのインデックス
@@ -80,7 +79,6 @@ inline std::string replaceNthToken(std::string_view src, const uint32_t index, s
 
     return result;
 }
-
 
 /// @brief エイリアスの [Object] セクションにある frame=<frame1>,<frame2>,... の <frame> の数をカウントする
 /// @param alias エイリアス文字列全体

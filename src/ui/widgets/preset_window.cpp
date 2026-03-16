@@ -8,7 +8,6 @@
 #include "gradient_widget.h"
 #include "imgui.h"
 #include "preset_controller.h"
-#include "config2_utils.h"
 
 namespace gradient_editor {
 void PresetWindow::render(bool* is_open, PresetManager& manager, preset_file::GradientPresetFile& file)
@@ -40,16 +39,16 @@ void PresetWindow::render(bool* is_open, PresetManager& manager, preset_file::Gr
     }
 
     if (ImGui::Button(ICON_MS_SAVE "##overwrite")) {
-        ImGui::OpenPopup((aul2::tr(L"上書き保存") + "###Overwrite confirmation").c_str());
+        ImGui::OpenPopup((m_config_wrapper->tr(L"上書き保存") + "###Overwrite confirmation").c_str());
     }
 
     // 上書き確認ダイアログ
     ImVec2 center = ImGui::GetMainViewport()->GetCenter();
     ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
     ImGuiWindowFlags modal_flags = ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoMove;
-    if (ImGui::BeginPopupModal((aul2::tr(L"上書き保存") + "###Overwrite confirmation").c_str(), nullptr, modal_flags)) {
+    if (ImGui::BeginPopupModal((m_config_wrapper->tr(L"上書き保存") + "###Overwrite confirmation").c_str(), nullptr, modal_flags)) {
         std::string replace_preset_name = file.presets[m_selected_preset_index].name;
-        ImGui::Text(aul2::tr(L"プリセット \"%s\" を現在のグラデーションで \"%s\" として上書きしますか?").c_str(), replace_preset_name.c_str(), m_preset_name);
+        ImGui::Text(m_config_wrapper->tr(L"プリセット \"%s\" を現在のグラデーションで \"%s\" として上書きしますか?").c_str(), replace_preset_name.c_str(), m_preset_name);
         ImGui::Separator();
 
         // 中央に配置
@@ -58,14 +57,14 @@ void PresetWindow::render(bool* is_open, PresetManager& manager, preset_file::Gr
         float off       = (avail - btn_width) * 0.5f;
         if (off > 0.0f) ImGui::SetCursorPosX(ImGui::GetCursorPosX() + off);
 
-        if (ImGui::Button((aul2::tr(L"はい") + "###Yes").c_str(), ImVec2(120, 0))) {
+        if (ImGui::Button((m_config_wrapper->tr(L"はい") + "###Yes").c_str(), ImVec2(120, 0))) {
             auto preset = PresetController::gradient2preset(m_target_gradient_data);
             PresetController::overwritePreset(manager, file, preset, m_preset_name, m_selected_preset_index);
             ImGui::CloseCurrentPopup();
         }
         ImGui::SetItemDefaultFocus();
         ImGui::SameLine();
-        if (ImGui::Button((aul2::tr(L"いいえ") + "###No").c_str(), ImVec2(120, 0))) {
+        if (ImGui::Button((m_config_wrapper->tr(L"いいえ") + "###No").c_str(), ImVec2(120, 0))) {
             ImGui::CloseCurrentPopup();
         }
         ImGui::EndPopup();
@@ -74,7 +73,7 @@ void PresetWindow::render(bool* is_open, PresetManager& manager, preset_file::Gr
     ImGui::PopStyleVar();
 
     if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNormal | ImGuiHoveredFlags_NoSharedDelay)) {
-        ImGui::SetTooltip(aul2::tr(L"上書き保存").c_str(), ImGui::GetStyle().HoverDelayNormal);
+        ImGui::SetTooltip(m_config_wrapper->tr(L"上書き保存").c_str(), ImGui::GetStyle().HoverDelayNormal);
     }
     ImGui::SameLine(0.0f, 0.0f);
 
@@ -88,7 +87,7 @@ void PresetWindow::render(bool* is_open, PresetManager& manager, preset_file::Gr
     // if (exist_same_preset_name) ImGui::EndDisabled();
     ImGui::PopStyleVar();
     if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNormal | ImGuiHoveredFlags_NoSharedDelay)) {
-        ImGui::SetTooltip(aul2::tr(L"新規保存").c_str(), ImGui::GetStyle().HoverDelayNormal);
+        ImGui::SetTooltip(m_config_wrapper->tr(L"新規保存").c_str(), ImGui::GetStyle().HoverDelayNormal);
     }
 
     m_is_clicked_preset = false;
@@ -135,7 +134,7 @@ void PresetWindow::renderPresetList(PresetManager& manager, preset_file::Gradien
         // 右クリックメニュー
         if (ImGui::BeginPopupContextItem()) {
             // 削除メニュー
-            if (ImGui::Selectable(aul2::tr(L"削除").c_str())) {
+            if (ImGui::Selectable(m_config_wrapper->tr(L"削除").c_str())) {
                 is_delete    = true;
                 delete_index = static_cast<uint32_t>(i);
                 ImGui::CloseCurrentPopup();

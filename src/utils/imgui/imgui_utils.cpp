@@ -2,8 +2,8 @@
 
 void imgui_utils::alignForWidth(float width, float alignment)
 {
-    float avail       = ImGui::GetContentRegionAvail().x;
-    float off         = (avail - width) * alignment;
+    float avail = ImGui::GetContentRegionAvail().x;
+    float off   = (avail - width) * alignment;
     if (off > 0.0f)
         ImGui::SetCursorPosX(ImGui::GetCursorPosX() + off);
 }

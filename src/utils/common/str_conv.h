@@ -24,7 +24,7 @@ inline std::wstring multiByteToWideChar(std::string_view str, uint32_t code_page
         return {};
     }
 
-    // 必要なバッファサイズを取得 (ヌル文字を含まない)
+    // 必要なバッファサイズを取得
     int size_needed = ::MultiByteToWideChar(
         code_page,
         0,
@@ -61,12 +61,11 @@ inline std::string wideCharToMultiByte(std::wstring_view str, uint32_t code_page
     }
 
     DWORD flags = 0;
-    // UTF-8の場合、WC_ERR_INVALID_CHARS を指定可能 (Windows Vista以降)
     if (code_page == CP_UTF8) {
         flags = WC_ERR_INVALID_CHARS;
     }
 
-    // 必要なバッファサイズを取得 (ヌル文字を含まない)
+    // 必要なバッファサイズを取得
     int size_needed = ::WideCharToMultiByte(
         code_page,
         flags,
@@ -124,7 +123,6 @@ inline T charsToInt(std::string_view s, T def, int base = 10)
 template <std::integral T>
 inline T wCharsToInt(std::wstring_view ws, T def, int base = 10)
 {
-    // wideCharToMultiByte が string_view 対応したため安全に変換可能
     std::string s = wideCharToMultiByte(ws);
     return charsToInt<T>(s, def, base);
 }
@@ -152,7 +150,6 @@ inline std::string intToChars(T x, std::string_view def, int base = 10)
 {
     if (base < 2 || base > 36) return std::string(def);
 
-    // バッファサイズは型のビット数あれば十分 (2進数の場合が最大長なので)
     constexpr size_t buffer_size = std::numeric_limits<T>::digits + std::numeric_limits<T>::is_signed + 1;
     char out[buffer_size];
 
@@ -177,7 +174,7 @@ inline std::wstring intToWchars(T x, std::string_view def, int base = 10)
 template <std::floating_point T>
 inline std::string floatingPointToChars(T x, std::string_view def, std::chars_format fmt = std::chars_format::general, int precision = -1)
 {
-    char out[256];  // 浮動小数点の文字列表現には通常これで十分
+    char out[256];
 
     std::to_chars_result res;
     if (precision < 0) {

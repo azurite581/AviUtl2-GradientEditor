@@ -3,11 +3,19 @@
 
 #include "gradient_data.h"
 #include "gradient_preset.h"
+#include "config2_wrapper_interface.h"
 
 namespace gradient_editor {
 
 class PresetWindow {
 public:
+    PresetWindow() {}
+
+    void setConfigWrapper(ConfigWrapperInterface* config_wrapper)
+    {
+        m_config_wrapper = config_wrapper;
+    }
+
     void render(bool* is_open, PresetManager& manager, preset_file::GradientPresetFile& file);
 
     bool isClickedPreset() const noexcept { return m_is_clicked_preset; }
@@ -16,6 +24,8 @@ public:
     void setTargetGradientData(const gradient_editor::GradientData& data) noexcept { m_target_gradient_data = data; }
 
 private:
+    ConfigWrapperInterface* m_config_wrapper;
+
     bool m_is_init           = false;
     char m_preset_name[32]   = "";
     bool m_is_clicked_preset = false;

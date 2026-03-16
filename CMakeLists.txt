@@ -34,6 +34,8 @@ add_library(${PROJECT_NAME} SHARED
     src/ui/widgets/preset_controller.cpp
     src/ui/widgets/preset_window.cpp
     src/main.cpp
+    src/utils/aviutl2/logger_wrapper_interface.cpp
+    src/utils/aviutl2/config2_wrapper_interface.cpp
     src/utils/imgui/imgui_utils.cpp
     ${GENERATED_CPP}
     ${COMPILED_PIXEL_SHADER}
@@ -77,14 +79,13 @@ target_include_directories(${PROJECT_NAME} PRIVATE src/core)
 target_include_directories(${PROJECT_NAME} PRIVATE src/fonts)
 target_include_directories(${PROJECT_NAME} PRIVATE src/shaders)
 target_include_directories(${PROJECT_NAME} PRIVATE src/ui)
-target_include_directories(${PROJECT_NAME} PRIVATE src/ui/style)
 target_include_directories(${PROJECT_NAME} PRIVATE src/ui/widgets)
 target_include_directories(${PROJECT_NAME} PRIVATE src/utils/aviutl2)
 target_include_directories(${PROJECT_NAME} PRIVATE src/utils/common)
 target_include_directories(${PROJECT_NAME} PRIVATE src/utils/imgui)
 
 # AviUtl2 SDK
-target_include_directories(${PROJECT_NAME} PRIVATE third_party/aviutl2_sdk_mirror/include/aviutl2_sdk)
+target_include_directories(${PROJECT_NAME} PRIVATE third_party/aviutl2_sdk_mirror/include)
 
 # nlohmann json
 target_include_directories(${PROJECT_NAME} PRIVATE third_party/json/single_include/nlohmann)

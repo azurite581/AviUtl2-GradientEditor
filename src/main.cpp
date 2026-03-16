@@ -1,20 +1,22 @@
-#include <future>
-#include <thread>
-#include <fstream>
+#include "app.h"
+#include "app_state.h"
+#include "constants.h"
 
 #define WIN32_LEAN_AND_MEAN
 #define NOMINMAX
 #include <windows.h>
 
-#include "app.h"
-#include "app_state.h"
-#include "constants.h"
-#include "logger_wrapper.h"
+#include "aviutl2_sdk/config2.h"
+#include "aviutl2_sdk/logger2.h"
+#include "aviutl2_sdk/plugin2.h"
 
-#include "config2.h"
-#include "logger2.h"
-#include "plugin2.h"
+#include <fstream>
+#include <future>
+#include <thread>
 
+//---------------------------------------------------------------------
+//	プラグイン情報用マクロ
+//---------------------------------------------------------------------
 #define STRINGIFY2(x) #x
 #define STRINGIFY(x) STRINGIFY2(x)
 #define WIDEN2(x) L##x
@@ -83,24 +85,24 @@ void guiThreadMain(std::promise<HWND>&& hwnd_promise)
     app.run(std::move(hwnd_promise));
 }
 
-} // namespace gradient_editor
+}  // namespace gradient_editor
 
 //---------------------------------------------------------------------
 //	AviUtl2 Plugin 関連
 //---------------------------------------------------------------------
 COMMON_PLUGIN_TABLE common_plugin_table = {
-	WIDEN(PLUGIN_NAME),
-	PLUGIN_INFO,
+    WIDEN(PLUGIN_NAME),
+    PLUGIN_INFO,
 };
 
-EXTERN_C __declspec(dllexport) DWORD RequiredVersion() {
-	return 2003200;
+EXTERN_C __declspec(dllexport) DWORD RequiredVersion()
+{
+    return 2003600;
 }
 
 EXTERN_C __declspec(dllexport) void InitializeLogger(LOG_HANDLE* handle)
 {
     g_app_state.log_handle = handle;
-    g_app_state.logger_wrapper.setLogHandle(handle);
 }
 
 EXTERN_C __declspec(dllexport) void InitializeConfig(CONFIG_HANDLE* handle)
@@ -122,7 +124,7 @@ EXTERN_C __declspec(dllexport) void InitializeConfig(CONFIG_HANDLE* handle)
 EXTERN_C __declspec(dllexport) bool InitializePlugin(DWORD version)
 {
     g_app_state.version = version;
-    if (version < 2003200) {
+    if (version < 2003600) {
         return false;
     }
     return true;
@@ -138,8 +140,9 @@ EXTERN_C __declspec(dllexport) void UninitializePlugin()
     g_app_state.cleanup();
 }
 
-EXTERN_C __declspec(dllexport) COMMON_PLUGIN_TABLE* GetCommonPluginTable(void) {
-	return &common_plugin_table;
+EXTERN_C __declspec(dllexport) COMMON_PLUGIN_TABLE* GetCommonPluginTable(void)
+{
+    return &common_plugin_table;
 }
 
 EXTERN_C __declspec(dllexport) void RegisterPlugin(HOST_APP_TABLE* host)
@@ -150,7 +153,7 @@ EXTERN_C __declspec(dllexport) void RegisterPlugin(HOST_APP_TABLE* host)
     g_app_state.edit_handle = host->create_edit_handle();
 
     std::promise<HWND> p;
-    auto f = p.get_future();
+    auto f                 = p.get_future();
     g_app_state.gui_thread = std::thread(guiThreadMain, std::move(p));
 
     HWND hwnd = f.get();

@@ -2,19 +2,24 @@
 #define MAIN_VIEW_H
 
 #include "app_state.h"
-#include "script_bridge.h"
+#include "config2_wrapper_interface.h"
 #include "gradient_preset.h"
+#include "logger_wrapper_interface.h"
 #include "preset_controller.h"
 #include "preset_window.h"
+#include "script_bridge.h"
 
 namespace gradient_editor {
 
 class MainView {
 public:
-    MainView();
+    MainView(LoggerWrapperInterface* logger_wrapper, ConfigWrapperInterface* config_wrapper);
     void render();
 
 private:
+    LoggerWrapperInterface* m_logger_wrapper;
+    ConfigWrapperInterface* m_config_wrapper;
+
     void renderGradientEditor();
     void renderPropertyEditor(GradientData* data);
 
@@ -38,7 +43,7 @@ private:
     bool m_load    = false;
     bool m_is_init = false;
 
-    // Colors for AviUtl objects
+    // Colors for AviUtl2 objects
     ImU32 m_object_video_color_start = 0;
     ImU32 m_object_video_color_stop  = 0;
     ImU32 m_frame_cursor_color       = 0;
