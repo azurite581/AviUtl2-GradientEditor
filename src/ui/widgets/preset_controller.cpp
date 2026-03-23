@@ -9,8 +9,7 @@
 #include "str_conv.h"
 
 namespace gradient_editor {
-
-gradient_editor::GradientData PresetController::preset2gradient(const preset::GradientPreset& preset)
+GradientData PresetController::preset2gradient(const preset::GradientPreset& preset)
 {
     gradient_editor::GradientData gradient{};
     std::vector<GradientMarkerData> markers_data;
@@ -49,7 +48,7 @@ preset::GradientPreset PresetController::gradient2preset(gradient_editor::Gradie
     return preset;
 }
 
-bool PresetController::deletePreset(PresetManager& manager, preset_file::GradientPresetFile& file, const uint32_t index)
+bool PresetController::deletePreset(PresetManager& manager, GradientConfig& file, const uint32_t index)
 {
     // 削除
     file.presets.erase(file.presets.begin() + index);
@@ -62,7 +61,7 @@ bool PresetController::deletePreset(PresetManager& manager, preset_file::Gradien
     return true;
 }
 
-bool PresetController::swapPreset(PresetManager& manager, preset_file::GradientPresetFile& file, const uint32_t index_1, const uint32_t index_2)
+bool PresetController::swapPreset(PresetManager& manager, GradientConfig& file, const uint32_t index_1, const uint32_t index_2)
 {
     // スワップ
     auto tmp              = file.presets[index_1];
@@ -77,7 +76,7 @@ bool PresetController::swapPreset(PresetManager& manager, preset_file::GradientP
     return true;
 }
 
-bool PresetController::overwritePreset(PresetManager& manager, preset_file::GradientPresetFile& file, preset::GradientPreset preset, const std::string& new_name, const uint32_t index)
+bool PresetController::overwritePreset(PresetManager& manager, GradientConfig& file, preset::GradientPreset preset, const std::string& new_name, const uint32_t index)
 {
     preset.name         = new_name;
     file.presets[index] = preset;  // 上書き
@@ -97,7 +96,7 @@ bool PresetController::overwritePreset(PresetManager& manager, preset_file::Grad
     return true;
 }
 
-bool PresetController::addPreset(PresetManager& manager, preset_file::GradientPresetFile& file, preset::GradientPreset preset, const std::string& new_name)
+bool PresetController::addPreset(PresetManager& manager, GradientConfig& file, preset::GradientPreset preset, const std::string& new_name)
 {
     // 追加する前に名前の重複を避ける
     auto has_duplicate_name = [&file](std::string& target_name) {
@@ -129,6 +128,42 @@ bool PresetController::addPreset(PresetManager& manager, preset_file::GradientPr
         return false;
     }
 
+    return true;
+}
+
+bool PresetController::setCategories(PresetManager& manager, GradientConfig& file, const std::vector<std::string>& new_categories)
+{
+    file.categories = new_categories;
+
+    // 書き込み
+    auto write_result = manager.writePresetFile(file);
+    if (!write_result.is_success) {
+        return false;
+    }
+    return true;
+}
+
+bool PresetController::changeCategory(PresetManager& manager, GradientConfig& file, const uint32_t index, const std::string& new_category)
+{
+    file.presets[index].category = new_category;
+
+    // 書き込み
+    auto write_result = manager.writePresetFile(file);
+    if (!write_result.is_success) {
+        return false;
+    }
+    return true;
+}
+
+bool PresetController::changeCategories(PresetManager& manager, GradientConfig& file, const std::vector<std::string>& new_categories)
+{
+    file.categories = new_categories;
+
+    // 書き込み
+    auto write_result = manager.writePresetFile(file);
+    if (!write_result.is_success) {
+        return false;
+    }
     return true;
 }
 

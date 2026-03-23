@@ -25,7 +25,7 @@ private:
 
     ScriptBridge m_script_bridge;
     PresetManager m_preset_manager;
-    preset_file::GradientPresetFile m_preset_file;
+    GradientConfig m_preset_file;
     PresetWindow m_preset_window;
     struct WindowVisible {
         bool preset_window = true;

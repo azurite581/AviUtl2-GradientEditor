@@ -72,34 +72,15 @@ void MainView::render()
     }
     ImGui::DockSpaceOverViewport(dockspace_id, viewport, ImGuiDockNodeFlags_PassthruCentralNode);
 
-    // グラデーションエディタを描画
-    renderGradientEditor();
 
-    // プリセットウィンドウの描画
-    ImGuiWindowClass windowClass;
-    windowClass.DockNodeFlagsOverrideSet = ImGuiDockNodeFlags_NoCloseButton | ImGuiDockNodeFlags_NoWindowMenuButton | ImGuiDockNodeFlags_NoTabBar;
-    ImGui::SetNextWindowClass(&windowClass);
-    if (m_window_visible.preset_window) {
-        m_preset_window.render(&m_window_visible.preset_window, m_preset_manager, m_preset_file);
-    }
-
-    if (!m_is_init) {
-        ImGui::SetWindowFocus("PresetWindow");
-        m_is_init = true;
-    }
-}
-
-void MainView::renderGradientEditor()
-{
-    ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize |
+    static ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize |
                                     ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse |
                                     ImGuiWindowFlags_MenuBar;
-
-    ImGuiWindowClass window_class;
+    static ImGuiWindowClass window_class;
     window_class.DockNodeFlagsOverrideSet = ImGuiDockNodeFlags_NoTabBar;
     ImGui::SetNextWindowClass(&window_class);
-
     ImGui::SetNextWindowSize(ImVec2(540, 0), ImGuiCond_FirstUseEver);
+
     ImGui::Begin("GradientEditorWindow", nullptr, window_flags);
 
     //
@@ -108,12 +89,34 @@ void MainView::renderGradientEditor()
     if (ImGui::BeginMenuBar()) {
         // 表示メニュー
         if (ImGui::BeginMenu(m_config_wrapper->tr(L"表示").c_str())) {
-            ImGui::MenuItem(m_config_wrapper->tr(L"プリセット").c_str(), nullptr, m_window_visible.preset_window);
+            ImGui::MenuItem(m_config_wrapper->tr(L"プリセット").c_str(), nullptr, &m_window_visible.preset_window);
             ImGui::EndMenu();
         }
         ImGui::EndMenuBar();
     }
 
+    // グラデーションエディタを描画
+    renderGradientEditor();
+
+    // プリセットウィンドウの描画
+    static ImGuiWindowClass side_window_class;
+    side_window_class.DockNodeFlagsOverrideSet = ImGuiDockNodeFlags_NoCloseButton | ImGuiDockNodeFlags_NoWindowMenuButton;
+    ImGui::SetNextWindowClass(&side_window_class);
+    if (m_window_visible.preset_window) {
+        m_preset_window.render(&m_window_visible.preset_window, m_preset_manager, m_preset_file);
+    }
+
+    if (!m_is_init) {
+        ImGui::SetWindowFocus("PresetWindow");
+        m_is_init = true;
+    }
+
+    ImGui::End();
+}
+
+void MainView::renderGradientEditor()
+{
+    ImGui::Begin("GradientEditorWindow");
     float frame_height              = ImGui::GetFrameHeight();
     static GradientData preset_data = m_preset_window.getSelectedGradientData();
 

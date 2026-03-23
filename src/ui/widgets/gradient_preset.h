@@ -11,8 +11,8 @@
 #include "json.hpp"
 
 namespace preset {
-class GradientPreset {
-public:
+struct GradientPreset {
+    std::string category{"default"};
     std::string name{"default"};
     std::vector<std::string> colors{"0x000000ff", "0xffffffff"};
     std::vector<float> positions{0.0f, 1.0f};
@@ -25,6 +25,7 @@ public:
 inline void to_json(nlohmann::ordered_json& j, const GradientPreset& preset)
 {
     j = nlohmann::ordered_json{
+        {"category", preset.category},
         {"name", preset.name},
         {"colors", preset.colors},
         {"positions", preset.positions},
@@ -36,39 +37,42 @@ inline void to_json(nlohmann::ordered_json& j, const GradientPreset& preset)
 
 inline void from_json(const nlohmann::ordered_json& j, GradientPreset& preset)
 {
-    j.at("name").get_to(preset.name);
-    j.at("colors").get_to(preset.colors);
-    j.at("positions").get_to(preset.positions);
-    j.at("midpoints").get_to(preset.midpoints);
-    j.at("blur_width").get_to(preset.blur_width);
-    j.at("color_space").get_to(preset.color_space);
-    j.at("interpolation_path").get_to(preset.interpolation_path);
+    preset.category = j.value("category", preset.category);
+    preset.name = j.value("name", preset.name);
+    preset.colors = j.value("colors", preset.colors);
+    preset.positions = j.value("positions", preset.positions);
+    preset.midpoints = j.value("midpoints", preset.midpoints);
+    preset.blur_width = j.value("blur_width", preset.blur_width);
+    preset.color_space = j.value("color_space", preset.color_space);
+    preset.interpolation_path = j.value("interpolation_path", preset.interpolation_path);
 }
 }  // namespace preset
 
-namespace preset_file {
-struct GradientPresetFile {
+struct GradientConfig {
+    std::vector<std::string> categories{"default"};
     std::vector<preset::GradientPreset> presets;
 };
 
-inline void to_json(nlohmann::ordered_json& j, const GradientPresetFile& preset_file)
+inline void to_json(nlohmann::ordered_json& j, const GradientConfig& config)
 {
-    j = nlohmann::ordered_json{{"presets", preset_file.presets}};
+    j = nlohmann::ordered_json{
+        {"categories", config.categories},
+        {"presets", config.presets}
+    };
 }
 
-inline void from_json(const nlohmann::ordered_json& j, GradientPresetFile& preset_file)
+inline void from_json(const nlohmann::ordered_json& j, GradientConfig& config)
 {
-    j.at("presets").get_to(preset_file.presets);
+    config.categories = j.value("categories", config.categories);
+    config.presets = j.value("presets", config.presets);
 }
-
-}  // namespace preset_file
 
 class PresetManager
     : public preset::GradientPreset,
-      public preset_file::GradientPresetFile {
+      public GradientConfig {
 private:
     std::filesystem::path m_preset_path;
-    const preset_file::GradientPresetFile DEFAULT_PRESET_FILE{preset_file::GradientPresetFile{.presets = {preset::GradientPreset{}}}};
+    const GradientConfig DEFAULT_PRESET_FILE{GradientConfig{ .categories = {"dafault"}, .presets = {preset::GradientPreset{}}}};
     inline static const char* DEFAULT_PRESET_FILE_JSON = R"(
 {
     "presets": [
@@ -199,7 +203,7 @@ public:
     void setPresetFilePath(const std::filesystem::path& path) { m_preset_path = path; }
 
     struct PresetLoadResult {
-        preset_file::GradientPresetFile preset_file;
+        GradientConfig preset_file;
         std::string error;  // 空なら成功
     };
     PresetLoadResult loadPresetFile() const
@@ -216,7 +220,7 @@ public:
         nlohmann::ordered_json j;
         try {
             j                  = nlohmann::ordered_json::parse(ifs);
-            result.preset_file = j.get<preset_file::GradientPresetFile>();
+            result.preset_file = j.get<GradientConfig>();
         } catch (const nlohmann::json::exception& e) {
             result.error = e.what();
             result.preset_file = DEFAULT_PRESET_FILE;
@@ -232,7 +236,7 @@ public:
         bool is_success;
         std::string error;
     };
-    PresetWriteResult writePresetFile(const preset_file::GradientPresetFile& preset_file)
+    PresetWriteResult writePresetFile(const GradientConfig& preset_file)
     {
         PresetWriteResult result{false, {}};
 
