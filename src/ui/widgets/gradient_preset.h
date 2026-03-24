@@ -278,6 +278,71 @@ public:
         return false;
     }
 
+    PresetWriteResult addPreset(GradientConfig& cfg, preset::GradientPreset preset, std::string_view name, std::string_view category)
+    {
+        // 追加する前に名前の重複を避ける
+        auto has_duplicate_name = [&cfg](std::string& target_name) {
+            for (const auto& p : cfg.presets) {
+                if (p.name == target_name) {
+                    return true;
+                }
+            }
+            return false;
+        };
+
+        std::string original_name  =  std::string{name};
+        std::string candidate_name = original_name;
+        while (has_duplicate_name(candidate_name)) {  // 重複がある限りループし続ける
+            candidate_name += "_copy";
+        }
+        preset.name = candidate_name;
+        preset.category = category;
+
+        cfg.presets.push_back(preset);
+
+        // 書き込み
+        return writePresetFile(cfg);
+    }
+
+    PresetWriteResult changeCategory(GradientConfig& cfg, std::string_view a, std::string_view b)
+    {
+        for (auto& preset : cfg.presets) {
+            if (preset.category == a) {
+                preset.category = b;
+            }
+        }
+
+        return writePresetFile(cfg);
+    }
+
+    PresetWriteResult deleteOnlyCategory(GradientConfig& cfg, std::string_view target_category)
+    {
+        auto it = std::find(cfg.categories.begin(), cfg.categories.end(), target_category);
+        if (it != cfg.categories.end()) {
+            cfg.categories.erase(it);
+        }
+
+        return writePresetFile(cfg);
+    }
+
+    PresetWriteResult deleteCategoryAndPresets(GradientConfig& cfg, std::string_view target_category)
+    {
+        // カテゴリを削除
+        auto it = std::find(cfg.categories.begin(), cfg.categories.end(), target_category);
+        if (it != cfg.categories.end()) {
+            cfg.categories.erase(it);
+        }
+
+        // target_category に属するプリセットを削除
+        cfg.presets.erase(
+            std::remove_if(cfg.presets.begin(), cfg.presets.end(),
+            [&](const auto& p) { return p.category == target_category; }),
+            cfg.presets.end()
+        );
+
+        return writePresetFile(cfg);
+    }
+
 };
 
 #endif  // !GRADIENT_PRESET_H

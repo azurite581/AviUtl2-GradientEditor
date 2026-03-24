@@ -5,6 +5,7 @@
 
 #include "gradient_data.h"
 #include "gradient_preset.h"
+#include "logger_wrapper_interface.h"
 #include "config2_wrapper_interface.h"
 
 namespace gradient_editor {
@@ -13,10 +14,8 @@ class PresetWindow {
 public:
     PresetWindow() {}
 
-    void setConfigWrapper(ConfigWrapperInterface* config_wrapper)
-    {
-        m_config_wrapper = config_wrapper;
-    }
+    void setLoggerWrapper(LoggerWrapperInterface* logger_wrapper) noexcept { m_logger_wrapper = logger_wrapper; }
+    void setConfigWrapper(ConfigWrapperInterface* config_wrapper) noexcept { m_config_wrapper = config_wrapper; }
 
     void render(bool* is_open, PresetManager& manager, GradientConfig& file);
 
@@ -26,6 +25,7 @@ public:
     void setTargetGradientData(const gradient_editor::GradientData& data) noexcept { m_target_gradient_data = data; }
 
 private:
+    LoggerWrapperInterface* m_logger_wrapper;
     ConfigWrapperInterface* m_config_wrapper;
 
     bool m_is_init           = false;

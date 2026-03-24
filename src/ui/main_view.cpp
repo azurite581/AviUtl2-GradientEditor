@@ -20,6 +20,7 @@ namespace gradient_editor {
 MainView::MainView(LoggerWrapperInterface* logger_wrapper, ConfigWrapperInterface* config_wrapper)
     : m_logger_wrapper{logger_wrapper}, m_config_wrapper{config_wrapper}
 {
+    m_preset_window.setLoggerWrapper(m_logger_wrapper);
     m_preset_window.setConfigWrapper(m_config_wrapper);
 
     // プリセットをファイルから読み込む
