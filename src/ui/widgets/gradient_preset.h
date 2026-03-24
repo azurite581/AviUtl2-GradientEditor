@@ -1,6 +1,10 @@
 #ifndef GRADIENT_PRESET_H
 #define GRADIENT_PRESET_H
 
+#include "gradient_data.h"
+#include "color_conv.h"
+#include "str_conv.h"
+
 #include <cstdint>
 #include <filesystem>
 #include <fstream>
@@ -278,6 +282,45 @@ public:
         return false;
     }
 
+    static gradient_editor::GradientData preset2gradient(const preset::GradientPreset& preset)
+    {
+        gradient_editor::GradientData gradient{};
+        std::vector<GradientMarkerData> markers_data;
+        for (uint32_t i = 0; i < static_cast<uint32_t>(std::ssize(preset.colors)); ++i) {
+            GradientMarkerData marker_data;
+            marker_data.color = color_conv::u32Rgba2Vec4Rgba<ImVec4>(str_conv::charsToInt(preset.colors[i].substr(2, 8), 0xffffffff, 16));
+            marker_data.pos   = preset.positions[i];
+            if (static_cast<int32_t>(i) < static_cast<int32_t>(std::ssize(preset.colors)) - 1) {
+                marker_data.midpoint.ratio = preset.midpoints[i];
+            }
+            markers_data.push_back(marker_data);
+        }
+        gradient.m_marker_manager.setDefaultMarkers(markers_data);
+        gradient.m_blur_width  = preset.blur_width;
+        gradient.m_color_space = preset.color_space;
+        gradient.m_interp_dir  = preset.interpolation_path;
+
+        return gradient;
+    }
+
+    static preset::GradientPreset gradient2preset(gradient_editor::GradientData& gradient)
+    {
+        preset::GradientPreset preset;
+        std::vector<std::string> rgba_hex_strs(static_cast<uint32_t>(std::ssize(gradient.m_marker_manager.getMarkerColors())));
+        for (const auto& [i, marker_color] : gradient.m_marker_manager.getMarkerColors() | std::views::enumerate) {
+            uint32_t rgba    = color_conv::vec4Rgba2u32Rgba<ImVec4>(marker_color);
+            rgba_hex_strs[i] = std::format("0x{:08X}", rgba);
+        }
+        preset.colors             = rgba_hex_strs;
+        preset.positions          = gradient.m_marker_manager.getMarkerPos();
+        preset.midpoints          = gradient.m_marker_manager.getMidpointRatios();
+        preset.blur_width         = gradient.getBlurWidth();
+        preset.color_space        = gradient.getColorSpace();
+        preset.interpolation_path = gradient.getInterpDir();
+
+        return preset;
+    }
+
     PresetWriteResult addPreset(GradientConfig& cfg, preset::GradientPreset preset, std::string_view name, std::string_view category)
     {
         // 追加する前に名前の重複を避ける
@@ -300,7 +343,68 @@ public:
 
         cfg.presets.push_back(preset);
 
-        // 書き込み
+        return writePresetFile(cfg);
+    }
+
+    PresetWriteResult deletePreset(GradientConfig& cfg, const uint32_t preset_index)
+    {
+        if (preset_index < 0 || static_cast<uint32_t>(std::ssize(cfg.presets)) <= preset_index) {
+            return { false, "The specified preset index is invalid." };
+        }
+
+        cfg.presets.erase(cfg.presets.begin() + preset_index);
+
+        return writePresetFile(cfg);
+    }
+
+    PresetWriteResult overwritePreset(GradientConfig& cfg, preset::GradientPreset preset, const uint32_t preset_index, std::string_view name, std::string_view category)
+    {
+        if (preset_index < 0 || static_cast<uint32_t>(std::ssize(cfg.presets)) <= preset_index) {
+            return { false, "The specified preset index is invalid." };
+        }
+
+        preset.name         = name;
+        preset.category     = category;
+        cfg.presets[preset_index] = preset;
+
+        return writePresetFile(cfg);
+    }
+
+    PresetWriteResult swapPreset(GradientConfig& cfg, const uint32_t a, const uint32_t b)
+    {
+        if ((a < 0 || static_cast<uint32_t>(std::ssize(cfg.presets)) <= a) ||
+            (b < 0 || static_cast<uint32_t>(std::ssize(cfg.presets)) <= b)) {
+            return { false, "The specified preset index is invalid." };
+        }
+
+        // スワップ
+        auto tmp       = cfg.presets[a];
+        cfg.presets[a] = cfg.presets[b];
+        cfg.presets[b] = tmp;
+
+        return writePresetFile(cfg);
+    }
+
+    PresetWriteResult addCategory(GradientConfig& cfg, std::string_view category)
+    {
+        for (const auto& c : cfg.categories) {
+            if (c == category) {
+                return { false, "A category with this name already exists." };
+            }
+        }
+        cfg.categories.push_back(std::string{category});
+
+        return writePresetFile(cfg);
+    }
+
+    PresetWriteResult changeCategory(GradientConfig& cfg, const uint32_t preset_index, std::string_view category)
+    {
+        if (preset_index < 0 || static_cast<uint32_t>(std::ssize(cfg.presets)) <= preset_index) {
+            return { false, "The specified preset index is invalid." };
+        }
+
+        cfg.presets[preset_index].category = category;
+
         return writePresetFile(cfg);
     }
 
@@ -311,6 +415,13 @@ public:
                 preset.category = b;
             }
         }
+
+        return writePresetFile(cfg);
+    }
+
+    PresetWriteResult changeCategories(GradientConfig& cfg, const std::vector<std::string>& categories)
+    {
+        cfg.categories = categories;
 
         return writePresetFile(cfg);
     }

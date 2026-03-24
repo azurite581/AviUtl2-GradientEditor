@@ -5,7 +5,6 @@
 #include "config2_wrapper_interface.h"
 #include "gradient_preset.h"
 #include "logger_wrapper_interface.h"
-#include "preset_controller.h"
 #include "preset_window.h"
 #include "script_bridge.h"
 

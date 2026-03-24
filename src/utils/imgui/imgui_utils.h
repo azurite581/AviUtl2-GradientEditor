@@ -148,6 +148,17 @@ inline bool squareIconButton(const std::string& icon, const std::string& label)
     return f;
 }
 
+inline static void helpMarker(const char* icon, const char* desc)
+{
+    ImGui::TextDisabled(icon);
+    if (ImGui::BeginItemTooltip()) {
+        ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
+        ImGui::TextUnformatted(desc);
+        ImGui::PopTextWrapPos();
+        ImGui::EndTooltip();
+    }
+}
+
 }  // namespace imgui_utils
 
 #endif

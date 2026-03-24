@@ -31,7 +31,6 @@ add_library(${PROJECT_NAME} SHARED
     src/ui/widgets/gradient_marker.cpp
     src/ui/widgets/gradient_renderer.cpp
     src/ui/widgets/gradient_widget.cpp
-    src/ui/widgets/preset_controller.cpp
     src/ui/widgets/preset_window.cpp
     src/main.cpp
     src/utils/aviutl2/logger_wrapper_interface.cpp
