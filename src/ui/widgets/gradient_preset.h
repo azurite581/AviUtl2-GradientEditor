@@ -12,7 +12,7 @@
 
 namespace preset {
 struct GradientPreset {
-    std::string category{"default"};
+    std::string category{"uncategorized"};
     std::string name{"default"};
     std::vector<std::string> colors{"0x000000ff", "0xffffffff"};
     std::vector<float> positions{0.0f, 1.0f};
@@ -49,7 +49,7 @@ inline void from_json(const nlohmann::ordered_json& j, GradientPreset& preset)
 }  // namespace preset
 
 struct GradientConfig {
-    std::vector<std::string> categories{"default"};
+    std::vector<std::string> categories{"uncategorized"};
     std::vector<preset::GradientPreset> presets;
 };
 
@@ -72,7 +72,7 @@ class PresetManager
       public GradientConfig {
 private:
     std::filesystem::path m_preset_path;
-    const GradientConfig DEFAULT_PRESET_FILE{GradientConfig{ .categories = {"dafault"}, .presets = {preset::GradientPreset{}}}};
+    const GradientConfig DEFAULT_PRESET_FILE{GradientConfig{ .categories = {"uncategorized"}, .presets = {preset::GradientPreset{}}}};
     inline static const char* DEFAULT_PRESET_FILE_JSON = R"(
 {
     "presets": [
@@ -269,6 +269,15 @@ public:
         std::ofstream ofs(file_path);
         ofs << DEFAULT_PRESET_FILE_JSON;
     }
+
+    static bool containsCategory(const std::vector<std::string>& categories, std::string_view target_category)
+    {
+        for (const auto& c : categories) {
+            if (c == target_category) return true;
+        }
+        return false;
+    }
+
 };
 
 #endif  // !GRADIENT_PRESET_H

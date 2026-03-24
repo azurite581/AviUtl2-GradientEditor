@@ -29,15 +29,14 @@ private:
     ConfigWrapperInterface* m_config_wrapper;
 
     bool m_is_init           = false;
-    char m_preset_name[64]   = "";
+    std::string m_preset_name{};
     bool m_is_clicked_preset = false;
     gradient_editor::GradientData m_selected_gradient;
     uint32_t m_selected_preset_index = 0;
-    std::unordered_set<std::string> m_categories{};
+    std::vector<std::string> m_categories{};
 
     gradient_editor::GradientData m_target_gradient_data;
 
-    void categorySelectorPopup();
     void renderPresetList(PresetManager& manager, GradientConfig& file, std::string_view category);
 };
 

@@ -36,7 +36,6 @@ add_library(${PROJECT_NAME} SHARED
     src/main.cpp
     src/utils/aviutl2/logger_wrapper_interface.cpp
     src/utils/aviutl2/config2_wrapper_interface.cpp
-    src/utils/imgui/imgui_utils.cpp
     ${GENERATED_CPP}
     ${COMPILED_PIXEL_SHADER}
     ${COMPILED_VERTEX_SHADER}
@@ -60,6 +59,7 @@ add_library(imgui STATIC
     ${IMGUI_SOURCE}/imgui_draw.cpp
     ${IMGUI_SOURCE}/imgui_tables.cpp
     ${IMGUI_SOURCE}/imgui_widgets.cpp
+    ${IMGUI_SOURCE}/misc/cpp/imgui_stdlib.cpp
 )
 target_include_directories(imgui PUBLIC ${IMGUI_SOURCE})
 add_library(imgui_dx11 STATIC

@@ -76,9 +76,11 @@ bool PresetController::swapPreset(PresetManager& manager, GradientConfig& file, 
     return true;
 }
 
-bool PresetController::overwritePreset(PresetManager& manager, GradientConfig& file, preset::GradientPreset preset, const std::string& new_name, const uint32_t index)
+bool PresetController::overwritePreset(PresetManager& manager, GradientConfig& file, preset::GradientPreset preset, const std::string& new_name, const std::string& category, const uint32_t index)
 {
     preset.name         = new_name;
+    preset.category     = category;
+
     file.presets[index] = preset;  // 上書き
 
     // 書き込み
@@ -96,7 +98,7 @@ bool PresetController::overwritePreset(PresetManager& manager, GradientConfig& f
     return true;
 }
 
-bool PresetController::addPreset(PresetManager& manager, GradientConfig& file, preset::GradientPreset preset, const std::string& new_name)
+bool PresetController::addPreset(PresetManager& manager, GradientConfig& file, preset::GradientPreset preset, const std::string& new_name, const std::string& category)
 {
     // 追加する前に名前の重複を避ける
     auto has_duplicate_name = [&file](std::string& target_name) {
@@ -114,7 +116,8 @@ bool PresetController::addPreset(PresetManager& manager, GradientConfig& file, p
     while (has_duplicate_name(candidate_name)) {
         candidate_name += "_copy";
     }
-    preset.name = candidate_name;  // 新しい名前をセット
+    preset.name = candidate_name;
+    preset.category = category;
 
     file.presets.push_back(preset);  // 追加
 
@@ -134,6 +137,19 @@ bool PresetController::addPreset(PresetManager& manager, GradientConfig& file, p
 bool PresetController::setCategories(PresetManager& manager, GradientConfig& file, const std::vector<std::string>& new_categories)
 {
     file.categories = new_categories;
+
+    // 書き込み
+    auto write_result = manager.writePresetFile(file);
+    if (!write_result.is_success) {
+        return false;
+    }
+    return true;
+}
+
+bool PresetController::deleteCategory(PresetManager& manager, GradientConfig& file, const std::string& category)
+{
+    auto v = file.categories;
+    v.erase(std::remove(v.begin(), v.end(), category), v.end());
 
     // 書き込み
     auto write_result = manager.writePresetFile(file);
