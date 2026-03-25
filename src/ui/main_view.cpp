@@ -44,9 +44,15 @@ MainView::MainView(LoggerWrapperInterface* logger_wrapper, ConfigWrapperInterfac
     auto load_result = m_preset_manager.loadPresetFile();
     m_preset_file    = load_result.preset_file;
     if (!load_result.error.empty()) {
-        auto error_w = str_conv::multiByteToWideChar(load_result.error);
-        m_logger_wrapper->error(L"{}", error_w.c_str());  // エラーメッセージに '{' または '}' があると std::format_error になるため "{}" で受け取る
+        m_logger_wrapper->error("{}", load_result.error.c_str());  // エラーメッセージに '{' または '}' があると std::format_error になるため "{}" で受け取る
+    } else {
+        // 一度書き込む
+        auto write_result = m_preset_manager.writePresetFile(m_preset_file);
+        if (!write_result.is_success) {
+            m_logger_wrapper->error("{}", write_result.error.c_str());
+        }
     }
+
 
     m_object_video_color_start = color_conv::u32Rgba2u32Abgr(color_conv::u32Rgb2u32Rgba(g_app_state.config_handle->get_color_code_index(g_app_state.config_handle, "ObjectVideo", 0), 0xFF));
     m_object_video_color_stop  = color_conv::u32Rgba2u32Abgr(color_conv::u32Rgb2u32Rgba(g_app_state.config_handle->get_color_code_index(g_app_state.config_handle, "ObjectVideo", 1), 0xFF));

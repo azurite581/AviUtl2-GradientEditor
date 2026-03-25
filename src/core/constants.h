@@ -22,7 +22,7 @@ constexpr float FRAME_BORDER_SIZE      = 1.0f;
 constexpr float TAB_ROUNDING           = 0.0f;
 constexpr float DOCKING_SEPARATOR_SIZE = 1.0f;
 constexpr float ITEM_SPACING_X         = 5.0f;
-constexpr float ITEM_SPACING_Y         = 1.0f;
+constexpr float ITEM_SPACING_Y         = 2.0f;
 constexpr float ITEM_INNER_SPACING_X   = 1.0f;
 }  // namespace absolute
 }  // namespace scale

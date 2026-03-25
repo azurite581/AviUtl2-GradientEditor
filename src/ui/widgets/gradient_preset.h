@@ -14,7 +14,6 @@
 
 #include "json.hpp"
 
-namespace preset {
 struct GradientPreset {
     std::string category{"uncategorized"};
     std::string name{"default"};
@@ -50,18 +49,27 @@ inline void from_json(const nlohmann::ordered_json& j, GradientPreset& preset)
     preset.color_space = j.value("color_space", preset.color_space);
     preset.interpolation_path = j.value("interpolation_path", preset.interpolation_path);
 }
-}  // namespace preset
 
 struct GradientConfig {
     std::vector<std::string> categories{"uncategorized"};
-    std::vector<preset::GradientPreset> presets;
+    std::vector<GradientPreset> presets{GradientPreset{}};
 };
 
 inline void to_json(nlohmann::ordered_json& j, const GradientConfig& config)
 {
+    auto categories = config.categories;
+    if (categories.empty()) {
+        categories = {"uncategorized"};
+    }
+
+    auto presets = config.presets;
+    if (presets.empty()) {
+        presets = {GradientPreset{}};
+    }
+
     j = nlohmann::ordered_json{
-        {"categories", config.categories},
-        {"presets", config.presets}
+        {"categories", categories},
+        {"presets", presets}
     };
 }
 
@@ -72,13 +80,23 @@ inline void from_json(const nlohmann::ordered_json& j, GradientConfig& config)
 }
 
 class PresetManager
-    : public preset::GradientPreset,
+    : public GradientPreset,
       public GradientConfig {
+public:
+    inline static const char* DEFAULT_CATEGORY = "uncategorized";
+
 private:
     std::filesystem::path m_preset_path;
-    const GradientConfig DEFAULT_PRESET_FILE{GradientConfig{ .categories = {"uncategorized"}, .presets = {preset::GradientPreset{}}}};
+
+    const GradientConfig DEFAULT_PRESET_FILE{GradientConfig{
+            .categories = { DEFAULT_CATEGORY },
+            .presets = { GradientPreset{} }
+        }};
     inline static const char* DEFAULT_PRESET_FILE_JSON = R"(
 {
+    "categories": [
+        "uncategorized"
+    ],
     "presets": [
         {
             "name": "black-white",
@@ -210,6 +228,9 @@ public:
         GradientConfig preset_file;
         std::string error;  // 空なら成功
     };
+
+    /// @brief プリセットファイル（json）を読み込む
+    /// @return PresetLoadResult 構造体 @n 成功の場合は preset_file に読み込んだ値が入り、 error が空になる。 @n 失敗の場合は preset_file がデフォルト値になり、 error にエラーメッセージが入る。
     PresetLoadResult loadPresetFile() const
     {
         PresetLoadResult result;
@@ -240,6 +261,9 @@ public:
         bool is_success;
         std::string error;
     };
+    /// @brief プリセットを指定されたファイル（json）に書き込む
+    /// @param preset_file 書き込むプリセットの値
+    /// @return PresetWriteResult 構造体 @n 成功の場合は is_success が true、error が空になる。 @n 失敗の場合は is_success が false、error にエラーメッセージが入る。
     PresetWriteResult writePresetFile(const GradientConfig& preset_file)
     {
         PresetWriteResult result{false, {}};
@@ -247,6 +271,7 @@ public:
         nlohmann::ordered_json j = preset_file;
         std::ofstream ofs(m_preset_path);
         if (!ofs) {
+            result.is_success = false;
             result.error = "failed to open preset file";
             return result;
         }
@@ -282,7 +307,7 @@ public:
         return false;
     }
 
-    static gradient_editor::GradientData preset2gradient(const preset::GradientPreset& preset)
+    static gradient_editor::GradientData preset2gradient(const GradientPreset& preset)
     {
         gradient_editor::GradientData gradient{};
         std::vector<GradientMarkerData> markers_data;
@@ -303,9 +328,9 @@ public:
         return gradient;
     }
 
-    static preset::GradientPreset gradient2preset(gradient_editor::GradientData& gradient)
+    static GradientPreset gradient2preset(gradient_editor::GradientData& gradient)
     {
-        preset::GradientPreset preset;
+        GradientPreset preset;
         std::vector<std::string> rgba_hex_strs(static_cast<uint32_t>(std::ssize(gradient.m_marker_manager.getMarkerColors())));
         for (const auto& [i, marker_color] : gradient.m_marker_manager.getMarkerColors() | std::views::enumerate) {
             uint32_t rgba    = color_conv::vec4Rgba2u32Rgba<ImVec4>(marker_color);
@@ -321,7 +346,7 @@ public:
         return preset;
     }
 
-    PresetWriteResult addPreset(GradientConfig& cfg, preset::GradientPreset preset, std::string_view name, std::string_view category)
+    PresetWriteResult addPreset(GradientConfig& cfg, GradientPreset preset, std::string_view name, std::string_view category)
     {
         // 追加する前に名前の重複を避ける
         auto has_duplicate_name = [&cfg](std::string& target_name) {
@@ -346,6 +371,7 @@ public:
         return writePresetFile(cfg);
     }
 
+    // プリセットを削除する
     PresetWriteResult deletePreset(GradientConfig& cfg, const uint32_t preset_index)
     {
         if (preset_index < 0 || static_cast<uint32_t>(std::ssize(cfg.presets)) <= preset_index) {
@@ -357,7 +383,7 @@ public:
         return writePresetFile(cfg);
     }
 
-    PresetWriteResult overwritePreset(GradientConfig& cfg, preset::GradientPreset preset, const uint32_t preset_index, std::string_view name, std::string_view category)
+    PresetWriteResult overwritePreset(GradientConfig& cfg, GradientPreset preset, const uint32_t preset_index, std::string_view name, std::string_view category)
     {
         if (preset_index < 0 || static_cast<uint32_t>(std::ssize(cfg.presets)) <= preset_index) {
             return { false, "The specified preset index is invalid." };
@@ -397,6 +423,7 @@ public:
         return writePresetFile(cfg);
     }
 
+    // 指定したプリセットのカテゴリーを変更する
     PresetWriteResult changeCategory(GradientConfig& cfg, const uint32_t preset_index, std::string_view category)
     {
         if (preset_index < 0 || static_cast<uint32_t>(std::ssize(cfg.presets)) <= preset_index) {
@@ -408,6 +435,7 @@ public:
         return writePresetFile(cfg);
     }
 
+    // 指定したカテゴリーを別のカテゴリーに置き換える
     PresetWriteResult changeCategory(GradientConfig& cfg, std::string_view a, std::string_view b)
     {
         for (auto& preset : cfg.presets) {
@@ -419,6 +447,7 @@ public:
         return writePresetFile(cfg);
     }
 
+    // カテゴリーの配列を置き換える
     PresetWriteResult changeCategories(GradientConfig& cfg, const std::vector<std::string>& categories)
     {
         cfg.categories = categories;
@@ -436,6 +465,7 @@ public:
         return writePresetFile(cfg);
     }
 
+    // カテゴリーとそのカテゴリーに属する全てのプリセットを削除する
     PresetWriteResult deleteCategoryAndPresets(GradientConfig& cfg, std::string_view target_category)
     {
         // カテゴリを削除
