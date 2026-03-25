@@ -74,7 +74,7 @@ void MainView::render()
         ImGuiID dock_id_main  = dockspace_id;
         ImGui::DockBuilderSplitNode(dock_id_main, ImGuiDir_Right, PRESET_WINDOW_RATIO, &dock_id_right, &dock_id_main);
         ImGui::DockBuilderDockWindow("GradientEditorWindow", dock_id_main);
-        ImGui::DockBuilderDockWindow("PresetWindow", dock_id_right);
+        ImGui::DockBuilderDockWindow("###PresetWindow", dock_id_right);
         ImGui::DockBuilderFinish(dockspace_id);
     }
     ImGui::DockSpaceOverViewport(dockspace_id, viewport, ImGuiDockNodeFlags_PassthruCentralNode);
@@ -114,7 +114,7 @@ void MainView::render()
     }
 
     if (!m_is_init) {
-        ImGui::SetWindowFocus("PresetWindow");
+        ImGui::SetWindowFocus("###PresetWindow");
         m_is_init = true;
     }
 

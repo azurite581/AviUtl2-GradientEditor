@@ -44,7 +44,7 @@ void PresetWindow::render(bool* is_open, PresetManager& manager, GradientConfig&
     // プリセットウィンドウ
     //
     ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse;
-    ImGui::Begin("PresetWindow", is_open, window_flags);
+    ImGui::Begin((m_config_wrapper->tr(L"プリセット") + "###PresetWindow").c_str(), is_open, window_flags);
 
     float item_spacing_x = ImGui::GetStyle().ItemSpacing.x * 0.5f;
     ImGui::PushStyleVar(ImGuiStyleVar_CellPadding, ImVec2(item_spacing_x, 0));
@@ -364,7 +364,7 @@ void PresetWindow::render(bool* is_open, PresetManager& manager, GradientConfig&
 
         if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNormal | ImGuiHoveredFlags_NoSharedDelay | ImGuiHoveredFlags_AllowWhenDisabled)) {
             if (exist_same_preset_name) {
-                ImGui::SetTooltip(m_config_wrapper->tr(L"すでに同じ名前のプリセットが存在します。新規保存するには名前を変更してください").c_str(), ImGui::GetStyle().HoverDelayNormal);
+                ImGui::SetTooltip(m_config_wrapper->tr(L"すでに同じ名前のプリセットが存在します").c_str(), ImGui::GetStyle().HoverDelayNormal);
             } else {
                 ImGui::SetTooltip(m_config_wrapper->tr(L"新規保存").c_str(), ImGui::GetStyle().HoverDelayNormal);
             }
@@ -386,7 +386,7 @@ void PresetWindow::render(bool* is_open, PresetManager& manager, GradientConfig&
 void PresetWindow::renderPresetList(PresetManager& manager, GradientConfig& file, std::string_view category)
 {
     bool is_delete        = false;
-    uint32_t delete_index = 0;
+    static uint32_t delete_index = 0;
 
     auto loadCategories = [&]() {
         m_categories.clear();
@@ -579,11 +579,40 @@ void PresetWindow::renderPresetList(PresetManager& manager, GradientConfig& file
     }
     ImGui::PopStyleVar();
 
-    if (is_delete) {
-        auto result = manager.deletePreset(file, delete_index);
-        if (!result.is_success) {
-            m_logger_wrapper->error("{}", result.error);
+    // 削除確認ダイアログ
+    ImVec2 center = ImGui::GetMainViewport()->GetCenter();
+    ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
+    ImGuiWindowFlags modal_flags = ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoMove;
+    if (ImGui::BeginPopupModal((m_config_wrapper->tr(L"削除") + "###delete_confirmation").c_str(), nullptr, modal_flags)) {
+        std::string replace_preset_name = file.presets[m_selected_preset_index].name;
+        ImGui::Text(m_config_wrapper->tr(L"プリセット \"%s\" を削除しますか?").c_str(), replace_preset_name.c_str(), m_preset_name.c_str());
+        ImGui::Dummy(ImVec2(0, ImGui::GetFrameHeight() * 0.25f));
+        ImGui::Separator();
+        ImGui::Dummy(ImVec2(0, ImGui::GetFrameHeight() * 0.25f));
+
+        // 中央に配置
+        float btn_width = 120 * 2 + ImGui::GetStyle().ItemSpacing.x * 1;
+        float avail     = ImGui::GetContentRegionAvail().x;
+        float off       = (avail - btn_width) * 0.5f;
+        if (off > 0.0f) ImGui::SetCursorPosX(ImGui::GetCursorPosX() + off);
+
+        if (ImGui::Button((m_config_wrapper->tr(L"はい") + "###Yes").c_str(), ImVec2(120, 0))) {
+            auto result = manager.deletePreset(file, delete_index);
+            if (!result.is_success) {
+                m_logger_wrapper->error("{}", result.error);
+            }
+            ImGui::CloseCurrentPopup();
         }
+        ImGui::SetItemDefaultFocus();
+        ImGui::SameLine();
+        if (ImGui::Button((m_config_wrapper->tr(L"いいえ") + "###No").c_str(), ImVec2(120, 0))) {
+            ImGui::CloseCurrentPopup();
+        }
+        ImGui::EndPopup();
+    }
+
+    if (is_delete) {
+        ImGui::OpenPopup((m_config_wrapper->tr(L"削除") + "###delete_confirmation").c_str());
     }
 }
 
