@@ -12,7 +12,7 @@
 #include "misc/cpp/imgui_stdlib.h"
 
 namespace gradient_editor {
-void PresetWindow::render(bool* is_open, PresetManager& manager, GradientConfig& file)
+void PresetWindow::render(bool* is_open, PresetManager& manager, GradientConfig& cfg)
 {
     static int32_t category_selected_index = 0;
     static std::string selected_category_name = PresetManager::DEFAULT_CATEGORY;
@@ -20,10 +20,10 @@ void PresetWindow::render(bool* is_open, PresetManager& manager, GradientConfig&
     auto loadCategories = [&]() {
         m_categories.clear();
 
-        // 重複なしでカテゴリを読み込む
+        // 重複なしでカテゴリーを読み込む
         std::unordered_set<std::string> tmp;
-        if (!file.categories.empty()) {
-            for (const auto& [i, category] : file.categories | std::views::enumerate) {
+        if (!cfg.categories.empty()) {
+            for (const auto& [i, category] : cfg.categories | std::views::enumerate) {
                 tmp.insert(category);
             }
         } else {
@@ -33,7 +33,6 @@ void PresetWindow::render(bool* is_open, PresetManager& manager, GradientConfig&
         for (const auto& e : tmp) m_categories.push_back(e);
     };
 
-    // カテゴリを読み込む
     static bool is_init = true;
     if (is_init) {
         is_init = false;
@@ -70,8 +69,8 @@ void PresetWindow::render(bool* is_open, PresetManager& manager, GradientConfig&
             categories.push_back(c);
         }
 
-
-        const char* combo_preview_value        = categories[category_selected_index].c_str();
+        // カテゴリーコンボボックス
+        const char* combo_preview_value = categories[category_selected_index].c_str();
         ImGui::SetNextItemWidth(-FLT_MIN);
         if (ImGui::BeginCombo("##category_combo", combo_preview_value, combo_flags)) {
             for (int n = 0; n < std::ssize(categories); n++) {
@@ -85,6 +84,7 @@ void PresetWindow::render(bool* is_open, PresetManager& manager, GradientConfig&
         }
         selected_category_name = categories[category_selected_index];
 
+        // カテゴリー編集ボタン
         ImGui::TableNextColumn();
         is_called_popup = imgui_utils::squareIconButton(ICON_MS_MENU, "##category_menu");
         if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNormal | ImGuiHoveredFlags_NoSharedDelay)) {
@@ -105,8 +105,8 @@ void PresetWindow::render(bool* is_open, PresetManager& manager, GradientConfig&
     std::string input_placeholder = (ICON_MS_SEARCH + std::string{" "} + m_config_wrapper->tr(L"カテゴリーを検索または作成"));
     float input_placeholder_width = ImGui::CalcTextSize(input_placeholder.c_str()).x;
     ImGui::SetNextWindowSize({input_placeholder_width + ImGui::GetStyle().FramePadding.x * 2.0f + ImGui::GetStyle().WindowPadding.x * 2.0f, 0});
-
     ImGui::PushStyleVarY(ImGuiStyleVar_ItemSpacing, ImGui::GetFrameHeight() * 0.25f);
+
     if (ImGui::BeginPopup("preset_category_editor")) {
         ImGui::Text(m_config_wrapper->tr(L"カテゴリーを編集").c_str());
         ImGui::SameLine();
@@ -125,7 +125,6 @@ void PresetWindow::render(bool* is_open, PresetManager& manager, GradientConfig&
         // 並び替え中に同じアイテムが二重に送信されることがあるため、1フレームのみのID競合が発生するという問題がある
         // そのため一時的に検出を無効にする
         ImGui::PushItemFlag(ImGuiItemFlags_AllowDuplicateId, true);
-
         // 検索欄
         ImGui::PushItemFlag(ImGuiItemFlags_NoNavDefaultFocus, true);
         ImGui::SetNextItemWidth(-FLT_MIN);
@@ -133,8 +132,8 @@ void PresetWindow::render(bool* is_open, PresetManager& manager, GradientConfig&
             filter.Build();
         }
         ImGui::PopItemFlag();
-        std::string input_text = filter.InputBuf;
 
+        std::string input_text = filter.InputBuf;
         std::vector<std::string> category_names = m_categories;
 
         // 既存カテゴリをループし、フィルターを通過したものだけを表示
@@ -165,6 +164,7 @@ void PresetWindow::render(bool* is_open, PresetManager& manager, GradientConfig&
                     input_flags |= ImGuiInputTextFlags_CharsNoBlank;   // スペース、タブなし
                     input_flags |= ImGuiInputTextFlags_AutoSelectAll;  // 最初にマウスフォーカスが当たったときにテキスト全体を選択
 
+                    // カテゴリー名入力欄
                     if (ImGui::InputText("##edit", &category_name, input_flags)) {
                         contains_same_category = PresetManager::containsCategory(m_categories, category_name);
                     }
@@ -178,11 +178,11 @@ void PresetWindow::render(bool* is_open, PresetManager& manager, GradientConfig&
                         ImGui::SetTooltip(m_config_wrapper->tr(L"すでに同じ名前のカテゴリが存在します").c_str());
                     }
 
-                    // カテゴリを置き換え
+                    // 名前に重複がなければカテゴリー名を置き換える
                     if ((!contains_same_category && ImGui::IsItemDeactivatedAfterEdit() && ImGui::IsKeyPressed(ImGuiKey_Enter)) || save) {
                         if (!PresetManager::containsCategory(m_categories, category_name)) {
                             m_categories[j] = category_name;
-                            auto result     = manager.changeCategories(file, m_categories);
+                            auto result     = manager.changeCategories(cfg, m_categories);
                             if (!result.is_success) {
                                 m_logger_wrapper->error("{}", result.error);
                             }
@@ -195,7 +195,7 @@ void PresetWindow::render(bool* is_open, PresetManager& manager, GradientConfig&
                         ImGui::Separator();
                         for (const auto& c : m_categories) {
                             if (ImGui::MenuItem(c.c_str())) {
-                                auto result = manager.changeCategory(file, m_categories[j], c);
+                                auto result = manager.changeCategory(cfg, m_categories[j], c);
                                 if (!result.is_success) {
                                     m_logger_wrapper->error("{}", result.error);
                                 }
@@ -206,7 +206,7 @@ void PresetWindow::render(bool* is_open, PresetManager& manager, GradientConfig&
 
                     if (ImGui::BeginMenu(m_config_wrapper->tr(L"削除").c_str())) {
                         if (ImGui::MenuItem(m_config_wrapper->tr(L"カテゴリのみ").c_str())) {
-                            auto result = manager.deleteOnlyCategory(file, m_categories[j]);
+                            auto result = manager.deleteOnlyCategory(cfg, m_categories[j]);
                             if (!result.is_success) {
                                 m_logger_wrapper->error("{}", result.error);
                             } else {
@@ -214,7 +214,7 @@ void PresetWindow::render(bool* is_open, PresetManager& manager, GradientConfig&
                             }
                         }
                         if (ImGui::MenuItem(m_config_wrapper->tr(L"プリセットごと").c_str())) {
-                            auto result = manager.deleteCategoryAndPresets(file, m_categories[j]);
+                            auto result = manager.deleteCategoryAndPresets(cfg, m_categories[j]);
                             if (!result.is_success) {
                                 m_logger_wrapper->error("{}", result.error);
                             } else {
@@ -254,7 +254,7 @@ void PresetWindow::render(bool* is_open, PresetManager& manager, GradientConfig&
         if (!exist_same_name && input_text != "") {
             std::string new_category_label = ICON_MS_ADD + std::string{" "} + input_text;
             if (ImGui::Selectable(new_category_label.c_str())) {
-                auto result = manager.addCategory(file, input_text);
+                auto result = manager.addCategory(cfg, input_text);
                 if (!result.is_success) {
                     m_logger_wrapper->error("{}", result.error);
                 } else {
@@ -293,7 +293,7 @@ void PresetWindow::render(bool* is_open, PresetManager& manager, GradientConfig&
 
         // 入力された文字列のチェック
         bool exist_same_preset_name = false;
-        for (const auto& p : file.presets) {
+        for (const auto& p : cfg.presets) {
             if (p.name == m_preset_name) {
                 exist_same_preset_name = true;
                 break;
@@ -305,7 +305,7 @@ void PresetWindow::render(bool* is_open, PresetManager& manager, GradientConfig&
         ImGui::TableNextColumn();
         if (is_empty) ImGui::BeginDisabled(true);
         if (imgui_utils::squareIconButton(ICON_MS_SAVE, "##overwrite")) {
-            ImGui::OpenPopup((m_config_wrapper->tr(L"上書き保存") + "###Overwrite confirmation").c_str());
+            ImGui::OpenPopup((m_config_wrapper->tr(L"上書き保存") + "###overwrite_confirmation").c_str());
         }
         if (is_empty) ImGui::EndDisabled();
 
@@ -313,8 +313,8 @@ void PresetWindow::render(bool* is_open, PresetManager& manager, GradientConfig&
         ImVec2 center = ImGui::GetMainViewport()->GetCenter();
         ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
         ImGuiWindowFlags modal_flags = ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoMove;
-        if (ImGui::BeginPopupModal((m_config_wrapper->tr(L"上書き保存") + "###Overwrite confirmation").c_str(), nullptr, modal_flags)) {
-            std::string replace_preset_name = file.presets[m_selected_preset_index].name;
+        if (ImGui::BeginPopupModal((m_config_wrapper->tr(L"上書き保存") + "###overwrite_confirmation").c_str(), nullptr, modal_flags)) {
+            std::string replace_preset_name = cfg.presets[m_selected_preset_index].name;
             ImGui::Text(m_config_wrapper->tr(L"プリセット \"%s\" を現在のグラデーションで \"%s\" として上書きしますか?").c_str(), replace_preset_name.c_str(), m_preset_name.c_str());
             ImGui::Dummy(ImVec2(0, ImGui::GetFrameHeight() * 0.25f));
             ImGui::Separator();
@@ -326,9 +326,9 @@ void PresetWindow::render(bool* is_open, PresetManager& manager, GradientConfig&
             float off       = (avail - btn_width) * 0.5f;
             if (off > 0.0f) ImGui::SetCursorPosX(ImGui::GetCursorPosX() + off);
 
-            if (ImGui::Button((m_config_wrapper->tr(L"はい") + "###Yes").c_str(), ImVec2(120, 0))) {
+            if (ImGui::Button((m_config_wrapper->tr(L"はい") + "###yes").c_str(), ImVec2(120, 0))) {
                 auto preset = manager.gradient2preset(m_target_gradient_data);
-                auto result = manager.overwritePreset(file, preset, m_selected_preset_index, m_preset_name, selected_category_name);
+                auto result = manager.overwritePreset(cfg, preset, m_selected_preset_index, m_preset_name, selected_category_name);
                 if (!result.is_success) {
                     m_logger_wrapper->error("{}", result.error);
                 } else {
@@ -338,7 +338,7 @@ void PresetWindow::render(bool* is_open, PresetManager& manager, GradientConfig&
             }
             ImGui::SetItemDefaultFocus();
             ImGui::SameLine();
-            if (ImGui::Button((m_config_wrapper->tr(L"いいえ") + "###No").c_str(), ImVec2(120, 0))) {
+            if (ImGui::Button((m_config_wrapper->tr(L"いいえ") + "###no").c_str(), ImVec2(120, 0))) {
                 ImGui::CloseCurrentPopup();
             }
             ImGui::EndPopup();
@@ -353,7 +353,7 @@ void PresetWindow::render(bool* is_open, PresetManager& manager, GradientConfig&
         if (exist_same_preset_name || is_empty) ImGui::BeginDisabled(true);
         if (imgui_utils::squareIconButton(ICON_MS_SAVE_AS, "##add")) {
             auto preset = manager.gradient2preset(m_target_gradient_data);
-            auto result = manager.addPreset(file, preset, m_preset_name, selected_category_name);
+            auto result = manager.addPreset(cfg, preset, m_preset_name, selected_category_name);
             if (!result.is_success) {
                 m_logger_wrapper->error("{}", result.error);
             } else {
@@ -376,9 +376,10 @@ void PresetWindow::render(bool* is_open, PresetManager& manager, GradientConfig&
     }
     ImGui::PopStyleVar();
 
-    // プリセット一覧を描画
     ImGui::Dummy(ImVec2(0, ImGui::GetFrameHeight() * 0.25f));
-    renderPresetList(manager, file, selected_category_name);
+
+    // プリセット一覧を描画
+    renderPresetList(manager, cfg, selected_category_name);
 
     ImGui::End();
 }
@@ -397,27 +398,26 @@ void PresetWindow::renderPresetList(PresetManager& manager, GradientConfig& file
                 tmp.insert(category);
             }
         } else {
-            tmp.insert("uncategorized");
+            tmp.insert(PresetManager::DEFAULT_CATEGORY);
         }
 
         for (const auto& e : tmp) m_categories.push_back(e);
     };
 
-    // プリセットのデータを1つずつ取り出して描画
     ImGui::PushStyleVarY(ImGuiStyleVar_ItemSpacing, ImGui::GetFrameHeight() * 0.25f);
-    for (const auto& [i, preset] : file.presets | std::views::enumerate) {
-        ImGui::PushID(static_cast<int>(i));
+    ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(ImGui::GetStyle().FrameBorderSize, ImGui::GetStyle().FrameBorderSize));
+    ImVec2 gradient_size = ImVec2(ImGui::GetContentRegionAvail().x, ImGui::GetFrameHeight() * 1.5f);
 
-        // プリセットからグラデーションのデータを得る
-        gradient_editor::GradientData gradient = manager.preset2gradient(preset);
+    // プリセットのデータを1つずつ取り出して描画
+    for (const auto& [i, preset] : file.presets | std::views::enumerate) {
+        ImGui::PushID(static_cast<int32_t>(i));
+
+        // プリセットからグラデーションデータを取得
+        GradientData gradient = manager.preset2gradient(preset);
 
         if (preset.category == category) {
             // プリセットを描画
             ImGui::PushStyleVarY(ImGuiStyleVar_ItemSpacing, 0.0f);
-            ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(ImGui::GetStyle().FrameBorderSize, ImGui::GetStyle().FrameBorderSize));
-            ImVec2 gradient_size = ImVec2(ImGui::GetContentRegionAvail().x, ImGui::GetFrameHeight() * 1.5f);
-
-            // プリセットが押されたとき または初回のみ
             if (CustomUI::drawGradientButton(preset.name, gradient_size, gradient) || (!m_is_init)) {
                 m_is_clicked_preset     = true;
                 m_selected_preset_index = static_cast<uint32_t>(i);  // 選択中のインデックスを更新
@@ -425,13 +425,8 @@ void PresetWindow::renderPresetList(PresetManager& manager, GradientConfig& file
                 m_preset_name           = preset.name;               // プリセット名を更新
                 if (!m_is_init) m_is_init = true;
             }
+            ImGui::PopStyleVar();
 
-            if (m_is_clicked_preset) {
-            }
-
-            ImGui::PopStyleVar(2);
-
-            // 名前表示
             if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNone)) {
                 ImGui::SetTooltip(preset.name.c_str());
             }
@@ -439,13 +434,11 @@ void PresetWindow::renderPresetList(PresetManager& manager, GradientConfig& file
             // 右クリックメニュー
             bool open_category_popup = false;
             if (ImGui::BeginPopupContextItem()) {
-                // カテゴリを変更
                 if (ImGui::Selectable(m_config_wrapper->tr(L"カテゴリを変更").c_str())) {
                     open_category_popup = true;
                     ImGui::CloseCurrentPopup();
                 }
 
-                // プリセットから削除
                 if (ImGui::Selectable(m_config_wrapper->tr(L"削除").c_str())) {
                     is_delete    = true;
                     delete_index = static_cast<uint32_t>(i);
@@ -454,9 +447,7 @@ void PresetWindow::renderPresetList(PresetManager& manager, GradientConfig& file
                 ImGui::EndPopup();
             }
 
-            //
             // カテゴリーを変更
-            //
             std::string input_placeholder = (ICON_MS_SEARCH + std::string{" "} + m_config_wrapper->tr(L"カテゴリーを検索または作成"));
             float input_placeholder_width = ImGui::CalcTextSize(input_placeholder.c_str()).x;
             ImGui::SetNextWindowSize({input_placeholder_width + ImGui::GetStyle().FramePadding.x * 2.0f + ImGui::GetStyle().WindowPadding.x * 2.0f, 0});
@@ -476,7 +467,6 @@ void PresetWindow::renderPresetList(PresetManager& manager, GradientConfig& file
                 }
 
                 ImGui::PushItemFlag(ImGuiItemFlags_AllowDuplicateId, true);
-
                 // 検索欄
                 ImGui::PushItemFlag(ImGuiItemFlags_NoNavDefaultFocus, true);
                 ImGui::SetNextItemWidth(-FLT_MIN);
@@ -484,11 +474,11 @@ void PresetWindow::renderPresetList(PresetManager& manager, GradientConfig& file
                     filter.Build();
                 }
                 ImGui::PopItemFlag();
-                std::string input_text = filter.InputBuf;
 
+                std::string input_text = filter.InputBuf;
                 std::vector<std::string> category_names = m_categories;
 
-                // 既存カテゴリをループし、フィルターを通過したものだけを表示
+                // 既存カテゴリーをループし、フィルターを通過したものだけを表示
                 for (int32_t j = 0; j < static_cast<int32_t>(std::ssize(m_categories)); ++j) {
                     std::string category_name_with_icon = ICON_MS_FOLDER + std::string{" "} + m_categories[j];
                     if (filter.PassFilter(category_name_with_icon.c_str())) {
@@ -512,7 +502,7 @@ void PresetWindow::renderPresetList(PresetManager& manager, GradientConfig& file
                     }
                 }
 
-                // カテゴリを作成
+                // カテゴリーを作成
                 bool exist_same_name = (std::find(category_names.begin(), category_names.end(), input_text) != category_names.end());
                 if (!exist_same_name && input_text != "") {
                     std::string new_category_label = ICON_MS_ADD + std::string{" "} + input_text;
@@ -577,7 +567,7 @@ void PresetWindow::renderPresetList(PresetManager& manager, GradientConfig& file
 
         ImGui::PopID();
     }
-    ImGui::PopStyleVar();
+    ImGui::PopStyleVar(2);
 
     // 削除確認ダイアログ
     ImVec2 center = ImGui::GetMainViewport()->GetCenter();
@@ -603,6 +593,7 @@ void PresetWindow::renderPresetList(PresetManager& manager, GradientConfig& file
             }
             ImGui::CloseCurrentPopup();
         }
+
         ImGui::SetItemDefaultFocus();
         ImGui::SameLine();
         if (ImGui::Button((m_config_wrapper->tr(L"いいえ") + "###No").c_str(), ImVec2(120, 0))) {

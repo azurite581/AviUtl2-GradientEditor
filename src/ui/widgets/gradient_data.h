@@ -5,6 +5,7 @@
 #include <wrl/client.h>
 
 #include <cstdint>
+#include <compare>
 #include <iterator>
 #include <numeric>
 #include <ranges>
@@ -13,8 +14,6 @@
 #include "gradient_marker.h"
 #include "gradient_renderer.h"
 #include "imgui.h"
-
-namespace gradient_editor {
 
 class GradientData {
 private:
@@ -26,6 +25,8 @@ private:
     Microsoft::WRL::ComPtr<ID3D11Buffer> m_pixel_constant_buffer  = nullptr;  // グラデーションを描画するピクセルシェーダーのコンスタントバッファー
     Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> m_output_srv = nullptr;
 
+
+
 public:
     ~GradientData()
     {
@@ -36,6 +37,20 @@ public:
     int32_t m_color_space{0};
     int32_t m_interp_dir{0};
     float m_blur_width{1.0f};
+
+    std::partial_ordering operator<=>(const GradientData& other) const {
+        if (auto cmp = m_marker_manager <=> other.m_marker_manager; cmp != 0) return cmp;
+        if (auto cmp = m_color_space <=> other.m_color_space; cmp != 0) return cmp;
+        if (auto cmp = m_interp_dir <=> other.m_interp_dir; cmp != 0) return cmp;
+        return m_blur_width <=> other.m_blur_width;
+    }
+
+    bool operator==(const GradientData& other) const {
+        return m_marker_manager == other.m_marker_manager &&
+               m_color_space == other.m_color_space &&
+               m_interp_dir == other.m_interp_dir &&
+               m_blur_width == other.m_blur_width;
+    }
 
     [[nodiscard]] GradientMarkerManager* getMarkerManager() noexcept { return &m_marker_manager; }
     [[nodiscard]] int32_t getColorSpace() const noexcept { return m_color_space; }
@@ -83,7 +98,5 @@ public:
         Microsoft::WRL::ComPtr<ID3D11Device> d3d_device,
         Microsoft::WRL::ComPtr<ID3D11DeviceContext> d3d_device_context, const int32_t x, const int32_t y);
 };
-
-}  // namespace gradient_editor
 
 #endif  // !GRADIENT_DATA_H

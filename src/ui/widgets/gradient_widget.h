@@ -28,15 +28,15 @@ void initDX11(Microsoft::WRL::ComPtr<ID3D11Device> device, Microsoft::WRL::ComPt
 void cleanup();
 
 ID3D11ShaderResourceView* getGradientSrv(
-    std::unordered_map<std::string, std::unique_ptr<gradient_editor::GradientData>>& gradient_datas,
+    std::unordered_map<std::string, std::unique_ptr<GradientData>>& gradient_datas,
     const std::string label,
     const ImVec2& display_size,
-    const gradient_editor::GradientData& data);
+    const GradientData& data);
 
 bool drawGradientButton(
     const std::string label,
     const ImVec2& display_size,
-    const gradient_editor::GradientData& data);
+    const GradientData& data);
 
 // 描画前にユーザーが設定できるオプション
 struct GradientEditorConfig {
@@ -52,10 +52,10 @@ struct GradientEditorConfig {
 /// @param replace_data グラデーションデータを data で置き換えるかどうか
 /// @param config グラデーションエディターの設定
 /// @return グラデーションエディターのハンドル
-gradient_editor::GradientData* drawGradientEditor(
+GradientData* drawGradientEditor(
     const std::string label,
     const ImVec2& display_size,
-    const gradient_editor::GradientData& data,
+    const GradientData& data,
     GradientEditorFlags flags   = GradientEditorFlags_None,
     bool replace_data           = false,
     GradientEditorConfig config = GradientEditorConfig());

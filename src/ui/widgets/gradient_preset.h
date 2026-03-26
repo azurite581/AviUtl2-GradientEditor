@@ -11,6 +11,7 @@
 #include <string>
 #include <string_view>
 #include <vector>
+#include <compare>
 
 #include "json.hpp"
 
@@ -50,9 +51,45 @@ inline void from_json(const nlohmann::ordered_json& j, GradientPreset& preset)
     preset.interpolation_path = j.value("interpolation_path", preset.interpolation_path);
 }
 
+struct GradientHistory {
+    std::string name{"default"};
+    std::vector<std::string> colors{"0x000000ff", "0xffffffff"};
+    std::vector<float> positions{0.0f, 1.0f};
+    std::vector<float> midpoints{0.5f};
+    float blur_width{1.0f};
+    int32_t color_space{0};
+    int32_t interpolation_path{0};
+
+    auto operator<=>(const GradientHistory&) const = default;
+};
+
+inline void to_json(nlohmann::ordered_json& j, const GradientHistory& history)
+{
+    j = nlohmann::ordered_json{
+        {"name", history.name},
+        {"colors", history.colors},
+        {"positions", history.positions},
+        {"midpoints", history.midpoints},
+        {"blur_width", history.blur_width},
+        {"color_space", history.color_space},
+        {"interpolation_path", history.interpolation_path}};
+}
+
+inline void from_json(const nlohmann::ordered_json& j, GradientHistory& history)
+{
+    history.name = j.value("name", history.name);
+    history.colors = j.value("colors", history.colors);
+    history.positions = j.value("positions", history.positions);
+    history.midpoints = j.value("midpoints", history.midpoints);
+    history.blur_width = j.value("blur_width", history.blur_width);
+    history.color_space = j.value("color_space", history.color_space);
+    history.interpolation_path = j.value("interpolation_path", history.interpolation_path);
+}
+
 struct GradientConfig {
     std::vector<std::string> categories{"uncategorized"};
     std::vector<GradientPreset> presets{GradientPreset{}};
+    std::vector<GradientHistory> histories{GradientHistory{}};
 };
 
 inline void to_json(nlohmann::ordered_json& j, const GradientConfig& config)
@@ -67,9 +104,12 @@ inline void to_json(nlohmann::ordered_json& j, const GradientConfig& config)
         presets = {GradientPreset{}};
     }
 
+    auto histories = config.histories;
+
     j = nlohmann::ordered_json{
         {"categories", categories},
-        {"presets", presets}
+        {"presets", presets},
+        {"histories", config.histories}
     };
 }
 
@@ -77,6 +117,7 @@ inline void from_json(const nlohmann::ordered_json& j, GradientConfig& config)
 {
     config.categories = j.value("categories", config.categories);
     config.presets = j.value("presets", config.presets);
+    config.histories = j.value("histories", config.histories);
 }
 
 class PresetManager
@@ -264,11 +305,11 @@ public:
     /// @brief プリセットを指定されたファイル（json）に書き込む
     /// @param preset_file 書き込むプリセットの値
     /// @return PresetWriteResult 構造体 @n 成功の場合は is_success が true、error が空になる。 @n 失敗の場合は is_success が false、error にエラーメッセージが入る。
-    PresetWriteResult writePresetFile(const GradientConfig& preset_file)
+    PresetWriteResult writePresetFile(const GradientConfig& cfg)
     {
         PresetWriteResult result{false, {}};
 
-        nlohmann::ordered_json j = preset_file;
+        nlohmann::ordered_json j = cfg;
         std::ofstream ofs(m_preset_path);
         if (!ofs) {
             result.is_success = false;
@@ -307,9 +348,9 @@ public:
         return false;
     }
 
-    static gradient_editor::GradientData preset2gradient(const GradientPreset& preset)
+    static GradientData preset2gradient(const GradientPreset& preset)
     {
-        gradient_editor::GradientData gradient{};
+        GradientData gradient{};
         std::vector<GradientMarkerData> markers_data;
         for (uint32_t i = 0; i < static_cast<uint32_t>(std::ssize(preset.colors)); ++i) {
             GradientMarkerData marker_data;
@@ -328,7 +369,7 @@ public:
         return gradient;
     }
 
-    static GradientPreset gradient2preset(gradient_editor::GradientData& gradient)
+    static GradientPreset gradient2preset(GradientData& gradient)
     {
         GradientPreset preset;
         std::vector<std::string> rgba_hex_strs(static_cast<uint32_t>(std::ssize(gradient.m_marker_manager.getMarkerColors())));
@@ -344,6 +385,45 @@ public:
         preset.interpolation_path = gradient.getInterpDir();
 
         return preset;
+    }
+
+    static GradientData history2gradient(const GradientHistory& history)
+    {
+        GradientData gradient{};
+        std::vector<GradientMarkerData> markers_data;
+        for (uint32_t i = 0; i < static_cast<uint32_t>(std::ssize(history.colors)); ++i) {
+            GradientMarkerData marker_data;
+            marker_data.color = color_conv::u32Rgba2Vec4Rgba<ImVec4>(str_conv::charsToInt(history.colors[i].substr(2, 8), 0xffffffff, 16));
+            marker_data.pos   = history.positions[i];
+            if (static_cast<int32_t>(i) < static_cast<int32_t>(std::ssize(history.colors)) - 1) {
+                marker_data.midpoint.ratio = history.midpoints[i];
+            }
+            markers_data.push_back(marker_data);
+        }
+        gradient.m_marker_manager.setDefaultMarkers(markers_data);
+        gradient.m_blur_width  = history.blur_width;
+        gradient.m_color_space = history.color_space;
+        gradient.m_interp_dir  = history.interpolation_path;
+
+        return gradient;
+    }
+
+    static GradientHistory gradient2history(GradientData& gradient)
+    {
+        GradientHistory history;
+        std::vector<std::string> rgba_hex_strs(static_cast<uint32_t>(std::ssize(gradient.m_marker_manager.getMarkerColors())));
+        for (const auto& [i, marker_color] : gradient.m_marker_manager.getMarkerColors() | std::views::enumerate) {
+            uint32_t rgba    = color_conv::vec4Rgba2u32Rgba<ImVec4>(marker_color);
+            rgba_hex_strs[i] = std::format("0x{:08X}", rgba);
+        }
+        history.colors             = rgba_hex_strs;
+        history.positions          = gradient.m_marker_manager.getMarkerPos();
+        history.midpoints          = gradient.m_marker_manager.getMidpointRatios();
+        history.blur_width         = gradient.getBlurWidth();
+        history.color_space        = gradient.getColorSpace();
+        history.interpolation_path = gradient.getInterpDir();
+
+        return history;
     }
 
     PresetWriteResult addPreset(GradientConfig& cfg, GradientPreset preset, std::string_view name, std::string_view category)

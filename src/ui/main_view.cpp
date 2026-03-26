@@ -18,12 +18,14 @@
 namespace gradient_editor {
 
 MainView::MainView(LoggerWrapperInterface* logger_wrapper, ConfigWrapperInterface* config_wrapper)
-    : m_logger_wrapper{logger_wrapper}, m_config_wrapper{config_wrapper}
+    : m_logger_wrapper{logger_wrapper}
+    , m_config_wrapper{config_wrapper}
 {
     m_preset_window.setLoggerWrapper(m_logger_wrapper);
     m_preset_window.setConfigWrapper(m_config_wrapper);
+    m_history_window.setLoggerWrapper(m_logger_wrapper);
+    m_history_window.setConfigWrapper(m_config_wrapper);
 
-    // プリセットをファイルから読み込む
     std::filesystem::path preset_path = str_conv::wideCharToMultiByte(g_app_state.config_handle->app_data_path);
     preset_path /= "Plugin";
     preset_path /= PRESET_FOLDER_NAME;
@@ -46,13 +48,11 @@ MainView::MainView(LoggerWrapperInterface* logger_wrapper, ConfigWrapperInterfac
     if (!load_result.error.empty()) {
         m_logger_wrapper->error("{}", load_result.error.c_str());  // エラーメッセージに '{' または '}' があると std::format_error になるため "{}" で受け取る
     } else {
-        // 一度書き込む
         auto write_result = m_preset_manager.writePresetFile(m_preset_file);
         if (!write_result.is_success) {
             m_logger_wrapper->error("{}", write_result.error.c_str());
         }
     }
-
 
     m_object_video_color_start = color_conv::u32Rgba2u32Abgr(color_conv::u32Rgb2u32Rgba(g_app_state.config_handle->get_color_code_index(g_app_state.config_handle, "ObjectVideo", 0), 0xFF));
     m_object_video_color_stop  = color_conv::u32Rgba2u32Abgr(color_conv::u32Rgb2u32Rgba(g_app_state.config_handle->get_color_code_index(g_app_state.config_handle, "ObjectVideo", 1), 0xFF));
@@ -61,9 +61,7 @@ MainView::MainView(LoggerWrapperInterface* logger_wrapper, ConfigWrapperInterfac
 
 void MainView::render()
 {
-    //
     // ドッキングスペースの設定
-    //
     ImGuiID dockspace_id    = ImGui::GetID("dockspace");
     ImGuiViewport* viewport = ImGui::GetMainViewport();
 
@@ -75,10 +73,10 @@ void MainView::render()
         ImGui::DockBuilderSplitNode(dock_id_main, ImGuiDir_Right, PRESET_WINDOW_RATIO, &dock_id_right, &dock_id_main);
         ImGui::DockBuilderDockWindow("GradientEditorWindow", dock_id_main);
         ImGui::DockBuilderDockWindow("###PresetWindow", dock_id_right);
+        ImGui::DockBuilderDockWindow("###history_window", dock_id_right);
         ImGui::DockBuilderFinish(dockspace_id);
     }
     ImGui::DockSpaceOverViewport(dockspace_id, viewport, ImGuiDockNodeFlags_PassthruCentralNode);
-
 
     static ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize |
                                     ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse |
@@ -90,13 +88,11 @@ void MainView::render()
 
     ImGui::Begin("GradientEditorWindow", nullptr, window_flags);
 
-    //
     // メニューバーの描画
-    //
     if (ImGui::BeginMenuBar()) {
-        // 表示メニュー
         if (ImGui::BeginMenu(m_config_wrapper->tr(L"表示").c_str())) {
             ImGui::MenuItem(m_config_wrapper->tr(L"プリセット").c_str(), nullptr, &m_window_visible.preset_window);
+            ImGui::MenuItem(m_config_wrapper->tr(L"履歴").c_str(), nullptr, &m_window_visible.history_window);
             ImGui::EndMenu();
         }
         ImGui::EndMenuBar();
@@ -105,14 +101,22 @@ void MainView::render()
     // グラデーションエディタを描画
     renderGradientEditor();
 
-    // プリセットウィンドウの描画
     static ImGuiWindowClass side_window_class;
     side_window_class.DockNodeFlagsOverrideSet = ImGuiDockNodeFlags_NoCloseButton | ImGuiDockNodeFlags_NoWindowMenuButton;
+
+    // プリセットウィンドウを描画
     ImGui::SetNextWindowClass(&side_window_class);
     if (m_window_visible.preset_window) {
         m_preset_window.render(&m_window_visible.preset_window, m_preset_manager, m_preset_file);
     }
 
+    // 履歴ウィンドウを描画
+    ImGui::SetNextWindowClass(&side_window_class);
+    if (m_window_visible.history_window) {
+        m_history_window.render(m_preset_manager, m_preset_file);
+    }
+
+    // 初回はプリセットウィンドウんにフォーカスを合わせる
     if (!m_is_init) {
         ImGui::SetWindowFocus("###PresetWindow");
         m_is_init = true;
@@ -127,9 +131,6 @@ void MainView::renderGradientEditor()
     float frame_height              = ImGui::GetFrameHeight();
     static GradientData preset_data = m_preset_window.getSelectedGradientData();
 
-    if (m_preset_window.isClickedPreset()) {
-        preset_data = m_preset_window.getSelectedGradientData();
-    }
 
     //
     // セクション選択
@@ -273,17 +274,35 @@ void MainView::renderGradientEditor()
     // グラデーションエディタの描画
     //
     ImGui::Dummy(ImVec2(0, frame_height * scale::relative::GRADIENT_MARGIN_Y));
-    CustomUI::GradientEditorConfig config;
+
+    // 描画設定
+    static CustomUI::GradientEditorConfig config;
     config.max_marker_count = MAX_MARKER_COUNT;
     config.marker_width     = frame_height * scale::relative::GRADIENT_MARKER_WIDTH;
 
-    auto data = CustomUI::drawGradientEditor(
+    if (m_preset_window.isClickedPreset()) {
+        preset_data = m_preset_window.getSelectedGradientData();
+    } else if (m_history_window.isHistoryClicked()) {
+        preset_data = m_history_window.getSelectedGradient();
+    }
+
+    static GradientData* data = nullptr;
+
+    if (m_preset_window.isClickedPreset() && data != nullptr) {
+        m_history_window.setHistory(*data);
+    }
+
+    data = CustomUI::drawGradientEditor(
         "gradient",
         ImVec2(std::clamp(ImGui::GetContentRegionAvail().x, 1.0f, 4096.0f), frame_height * scale::relative::GRADIENT_HEIGHT),
         preset_data,
         CustomUI::GradientEditorFlags_None,
-        m_preset_window.isClickedPreset(),
-        config);
+        m_preset_window.isClickedPreset() || m_history_window.isHistoryClicked(),
+        config
+    );
+
+
+
     ImGui::Dummy(ImVec2(0, frame_height * scale::relative::GRADIENT_MARGIN_Y));
     m_preset_window.setTargetGradientData(*data);
 
@@ -331,6 +350,8 @@ void MainView::renderGradientEditor()
     if (is_reverse) data->getMarkerManager()->reverseMarkers();
     if (is_del) data->getMarkerManager()->deleteSelectedMarker();
 
+
+
     // プリセットがクリックされた場合、現在のグラデーションがプリセットのものに置き換わるため、
     // その時のグラデーションのデータを差分検知のために保存しておく
     if (m_preset_window.isClickedPreset()) {
@@ -339,6 +360,11 @@ void MainView::renderGradientEditor()
 
     // スクリプトからグラデーションエディタに値を読み込む
     if (m_load) {
+        m_load = false;
+
+        // 置き換える前のグラデーションデータを履歴に保存
+        m_history_window.setHistory(*data);
+
         plugin2_utils::call_edit_lambda(g_app_state.edit_handle->call_edit_section_param, [&](EDIT_SECTION* edit) {
             OBJECT_HANDLE object_handle = edit->get_focus_object();
             if (!object_handle) return;
@@ -465,6 +491,12 @@ void MainView::renderPropertyEditor(GradientData* data)
         }
     }
     ImGui::EndGroup();
+}
+
+void  MainView::writeHistories()
+{
+    m_history_window.writeHistoryToConfig(m_preset_manager, m_preset_file);
+    auto result = m_preset_manager.writePresetFile(m_preset_file);
 }
 
 }  // namespace gradient_editor

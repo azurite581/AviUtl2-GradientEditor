@@ -1,6 +1,5 @@
 #include "gradient_data.h"
 
-namespace gradient_editor {
 
 gradient_editor::GradientRenderer::PixelConstantBuffer GradientData::gradientData2pixelConstantBuffer()
 {
@@ -83,5 +82,3 @@ std::vector<float> GradientData::getTextureColor(Microsoft::WRL::ComPtr<ID3D11De
         return {0.0f, 0.0f, 0.0f, 0.0f};
     }
 }
-
-}  // namespace gradient_editor

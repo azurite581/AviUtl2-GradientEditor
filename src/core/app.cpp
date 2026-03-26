@@ -252,6 +252,7 @@ void App::cleanup()
 {
     // 設定を書き込む
     writeSettings();
+    m_main_view.get()->writeHistories();
 
     g_app_state.render = nullptr;
     m_main_view.reset();

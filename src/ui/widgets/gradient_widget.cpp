@@ -7,8 +7,8 @@ Microsoft::WRL::ComPtr<ID3D11DeviceContext> g_d3d_device_context = nullptr;
 gradient_editor::GradientRenderer::RenderResources g_resources;
 
 // グラデーションデータを保持するマップ
-std::unordered_map<std::string, std::unique_ptr<gradient_editor::GradientData>> g_editor_gradients;
-std::unordered_map<std::string, std::unique_ptr<gradient_editor::GradientData>> g_button_gradients;
+std::unordered_map<std::string, std::unique_ptr<GradientData>> g_editor_gradients;
+std::unordered_map<std::string, std::unique_ptr<GradientData>> g_button_gradients;
 
 void initDX11(Microsoft::WRL::ComPtr<ID3D11Device> device, Microsoft::WRL::ComPtr<ID3D11DeviceContext> context)
 {
@@ -34,10 +34,10 @@ void cleanup()
     }
 }
 
-gradient_editor::GradientData* drawGradientEditor(
+GradientData* drawGradientEditor(
     const std::string label,
     const ImVec2& display_size,
-    const gradient_editor::GradientData& data,
+    const GradientData& data,
     GradientEditorFlags flags,
     bool replace_data,
     GradientEditorConfig config)
@@ -48,10 +48,11 @@ gradient_editor::GradientData* drawGradientEditor(
     }
 
     auto it = g_editor_gradients.find(label);
+
     // 指定されたラベルをキーとするグラデーションデータが存在しなかった場合、
     // 新規作成してマップに追加
     if (it == g_editor_gradients.end()) {
-        auto gradient_data = std::make_unique<gradient_editor::GradientData>();
+        auto gradient_data = std::make_unique<GradientData>();
         gradient_data->init(g_d3d_device, static_cast<int32_t>(display_size.x), static_cast<int32_t>(display_size.y));
         gradient_data->getMarkerManager()->setDefaultMarkers(data.m_marker_manager.getMarkers());
         gradient_data->setBlurWidth(data.m_blur_width);
@@ -63,6 +64,7 @@ gradient_editor::GradientData* drawGradientEditor(
     auto* gradient_data   = it->second.get();
     auto* gradient_marker = it->second.get()->getMarkerManager();
 
+    // データを置換する場合
     if (replace_data) {
         gradient_data->getMarkerManager()->setDefaultMarkers(data.m_marker_manager.getMarkers());
         gradient_data->setBlurWidth(data.m_blur_width);
@@ -118,7 +120,9 @@ gradient_editor::GradientData* drawGradientEditor(
 
     // グラデーションを描画したテクスチャを使ってボタンを描画
     if (!(flags & GradientEditorFlags_NoMarker)) ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(ImGui::GetStyle().ItemSpacing.x, 0.0f));
+
     ImVec2 gradient_region_size = display_size;
+
     if (!(flags & GradientEditorFlags_NotAlignSideToMarker)) {
         ImVec2 cursor = ImGui::GetCursorScreenPos();
         ImGui::SetCursorScreenPos(ImVec2(cursor.x + marker_half_width, cursor.y));
@@ -187,10 +191,10 @@ gradient_editor::GradientData* drawGradientEditor(
 }
 
 ID3D11ShaderResourceView* getGradientSrv(
-    std::unordered_map<std::string, std::unique_ptr<gradient_editor::GradientData>>& gradient_datas,
+    std::unordered_map<std::string, std::unique_ptr<GradientData>>& gradient_datas,
     const std::string label,
     const ImVec2& display_size,
-    const gradient_editor::GradientData& data)
+    const GradientData& data)
 {
     // レンダラーの初期化に失敗していたら早期終了
     if (!g_d3d_device || !g_d3d_device_context) {
@@ -201,7 +205,7 @@ ID3D11ShaderResourceView* getGradientSrv(
     // 指定されたラベルをキーとするグラデーションデータが存在しなかった場合、
     // 新規作成してマップに追加
     if (it == gradient_datas.end()) {
-        auto gradient_data = std::make_unique<gradient_editor::GradientData>();
+        auto gradient_data = std::make_unique<GradientData>();
         gradient_data->init(g_d3d_device, static_cast<int32_t>(display_size.x), static_cast<int32_t>(display_size.y));
         gradient_data->getMarkerManager()->setDefaultMarkers(data.m_marker_manager.getMarkers());
         gradient_data->setBlurWidth(data.m_blur_width);
@@ -248,7 +252,7 @@ ID3D11ShaderResourceView* getGradientSrv(
     return gradient_data->getOutputSrv();
 }
 
-bool drawGradientButton(const std::string label, const ImVec2& display_size, const gradient_editor::GradientData& data)
+bool drawGradientButton(const std::string label, const ImVec2& display_size, const GradientData& data)
 {
     ImVec2 gradient_size                   = ImVec2(display_size.x - ImGui::GetStyle().FramePadding.x * 2.0f, display_size.y - ImGui::GetStyle().FramePadding.y * 2.0f);
     ID3D11ShaderResourceView* gradient_srv = getGradientSrv(g_button_gradients, label, gradient_size, data);

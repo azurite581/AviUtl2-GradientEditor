@@ -6,6 +6,7 @@
 #include "gradient_preset.h"
 #include "logger_wrapper_interface.h"
 #include "preset_window.h"
+#include "history_window.h"
 #include "script_bridge.h"
 
 namespace gradient_editor {
@@ -14,6 +15,7 @@ class MainView {
 public:
     MainView(LoggerWrapperInterface* logger_wrapper, ConfigWrapperInterface* config_wrapper);
     void render();
+    void writeHistories();
 
 private:
     LoggerWrapperInterface* m_logger_wrapper;
@@ -25,9 +27,13 @@ private:
     ScriptBridge m_script_bridge;
     PresetManager m_preset_manager;
     GradientConfig m_preset_file;
+
     PresetWindow m_preset_window;
+    HistoryWindow m_history_window;
+
     struct WindowVisible {
         bool preset_window = true;
+        bool history_window = true;
     };
     WindowVisible m_window_visible;
 
