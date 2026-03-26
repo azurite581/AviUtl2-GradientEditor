@@ -17,7 +17,7 @@ public:
     void setLoggerWrapper(LoggerWrapperInterface* logger_wrapper) noexcept { m_logger_wrapper = logger_wrapper; }
     void setConfigWrapper(ConfigWrapperInterface* config_wrapper) noexcept { m_config_wrapper = config_wrapper; }
 
-    void render(bool* is_open, PresetManager& manager, GradientConfig& file);
+    void render(PresetManager& manager, GradientConfig& file);
 
     bool isClickedPreset() const noexcept { return m_is_clicked_preset; }
     [[nodiscard]] GradientData getSelectedGradientData() const noexcept { return m_selected_gradient; }

@@ -24,6 +24,7 @@ private:
     void renderGradientEditor();
     void renderPropertyEditor(GradientData* data);
 
+    GradientData* m_data;
     ScriptBridge m_script_bridge;
     PresetManager m_preset_manager;
     GradientConfig m_preset_file;

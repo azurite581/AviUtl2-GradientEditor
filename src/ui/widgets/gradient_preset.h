@@ -89,7 +89,7 @@ inline void from_json(const nlohmann::ordered_json& j, GradientHistory& history)
 struct GradientConfig {
     std::vector<std::string> categories{"uncategorized"};
     std::vector<GradientPreset> presets{GradientPreset{}};
-    std::vector<GradientHistory> histories{GradientHistory{}};
+    std::vector<GradientHistory> histories{};
 };
 
 inline void to_json(nlohmann::ordered_json& j, const GradientConfig& config)
@@ -105,11 +105,14 @@ inline void to_json(nlohmann::ordered_json& j, const GradientConfig& config)
     }
 
     auto histories = config.histories;
+    if (histories.empty()) {
+        histories = std::vector<GradientHistory>{};
+    }
 
     j = nlohmann::ordered_json{
         {"categories", categories},
         {"presets", presets},
-        {"histories", config.histories}
+        {"histories", histories}
     };
 }
 
@@ -117,7 +120,7 @@ inline void from_json(const nlohmann::ordered_json& j, GradientConfig& config)
 {
     config.categories = j.value("categories", config.categories);
     config.presets = j.value("presets", config.presets);
-    config.histories = j.value("histories", config.histories);
+    config.histories = j.value("histories", std::vector<GradientHistory>{});
 }
 
 class PresetManager
@@ -251,7 +254,8 @@ private:
             "color_space": 1,
             "interpolation_path": 0
         }
-    ]
+    ],
+    "histories": []
 }
 )";
 

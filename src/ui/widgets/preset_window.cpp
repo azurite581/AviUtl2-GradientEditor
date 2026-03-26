@@ -12,7 +12,7 @@
 #include "misc/cpp/imgui_stdlib.h"
 
 namespace gradient_editor {
-void PresetWindow::render(bool* is_open, PresetManager& manager, GradientConfig& cfg)
+void PresetWindow::render(PresetManager& manager, GradientConfig& cfg)
 {
     static int32_t category_selected_index = 0;
     static std::string selected_category_name = PresetManager::DEFAULT_CATEGORY;
@@ -43,7 +43,7 @@ void PresetWindow::render(bool* is_open, PresetManager& manager, GradientConfig&
     // プリセットウィンドウ
     //
     ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse;
-    ImGui::Begin((m_config_wrapper->tr(L"プリセット") + "###PresetWindow").c_str(), is_open, window_flags);
+    ImGui::Begin((m_config_wrapper->tr(L"プリセット") + "###PresetWindow").c_str(), nullptr, window_flags);
 
     float item_spacing_x = ImGui::GetStyle().ItemSpacing.x * 0.5f;
     ImGui::PushStyleVar(ImGuiStyleVar_CellPadding, ImVec2(item_spacing_x, 0));
@@ -409,6 +409,8 @@ void PresetWindow::renderPresetList(PresetManager& manager, GradientConfig& file
     ImVec2 gradient_size = ImVec2(ImGui::GetContentRegionAvail().x, ImGui::GetFrameHeight() * 1.5f);
 
     // プリセットのデータを1つずつ取り出して描画
+    m_is_clicked_preset = false;
+    bool is_clicked_any = false;
     for (const auto& [i, preset] : file.presets | std::views::enumerate) {
         ImGui::PushID(static_cast<int32_t>(i));
 
@@ -418,12 +420,12 @@ void PresetWindow::renderPresetList(PresetManager& manager, GradientConfig& file
         if (preset.category == category) {
             // プリセットを描画
             ImGui::PushStyleVarY(ImGuiStyleVar_ItemSpacing, 0.0f);
-            if (CustomUI::drawGradientButton(preset.name, gradient_size, gradient) || (!m_is_init)) {
-                m_is_clicked_preset     = true;
+            is_clicked_any = CustomUI::drawGradientButton(preset.name, gradient_size, gradient);
+            if (is_clicked_any) {
+                m_is_clicked_preset = true;
                 m_selected_preset_index = static_cast<uint32_t>(i);  // 選択中のインデックスを更新
                 m_selected_gradient     = gradient;                  // 選択中のグラデーションを更新
                 m_preset_name           = preset.name;               // プリセット名を更新
-                if (!m_is_init) m_is_init = true;
             }
             ImGui::PopStyleVar();
 

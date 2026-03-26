@@ -98,39 +98,45 @@ void MainView::render()
         ImGui::EndMenuBar();
     }
 
-    // グラデーションエディタを描画
-    renderGradientEditor();
-
     static ImGuiWindowClass side_window_class;
     side_window_class.DockNodeFlagsOverrideSet = ImGuiDockNodeFlags_NoCloseButton | ImGuiDockNodeFlags_NoWindowMenuButton;
 
     // プリセットウィンドウを描画
-    ImGui::SetNextWindowClass(&side_window_class);
     if (m_window_visible.preset_window) {
-        m_preset_window.render(&m_window_visible.preset_window, m_preset_manager, m_preset_file);
+        ImGui::SetNextWindowClass(&side_window_class);
+        m_preset_window.render(m_preset_manager, m_preset_file);
     }
 
     // 履歴ウィンドウを描画
-    ImGui::SetNextWindowClass(&side_window_class);
     if (m_window_visible.history_window) {
+        ImGui::SetNextWindowClass(&side_window_class);
         m_history_window.render(m_preset_manager, m_preset_file);
     }
 
     // 初回はプリセットウィンドウんにフォーカスを合わせる
     if (!m_is_init) {
         ImGui::SetWindowFocus("###PresetWindow");
-        m_is_init = true;
+
     }
 
+    // グラデーションエディタを描画
+    renderGradientEditor();
+
     ImGui::End();
+
+    m_is_init = true;
 }
 
 void MainView::renderGradientEditor()
 {
     ImGui::Begin("GradientEditorWindow");
-    float frame_height              = ImGui::GetFrameHeight();
-    static GradientData preset_data = m_preset_window.getSelectedGradientData();
 
+    static float frame_height              = ImGui::GetFrameHeight();
+
+    static GradientData preset_data;
+    if (!m_is_init && !m_history_window.m_history_data.empty()) {
+        preset_data = m_history_window.m_history_data.back().data;
+    }
 
     //
     // セクション選択
@@ -297,9 +303,11 @@ void MainView::renderGradientEditor()
         ImVec2(std::clamp(ImGui::GetContentRegionAvail().x, 1.0f, 4096.0f), frame_height * scale::relative::GRADIENT_HEIGHT),
         preset_data,
         CustomUI::GradientEditorFlags_None,
-        m_preset_window.isClickedPreset() || m_history_window.isHistoryClicked(),
+        m_preset_window.isClickedPreset() || m_history_window.isHistoryClicked() || (!m_is_init && !m_history_window.m_history_data.empty()),
         config
     );
+
+    m_data = data;
 
 
 
@@ -493,8 +501,9 @@ void MainView::renderPropertyEditor(GradientData* data)
     ImGui::EndGroup();
 }
 
-void  MainView::writeHistories()
+void MainView::writeHistories()
 {
+    m_history_window.setHistory(*m_data);
     m_history_window.writeHistoryToConfig(m_preset_manager, m_preset_file);
     auto result = m_preset_manager.writePresetFile(m_preset_file);
 }

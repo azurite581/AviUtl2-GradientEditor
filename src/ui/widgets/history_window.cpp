@@ -16,6 +16,9 @@ void HistoryWindow::setHistory(const GradientData& gradient_data)
         auto last_history = m_history_data.back();
         if (last_history.data != gradient_data) {
             m_history_data.push_back({tz, gradient_data});
+            if (static_cast<uint32_t>(std::ssize(m_history_data)) > HISTORY_MAX_NUM) {
+                m_history_data.pop_front();
+            }
         }
     } else {
         m_history_data.push_back({tz, gradient_data});
@@ -32,6 +35,9 @@ void HistoryWindow::render(PresetManager& manager, GradientConfig& cfg)
 
         for (const auto& history : cfg.histories) {
             m_history_data.push_back({history.name, manager.history2gradient(history)});
+            if (static_cast<uint32_t>(std::ssize(m_history_data)) > HISTORY_MAX_NUM) {
+                m_history_data.pop_front();
+            }
         }
     }
 
@@ -41,13 +47,15 @@ void HistoryWindow::render(PresetManager& manager, GradientConfig& cfg)
         ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(ImGui::GetStyle().FrameBorderSize, ImGui::GetStyle().FrameBorderSize));
 
         ImVec2 button_size = ImVec2(ImGui::GetContentRegionAvail().x, ImGui::GetFrameHeight() * 1.5f);
+        bool is_clicked = false;
+        m_is_history_clicked = false;
         for (int32_t i = history_num - 1; i >= 0; --i) {
             auto history_data = m_history_data[i];
 
-            m_is_history_clicked = CustomUI::drawGradientButton(history_data.name, button_size, history_data.data);
+            is_clicked = CustomUI::drawGradientButton(history_data.name, button_size, history_data.data);
 
-            if (m_is_history_clicked) {
-                m_logger_wrapper->log("history_clicked");
+            if (is_clicked) {
+                m_is_history_clicked = true;
                 m_selected_gradient = history_data.data;
             }
 
