@@ -18,7 +18,6 @@
 
 namespace gradient_editor {
 
-// Forward declare message handler
 extern LRESULT CALLBACK wnd_proc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam);
 
 App::App() = default;
@@ -250,9 +249,8 @@ void App::renderFrame()
 
 void App::cleanup()
 {
-    // 設定を書き込む
-    writeSettings();
-    m_main_view.get()->writeHistories();
+    writeSettings();  // ウィンドウのレイアウト等の設定をファイルに書き込む
+    m_main_view.get()->writeHistories();  // グラデーションの履歴をファイルに書き込む
 
     g_app_state.render = nullptr;
     m_main_view.reset();

@@ -4,8 +4,8 @@
 #include <d3d11.h>
 #include <wrl/client.h>
 
-#include <cstdint>
 #include <compare>
+#include <cstdint>
 #include <iterator>
 #include <numeric>
 #include <ranges>
@@ -25,8 +25,6 @@ private:
     Microsoft::WRL::ComPtr<ID3D11Buffer> m_pixel_constant_buffer  = nullptr;  // グラデーションを描画するピクセルシェーダーのコンスタントバッファー
     Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> m_output_srv = nullptr;
 
-
-
 public:
     ~GradientData()
     {
@@ -38,14 +36,16 @@ public:
     int32_t m_interp_dir{0};
     float m_blur_width{1.0f};
 
-    std::partial_ordering operator<=>(const GradientData& other) const {
+    std::partial_ordering operator<=>(const GradientData& other) const
+    {
         if (auto cmp = m_marker_manager <=> other.m_marker_manager; cmp != 0) return cmp;
         if (auto cmp = m_color_space <=> other.m_color_space; cmp != 0) return cmp;
         if (auto cmp = m_interp_dir <=> other.m_interp_dir; cmp != 0) return cmp;
         return m_blur_width <=> other.m_blur_width;
     }
 
-    bool operator==(const GradientData& other) const {
+    bool operator==(const GradientData& other) const
+    {
         return m_marker_manager == other.m_marker_manager &&
                m_color_space == other.m_color_space &&
                m_interp_dir == other.m_interp_dir &&

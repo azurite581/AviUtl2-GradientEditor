@@ -71,8 +71,8 @@ void MainView::render()
         ImGuiID dock_id_right = 0;
         ImGuiID dock_id_main  = dockspace_id;
         ImGui::DockBuilderSplitNode(dock_id_main, ImGuiDir_Right, PRESET_WINDOW_RATIO, &dock_id_right, &dock_id_main);
-        ImGui::DockBuilderDockWindow("GradientEditorWindow", dock_id_main);
-        ImGui::DockBuilderDockWindow("###PresetWindow", dock_id_right);
+        ImGui::DockBuilderDockWindow("###gradient_editor_window", dock_id_main);
+        ImGui::DockBuilderDockWindow("###preset_window", dock_id_right);
         ImGui::DockBuilderDockWindow("###history_window", dock_id_right);
         ImGui::DockBuilderFinish(dockspace_id);
     }
@@ -86,7 +86,7 @@ void MainView::render()
     ImGui::SetNextWindowClass(&window_class);
     ImGui::SetNextWindowSize(ImVec2(540, 0), ImGuiCond_FirstUseEver);
 
-    ImGui::Begin("GradientEditorWindow", nullptr, window_flags);
+    ImGui::Begin("###gradient_editor_window", nullptr, window_flags);
 
     // メニューバーの描画
     if (ImGui::BeginMenuBar()) {
@@ -113,10 +113,9 @@ void MainView::render()
         m_history_window.render(m_preset_manager, m_preset_file);
     }
 
-    // 初回はプリセットウィンドウんにフォーカスを合わせる
+    // 初回はプリセットウィンドウにフォーカスを合わせる
     if (!m_is_init) {
-        ImGui::SetWindowFocus("###PresetWindow");
-
+        ImGui::SetWindowFocus("###preset_window");
     }
 
     // グラデーションエディタを描画
@@ -129,13 +128,13 @@ void MainView::render()
 
 void MainView::renderGradientEditor()
 {
-    ImGui::Begin("GradientEditorWindow");
+    ImGui::Begin("###gradient_editor_window");
 
-    static float frame_height              = ImGui::GetFrameHeight();
+    static float frame_height = ImGui::GetFrameHeight();
 
-    static GradientData preset_data;
+    static GradientData replace_data;
     if (!m_is_init && !m_history_window.m_history_data.empty()) {
-        preset_data = m_history_window.m_history_data.back().data;
+        replace_data = m_history_window.m_history_data.back().data;
     }
 
     //
@@ -286,36 +285,29 @@ void MainView::renderGradientEditor()
     config.max_marker_count = MAX_MARKER_COUNT;
     config.marker_width     = frame_height * scale::relative::GRADIENT_MARKER_WIDTH;
 
-    if (m_preset_window.isClickedPreset()) {
-        preset_data = m_preset_window.getSelectedGradientData();
+    // プリセット、履歴がクリックされたときはそのグラデーションを使用する
+    if (m_preset_window.isPresetClicked()) {
+        if (m_data != nullptr) m_history_window.pushHistory(*m_data);
+        replace_data = m_preset_window.getSelectedGradientData();
     } else if (m_history_window.isHistoryClicked()) {
-        preset_data = m_history_window.getSelectedGradient();
+        replace_data = m_history_window.getSelectedGradient();
     }
 
-    static GradientData* data = nullptr;
-
-    if (m_preset_window.isClickedPreset() && data != nullptr) {
-        m_history_window.setHistory(*data);
-    }
-
-    data = CustomUI::drawGradientEditor(
+    bool should_replace = m_preset_window.isPresetClicked() || m_history_window.isHistoryClicked() || (!m_is_init && !m_history_window.m_history_data.empty());
+    m_data = CustomUI::drawGradientEditor(
         "gradient",
         ImVec2(std::clamp(ImGui::GetContentRegionAvail().x, 1.0f, 4096.0f), frame_height * scale::relative::GRADIENT_HEIGHT),
-        preset_data,
+        replace_data,
         CustomUI::GradientEditorFlags_None,
-        m_preset_window.isClickedPreset() || m_history_window.isHistoryClicked() || (!m_is_init && !m_history_window.m_history_data.empty()),
+        should_replace,
         config
     );
 
-    m_data = data;
-
-
-
     ImGui::Dummy(ImVec2(0, frame_height * scale::relative::GRADIENT_MARGIN_Y));
-    m_preset_window.setTargetGradientData(*data);
+    m_preset_window.setTargetGradientData(*m_data);
 
     // 更新
-    m_script_bridge.update(*data);
+    m_script_bridge.update(*m_data);
 
     //
     // 各種ツールボタン
@@ -341,29 +333,27 @@ void MainView::renderGradientEditor()
     bool is_del = imgui_utils::squareIconButton(ICON_MS_DELETE, "##delete");
     if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNormal)) ImGui::SetTooltip(m_config_wrapper->tr(L"選択中のマーカーを削除").c_str());
 
-    if (is_distribute_marker) data->getMarkerManager()->distributeMarkersEvenly();
-    if (is_distribute_marker_and_midpoint) data->getMarkerManager()->distributeMarkersAndMipointsEvenly();
+    if (is_distribute_marker) m_data->getMarkerManager()->distributeMarkersEvenly();
+    if (is_distribute_marker_and_midpoint) m_data->getMarkerManager()->distributeMarkersAndMipointsEvenly();
     if (is_reset_all) {
-        data->getMarkerManager()->setDefaultMarkers();
-        data->setColorSpace(0);
-        data->setInterpDir(0);
-        data->setBlurWidth(1.0f);
+        m_data->getMarkerManager()->setDefaultMarkers();
+        m_data->setColorSpace(0);
+        m_data->setInterpDir(0);
+        m_data->setBlurWidth(1.0f);
         if (m_apply) {
             plugin2_utils::call_edit_lambda(g_app_state.edit_handle->call_edit_section_param, [&](EDIT_SECTION* edit) {
-                m_script_bridge.resetScriptData(edit, static_cast<uint32_t>(data->getMarkerManager()->getMarkers().size()), MAX_MARKER_COUNT, effect_full_name, m_effect_index, m_target_move_index, MAX_MARKER_COUNT);
+                m_script_bridge.resetScriptData(edit, static_cast<uint32_t>(m_data->getMarkerManager()->getMarkers().size()), MAX_MARKER_COUNT, effect_full_name, m_effect_index, m_target_move_index, MAX_MARKER_COUNT);
             });
         }
     }
-    if (is_reset_midpoint) data->getMarkerManager()->resetMidpoints();
-    if (is_reverse) data->getMarkerManager()->reverseMarkers();
-    if (is_del) data->getMarkerManager()->deleteSelectedMarker();
-
-
+    if (is_reset_midpoint) m_data->getMarkerManager()->resetMidpoints();
+    if (is_reverse) m_data->getMarkerManager()->reverseMarkers();
+    if (is_del) m_data->getMarkerManager()->deleteSelectedMarker();
 
     // プリセットがクリックされた場合、現在のグラデーションがプリセットのものに置き換わるため、
     // その時のグラデーションのデータを差分検知のために保存しておく
-    if (m_preset_window.isClickedPreset()) {
-        m_script_bridge.setValues(*data);
+    if (m_preset_window.isPresetClicked()) {
+        m_script_bridge.setValues(*m_data);
     }
 
     // スクリプトからグラデーションエディタに値を読み込む
@@ -371,7 +361,7 @@ void MainView::renderGradientEditor()
         m_load = false;
 
         // 置き換える前のグラデーションデータを履歴に保存
-        m_history_window.setHistory(*data);
+        m_history_window.pushHistory(*m_data);
 
         plugin2_utils::call_edit_lambda(g_app_state.edit_handle->call_edit_section_param, [&](EDIT_SECTION* edit) {
             OBJECT_HANDLE object_handle = edit->get_focus_object();
@@ -382,7 +372,7 @@ void MainView::renderGradientEditor()
                 return;
             }
 
-            m_script_bridge.loadGradientFromScript(edit, *data, effect_full_name, m_effect_index, m_target_move_index);
+            m_script_bridge.loadGradientFromScript(edit, *m_data, effect_full_name, m_effect_index, m_target_move_index);
         });
     }
 
@@ -390,30 +380,30 @@ void MainView::renderGradientEditor()
     bool is_changed_apply =
         off_to_on ||                                          // 「反映」が OFF から ON に切り替わった
         (m_apply && (                                         // または「反映」ON の状態で、
-                        m_preset_window.isClickedPreset() ||  // プリセットがクリックされた
-                        is_refresh ||                         // 更新ボタンが押された
-                        is_changed_section ||                 // セクションが変更された
-                        is_changed_section_effect ||          // 対象とするエフェクトが変更された
-                        is_changed_effect_index ||            // 同じエフェクトが複数ある際の対象とするインデックスが変更された
-                        is_reverse                            // マーカー反転のボタンが押された
+                        m_preset_window.isPresetClicked() ||    // プリセットがクリックされた
+                        is_refresh ||                           // 更新ボタンが押された
+                        is_changed_section ||                   // セクションが変更された
+                        is_changed_section_effect ||            // 対象とするエフェクトが変更された
+                        is_changed_effect_index ||              // 同じエフェクトが複数ある際、対象とするエフェクトのインデックスが変更された
+                        is_reverse                              // マーカー反転のボタンが押された
                         ));
-    // または各値がグラデーションエディタ側で変更されたとき
+    // または各値がグラデーションエディタ側で変更された
     // マーカーの削除、リセット、均等配置による変更は isChangedValues() で検知できる
     if (is_changed_apply || (m_apply && m_script_bridge.getIsChangedValues())) {
         plugin2_utils::call_edit_lambda(g_app_state.edit_handle->call_edit_section_param, [&](EDIT_SECTION* edit) {
-            m_script_bridge.applyGradientToScript(edit, *data, effect_full_name, m_effect_index, m_target_move_index);
+            m_script_bridge.applyGradientToScript(edit, *m_data, effect_full_name, m_effect_index, m_target_move_index);
         });
     }
 
     // プリセットが変更されたとき、プリセットの範囲外の値はデフォルト値にリセットする
-    if (m_apply && m_preset_window.isClickedPreset()) {
+    if (m_apply && m_preset_window.isPresetClicked()) {
         plugin2_utils::call_edit_lambda(g_app_state.edit_handle->call_edit_section_param, [&](EDIT_SECTION* edit) {
-            m_script_bridge.resetScriptData(edit, static_cast<uint32_t>(data->getMarkerManager()->getMarkers().size()), MAX_MARKER_COUNT, effect_full_name, m_effect_index, m_target_move_index, MAX_MARKER_COUNT);
+            m_script_bridge.resetScriptData(edit, static_cast<uint32_t>(m_data->getMarkerManager()->getMarkers().size()), MAX_MARKER_COUNT, effect_full_name, m_effect_index, m_target_move_index, MAX_MARKER_COUNT);
         });
     }
 
     // AviUtl2 ライクなプロパティエディタ（トラックバー、コンボボックスなど）を描画する
-    renderPropertyEditor(data);
+    renderPropertyEditor(m_data);
 
     ImGui::End();
 }
@@ -424,7 +414,7 @@ void MainView::renderPropertyEditor(GradientData* data)
     float height      = ImGui::GetFrameHeight() * 6 + ImGui::GetStyle().ItemSpacing.y * 5;
     float label_width = ImGui::GetFrameHeight() * scale::relative::ITEM_NAME_BUTTON_WIDTH;
 
-    ImGui::BeginChild("##item labels", ImVec2(label_width, height), ImGuiChildFlags_ResizeX, ImGuiWindowFlags_NoScrollbar);
+    ImGui::BeginChild("##item_labels", ImVec2(label_width, height), ImGuiChildFlags_ResizeX, ImGuiWindowFlags_NoScrollbar);
     {
         ImVec2 size(ImGui::GetWindowSize().x, ImGui::GetFrameHeight());
         auto& colors = ImGui::GetStyle().Colors;
@@ -471,18 +461,18 @@ void MainView::renderPropertyEditor(GradientData* data)
 
         ImGui::SetNextItemWidth(width);
         float pos = curr.selected_marker_pos * 100.0f;
-        if (ImGui::SliderFloat("##marker pos", &pos, 0.0f, 100.0f, "%.2f")) data->getMarkerManager()->setSelectedMarkerPos(pos / 100.0f);
+        if (ImGui::SliderFloat("##marker_pos", &pos, 0.0f, 100.0f, "%.2f")) data->getMarkerManager()->setSelectedMarkerPos(pos / 100.0f);
 
         ImGui::SetNextItemWidth(width);
         float mid = curr.selected_midpoint_ratio * 100.0f;
-        if (ImGui::SliderFloat("##midpoint ratio", &mid, 0.0f, 100.0f, "%.2f")) data->getMarkerManager()->setSelectedMidpointRatio(mid / 100.0f);
+        if (ImGui::SliderFloat("##midpoint_ratio", &mid, 0.0f, 100.0f, "%.2f")) data->getMarkerManager()->setSelectedMidpointRatio(mid / 100.0f);
 
         ImGui::SetNextItemWidth(width);
         float blur = curr.blur_width * 100.0f;
-        if (ImGui::SliderFloat("##blur width", &blur, 0.0f, 100.0f, "%.0f")) data->setBlurWidth(blur / 100.0f);
+        if (ImGui::SliderFloat("##blur_width", &blur, 0.0f, 100.0f, "%.0f")) data->setBlurWidth(blur / 100.0f);
 
         ImGui::SetNextItemWidth(width);
-        if (ImGui::BeginCombo("##color space", COLOR_SPACE_NAMES[curr.color_space_index])) {
+        if (ImGui::BeginCombo("##color_space", COLOR_SPACE_NAMES[curr.color_space_index])) {
             for (uint32_t i = 0; i < IM_ARRAYSIZE(COLOR_SPACE_NAMES); i++) {
                 if (ImGui::Selectable(COLOR_SPACE_NAMES[i], curr.color_space_index == i)) data->setColorSpace(i);
             }
@@ -490,7 +480,7 @@ void MainView::renderPropertyEditor(GradientData* data)
         }
 
         ImGui::SetNextItemWidth(width);
-        if (ImGui::BeginCombo("##interp dir", m_config_wrapper->tr(str_conv::multiByteToWideChar(INTERP_DIR_NAMES[curr.interp_dir_index]).c_str()).c_str())) {
+        if (ImGui::BeginCombo("##interp_dir", m_config_wrapper->tr(str_conv::multiByteToWideChar(INTERP_DIR_NAMES[curr.interp_dir_index]).c_str()).c_str())) {
             for (uint32_t i = 0; i < IM_ARRAYSIZE(INTERP_DIR_NAMES); i++) {
                 if (ImGui::Selectable(m_config_wrapper->tr(str_conv::multiByteToWideChar(INTERP_DIR_NAMES[i]).c_str()).c_str(), curr.interp_dir_index == i))
                     data->setInterpDir(i);
@@ -503,9 +493,12 @@ void MainView::renderPropertyEditor(GradientData* data)
 
 void MainView::writeHistories()
 {
-    m_history_window.setHistory(*m_data);
+    m_history_window.pushHistory(*m_data);  // この関数が呼ばれた時点のグラデーションを履歴に保存する
     m_history_window.writeHistoryToConfig(m_preset_manager, m_preset_file);
     auto result = m_preset_manager.writePresetFile(m_preset_file);
+    if (!result.is_success) {
+        m_logger_wrapper->error("{}", result.error);
+    }
 }
 
 }  // namespace gradient_editor

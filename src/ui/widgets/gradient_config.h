@@ -1,5 +1,5 @@
-#ifndef GRADIENT_PRESET_H
-#define GRADIENT_PRESET_H
+#ifndef GRADIENT_CONFIG_H
+#define GRADIENT_CONFIG_H
 
 #include "gradient_data.h"
 #include "color_conv.h"
@@ -123,15 +123,13 @@ inline void from_json(const nlohmann::ordered_json& j, GradientConfig& config)
     config.histories = j.value("histories", std::vector<GradientHistory>{});
 }
 
-class PresetManager
+class GradientConfigManager
     : public GradientPreset,
       public GradientConfig {
 public:
     inline static const char* DEFAULT_CATEGORY = "uncategorized";
 
 private:
-    std::filesystem::path m_preset_path;
-
     const GradientConfig DEFAULT_PRESET_FILE{GradientConfig{
             .categories = { DEFAULT_CATEGORY },
             .presets = { GradientPreset{} }
@@ -259,20 +257,18 @@ private:
 }
 )";
 
+    std::filesystem::path m_preset_path;
+
 public:
-    PresetManager() = default;
-
-    PresetManager(const std::filesystem::path& path)
-        : m_preset_path{path}
-    {
-    }
-
-    void setPresetFilePath(const std::filesystem::path& path) { m_preset_path = path; }
-
     struct PresetLoadResult {
         GradientConfig preset_file;
         std::string error;  // 空なら成功
     };
+
+    GradientConfigManager() = default;
+    GradientConfigManager(const std::filesystem::path& path) : m_preset_path{path} {}
+
+    void setPresetFilePath(const std::filesystem::path& path) { m_preset_path = path; }
 
     /// @brief プリセットファイル（json）を読み込む
     /// @return PresetLoadResult 構造体 @n 成功の場合は preset_file に読み込んだ値が入り、 error が空になる。 @n 失敗の場合は preset_file がデフォルト値になり、 error にエラーメッセージが入る。
@@ -344,6 +340,7 @@ public:
         ofs << DEFAULT_PRESET_FILE_JSON;
     }
 
+    // 指定したカテゴリーがすでにに存在するか調べる
     static bool containsCategory(const std::vector<std::string>& categories, std::string_view target_category)
     {
         for (const auto& c : categories) {
@@ -455,7 +452,6 @@ public:
         return writePresetFile(cfg);
     }
 
-    // プリセットを削除する
     PresetWriteResult deletePreset(GradientConfig& cfg, const uint32_t preset_index)
     {
         if (preset_index < 0 || static_cast<uint32_t>(std::ssize(cfg.presets)) <= preset_index) {
@@ -487,7 +483,6 @@ public:
             return { false, "The specified preset index is invalid." };
         }
 
-        // スワップ
         auto tmp       = cfg.presets[a];
         cfg.presets[a] = cfg.presets[b];
         cfg.presets[b] = tmp;
@@ -552,7 +547,7 @@ public:
     // カテゴリーとそのカテゴリーに属する全てのプリセットを削除する
     PresetWriteResult deleteCategoryAndPresets(GradientConfig& cfg, std::string_view target_category)
     {
-        // カテゴリを削除
+        // カテゴリーを削除
         auto it = std::find(cfg.categories.begin(), cfg.categories.end(), target_category);
         if (it != cfg.categories.end()) {
             cfg.categories.erase(it);
@@ -570,4 +565,4 @@ public:
 
 };
 
-#endif  // !GRADIENT_PRESET_H
+#endif  // !GRADIENT_CONFIG_H

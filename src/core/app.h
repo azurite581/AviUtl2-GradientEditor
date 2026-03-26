@@ -24,7 +24,6 @@ public:
 
 private:
     void cleanup();
-
     void readSettings();
     void writeSettings();
 

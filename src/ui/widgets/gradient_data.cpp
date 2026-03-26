@@ -1,6 +1,5 @@
 #include "gradient_data.h"
 
-
 gradient_editor::GradientRenderer::PixelConstantBuffer GradientData::gradientData2pixelConstantBuffer()
 {
     gradient_editor::GradientRenderer::PixelConstantBuffer buffer_values;
