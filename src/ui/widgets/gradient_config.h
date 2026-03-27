@@ -534,6 +534,13 @@ public:
         return writePresetFile(cfg);
     }
 
+    PresetWriteResult swapCategory(GradientConfig& cfg, const uint32_t a, const uint32_t b)
+    {
+        std::swap(cfg.categories[a], cfg.categories[b]);
+
+        return writePresetFile(cfg);
+    }
+
     PresetWriteResult deleteOnlyCategory(GradientConfig& cfg, std::string_view target_category)
     {
         auto it = std::find(cfg.categories.begin(), cfg.categories.end(), target_category);
@@ -562,7 +569,6 @@ public:
 
         return writePresetFile(cfg);
     }
-
 };
 
 #endif  // !GRADIENT_CONFIG_H

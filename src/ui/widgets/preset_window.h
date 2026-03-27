@@ -32,7 +32,7 @@ private:
     bool m_is_initialized = false;
     bool m_is_clicked_preset = false;
     GradientData m_selected_gradient;
-    uint32_t m_selected_preset_index = 0;
+    int32_t m_selected_preset_index = -1;  // -1 == 未選択
     std::vector<std::string> m_categories{};
 
     GradientData m_target_gradient_data;
