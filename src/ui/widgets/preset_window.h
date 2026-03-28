@@ -30,6 +30,7 @@ private:
     ConfigWrapperInterface* m_config_wrapper;
 
     std::string m_preset_name{};
+    std::string m_old_category_name{};
     bool m_is_initialized = false;
     bool m_is_clicked_preset = false;
     GradientData m_selected_gradient;

@@ -492,11 +492,6 @@ public:
 
     PresetWriteResult addCategory(GradientConfig& cfg, std::string_view category_name)
     {
-        for (const auto& c : cfg.categories) {
-            if (c == category_name) {
-                return { false, "A category with this name already exists." };
-            }
-        }
         cfg.categories.push_back(std::string{category_name});
 
         return writePresetFile(cfg);
