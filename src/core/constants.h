@@ -30,8 +30,9 @@ constexpr float DEFAULT_FONT_SIZE       = 13.0f;
 constexpr float ICON_FONT_GLYPHOFFSET_Y = 1.5f;
 
 constexpr const wchar_t* WINDOW_NAME_DEFAULT = L"GradientEditor";
-constexpr const char* PRESET_FOLDER_NAME     = "GradientEditorPreset";
+constexpr const char* CONFIG_FOLDER_NAME     = "GradientEditorPreset";
 constexpr const char* PRESET_FILE_NAME       = "gradient_editor_preset.json";
+constexpr const char* HISTORY_FILE_NAME      = "gradient_editor_history.json";
 
 #ifdef MARKER_COUNT
 inline constexpr uint32_t MAX_MARKER_COUNT = MARKER_COUNT;

@@ -23,33 +23,64 @@ MainView::MainView(LoggerWrapperInterface* logger_wrapper, ConfigWrapperInterfac
     m_history_window.setLoggerWrapper(m_logger_wrapper);
     m_history_window.setConfigWrapper(m_config_wrapper);
 
-    std::filesystem::path preset_path = str_conv::wideCharToMultiByte(gradient_editor::g_app_state.config_handle->app_data_path);
-    preset_path /= "Plugin";
-    preset_path /= PRESET_FOLDER_NAME;
+    std::filesystem::path data_path = str_conv::wideCharToMultiByte(gradient_editor::g_app_state.config_handle->app_data_path);
+    std::filesystem::path config_folder_path = data_path / "Plugin" / CONFIG_FOLDER_NAME;
+    m_config_manager.setDefaultPresetFilePath(config_folder_path / "gradient_editor_default_preset.json");
 
     // プリセットフォルダがなければ作成
-    if (!std::filesystem::exists(preset_path) || !std::filesystem::is_directory(preset_path)) {
-        std::filesystem::create_directory(preset_path);
+    if (!std::filesystem::exists(config_folder_path) || !std::filesystem::is_directory(config_folder_path)) {
+        std::filesystem::create_directory(config_folder_path);
     }
 
     // プリセットファイルがなければ作成
-    preset_path /= PRESET_FILE_NAME;
+    std::filesystem::path preset_path = config_folder_path / PRESET_FILE_NAME;
     if (!std::filesystem::exists(preset_path)) {
-        m_preset_manager.createDefaultPresetFile(preset_path);
+        std::error_code ec;
+
+        bool is_copied = std::filesystem::copy_file(
+            config_folder_path / "gradient_editor_default_preset.json",
+            preset_path,
+            std::filesystem::copy_options::skip_existing,
+            ec
+        );
+
+        // コピー元ファイルが存在しない、またはコピーに失敗した場合
+        if (!is_copied) {
+            m_logger_wrapper->warn("Copy skipped or failed: {}", ec.message());
+
+            std::ofstream ofs(preset_path, std::ios::binary);
+            if (ofs.is_open()) {
+                ofs << GradientConfigManager::DEFAULT_PRESET_FILE_JSON;
+            } else {
+                m_logger_wrapper->error("Failed to create preset file at: {}", preset_path.string());
+            }
+        }
     }
 
     // プリセットを読み込む
-    m_preset_manager.setPresetFilePath(preset_path);
-    auto load_result = m_preset_manager.loadPresetFile();
-    m_preset_file    = load_result.preset_file;
-    if (!load_result.error.empty()) {
-        m_logger_wrapper->error("{}", load_result.error.c_str());  // エラーメッセージに '{' または '}' があると std::format_error になるため "{}" で受け取る
-    } else {
-        auto write_result = m_preset_manager.writePresetFile(m_preset_file);
-        if (!write_result.is_success) {
-            m_logger_wrapper->error("{}", write_result.error.c_str());
+    m_config_manager.setPresetFilePath(preset_path);
+    auto preset_load_result = m_config_manager.loadPresetConfig();
+    if (!preset_load_result.is_success()) {
+        m_logger_wrapper->error("{}", preset_load_result.error.c_str());  // エラーメッセージに '{' または '}' があると std::format_error になるため "{}" で受け取る
+    }
+    m_preset_config = preset_load_result.config;
+
+    // 履歴ファイルがなければ作成
+    std::filesystem::path history_path = config_folder_path / HISTORY_FILE_NAME;
+    if (!std::filesystem::exists(history_path)) {
+        std::ofstream file(history_path);
+        if (!file) {
+            m_logger_wrapper->error("{}", "Failed to create history file.");
         }
     }
+
+    // 履歴を読み込む
+    m_config_manager.setHistoryFilePath(history_path);
+    auto history_load_result = m_config_manager.loadHistoryConfig();
+    if (!history_load_result.is_success()) {
+        m_logger_wrapper->error("{}", preset_load_result.error.c_str());
+    }
+    m_history_config = history_load_result.config;
 
     m_object_video_color_start = color_conv::u32Rgba2u32Abgr(color_conv::u32Rgb2u32Rgba(gradient_editor::g_app_state.config_handle->get_color_code_index(gradient_editor::g_app_state.config_handle, "ObjectVideo", 0), 0xFF));
     m_object_video_color_stop  = color_conv::u32Rgba2u32Abgr(color_conv::u32Rgb2u32Rgba(gradient_editor::g_app_state.config_handle->get_color_code_index(gradient_editor::g_app_state.config_handle, "ObjectVideo", 1), 0xFF));
@@ -96,18 +127,18 @@ void MainView::render()
     }
 
     static ImGuiWindowClass side_window_class;
-    side_window_class.DockNodeFlagsOverrideSet = ImGuiDockNodeFlags_NoCloseButton | ImGuiDockNodeFlags_NoWindowMenuButton;
+    side_window_class.DockNodeFlagsOverrideSet = ImGuiDockNodeFlags_NoCloseButton | ImGuiDockNodeFlags_NoWindowMenuButton | ImGuiDockNodeFlags_NoUndocking;
 
     // プリセットウィンドウを描画
     if (m_window_visible.preset_window) {
         ImGui::SetNextWindowClass(&side_window_class);
-        m_preset_window.render(m_preset_manager, m_preset_file);
+        m_preset_window.render(m_config_manager, m_preset_config);
     }
 
     // 履歴ウィンドウを描画
     if (m_window_visible.history_window) {
         ImGui::SetNextWindowClass(&side_window_class);
-        m_history_window.render(m_preset_manager, m_preset_file);
+        m_history_window.render(m_config_manager, m_history_config);
     }
 
     // 初回はプリセットウィンドウにフォーカスを合わせる
@@ -491,9 +522,5 @@ void MainView::renderPropertyEditor(GradientData* data)
 void MainView::writeHistories()
 {
     m_history_window.pushHistory(*m_data);  // この関数が呼ばれた時点のグラデーションを履歴に保存する
-    m_history_window.writeHistoryToConfig(m_preset_manager, m_preset_file);
-    auto result = m_preset_manager.writePresetFile(m_preset_file);
-    if (!result.is_success) {
-        m_logger_wrapper->error("{}", result.error);
-    }
+    m_history_window.writeHistoryToConfig(m_config_manager, m_history_config);
 }
