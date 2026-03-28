@@ -219,10 +219,8 @@ void App::renderFrame()
         ImGui::ClosePopupsOverWindow(nullptr, false);
     }
 
-    // 表示状態のときのみ描画する
-    if (is_visible) {
-        m_main_view->render();
-    }
+    // 非表示の時でもウィンドウ等の状態を維持するために描画処理を呼び出す
+    m_main_view->render();
 
     ImGui::Render();
 
