@@ -35,6 +35,26 @@
 マーカーを反転=Reverse the markers
 選択中のマーカーを削除=Delete the selected marker
 リセット=Reset
+カテゴリー=Category
+カテゴリーを編集=Edit Category
+カテゴリーを検索または作成=Search or Create Category
+カテゴリーを変更=Change Category
+カテゴリーをドラッグで並び替え、右クリックからメニューを表示して編集できます=Drag categories to reorder, and right-click to open the menu for editing
+名前を変更=Rename
+すでに同じ名前のカテゴリが存在します=A category with the same name already exists
+すでに同じ名前のプリセットが存在します=A preset with the same name already exists
+プリセットをまとめて移動=Move Presets in Bulk
+プリセット "%s" を削除しますか?=Delete preset "%s"?
+移動=Move
+移動先=Destination
+カテゴリのみ=Category Only
+プリセットごと=With Presets
+保存=Save
+閉じる=Close
+名前=Name
+カテゴリーをクリックしてプリセットを移動します=Click a category to move the preset
+履歴=History
+履歴を削除=Delete History
 
 [MultiGradient@GradientEditor]
 強さ=Intensity
