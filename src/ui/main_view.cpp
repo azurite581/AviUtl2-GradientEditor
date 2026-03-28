@@ -16,8 +16,7 @@
 #include "str_conv.h"
 
 MainView::MainView(LoggerWrapperInterface* logger_wrapper, ConfigWrapperInterface* config_wrapper)
-    : m_logger_wrapper{logger_wrapper}
-    , m_config_wrapper{config_wrapper}
+    : m_logger_wrapper{logger_wrapper}, m_config_wrapper{config_wrapper}
 {
     m_preset_window.setLoggerWrapper(m_logger_wrapper);
     m_preset_window.setConfigWrapper(m_config_wrapper);
@@ -77,8 +76,8 @@ void MainView::render()
     ImGui::DockSpaceOverViewport(dockspace_id, viewport, ImGuiDockNodeFlags_PassthruCentralNode);
 
     static ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize |
-                                    ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse |
-                                    ImGuiWindowFlags_MenuBar;
+                                           ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse |
+                                           ImGuiWindowFlags_MenuBar;
     static ImGuiWindowClass window_class;
     window_class.DockNodeFlagsOverrideSet = ImGuiDockNodeFlags_NoTabBar;
     ImGui::SetNextWindowClass(&window_class);
@@ -293,14 +292,13 @@ void MainView::renderGradientEditor()
     }
 
     bool should_replace = m_preset_window.isPresetClicked() || m_history_window.isHistoryClicked() || (!m_is_init && !m_history_window.m_history_data.empty());
-    m_data = CustomUI::drawGradientEditor(
+    m_data              = CustomUI::drawGradientEditor(
         "gradient",
         ImVec2(std::clamp(ImGui::GetContentRegionAvail().x, 1.0f, 4096.0f), frame_height * scale::relative::GRADIENT_HEIGHT),
         replace_data,
         CustomUI::GradientEditorFlags_None,
         should_replace,
-        config
-    );
+        config);
 
     ImGui::Dummy(ImVec2(0, frame_height * scale::relative::GRADIENT_MARGIN_Y));
     m_preset_window.setTargetGradientData(*m_data);
@@ -379,12 +377,12 @@ void MainView::renderGradientEditor()
     bool is_changed_apply =
         off_to_on ||                                          // 「反映」が OFF から ON に切り替わった
         (m_apply && (                                         // または「反映」ON の状態で、
-                        m_preset_window.isPresetClicked() ||    // プリセットがクリックされた
-                        is_refresh ||                           // 更新ボタンが押された
-                        is_changed_section ||                   // セクションが変更された
-                        is_changed_section_effect ||            // 対象とするエフェクトが変更された
-                        is_changed_effect_index ||              // 同じエフェクトが複数ある際、対象とするエフェクトのインデックスが変更された
-                        is_reverse                              // マーカー反転のボタンが押された
+                        m_preset_window.isPresetClicked() ||  // プリセットがクリックされた
+                        is_refresh ||                         // 更新ボタンが押された
+                        is_changed_section ||                 // セクションが変更された
+                        is_changed_section_effect ||          // 対象とするエフェクトが変更された
+                        is_changed_effect_index ||            // 同じエフェクトが複数ある際、対象とするエフェクトのインデックスが変更された
+                        is_reverse                            // マーカー反転のボタンが押された
                         ));
     // または各値がグラデーションエディタ側で変更された
     // マーカーの削除、リセット、均等配置による変更は isChangedValues() で検知できる
@@ -499,4 +497,3 @@ void MainView::writeHistories()
         m_logger_wrapper->error("{}", result.error);
     }
 }
-

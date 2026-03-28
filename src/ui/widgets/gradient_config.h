@@ -1,19 +1,18 @@
 #ifndef GRADIENT_CONFIG_H
 #define GRADIENT_CONFIG_H
 
-#include "gradient_data.h"
-#include "color_conv.h"
-#include "str_conv.h"
-
+#include <compare>
 #include <cstdint>
 #include <filesystem>
 #include <fstream>
 #include <string>
 #include <string_view>
 #include <vector>
-#include <compare>
 
+#include "color_conv.h"
+#include "gradient_data.h"
 #include "json.hpp"
+#include "str_conv.h"
 
 struct GradientPreset {
     std::string category{"uncategorized"};
@@ -41,13 +40,13 @@ inline void to_json(nlohmann::ordered_json& j, const GradientPreset& preset)
 
 inline void from_json(const nlohmann::ordered_json& j, GradientPreset& preset)
 {
-    preset.category = j.value("category", preset.category);
-    preset.name = j.value("name", preset.name);
-    preset.colors = j.value("colors", preset.colors);
-    preset.positions = j.value("positions", preset.positions);
-    preset.midpoints = j.value("midpoints", preset.midpoints);
-    preset.blur_width = j.value("blur_width", preset.blur_width);
-    preset.color_space = j.value("color_space", preset.color_space);
+    preset.category           = j.value("category", preset.category);
+    preset.name               = j.value("name", preset.name);
+    preset.colors             = j.value("colors", preset.colors);
+    preset.positions          = j.value("positions", preset.positions);
+    preset.midpoints          = j.value("midpoints", preset.midpoints);
+    preset.blur_width         = j.value("blur_width", preset.blur_width);
+    preset.color_space        = j.value("color_space", preset.color_space);
     preset.interpolation_path = j.value("interpolation_path", preset.interpolation_path);
 }
 
@@ -77,12 +76,12 @@ inline void to_json(nlohmann::ordered_json& j, const GradientHistory& history)
 
 inline void from_json(const nlohmann::ordered_json& j, GradientHistory& history)
 {
-    history.name = j.value("name", history.name);
-    history.colors = j.value("colors", history.colors);
-    history.positions = j.value("positions", history.positions);
-    history.midpoints = j.value("midpoints", history.midpoints);
-    history.blur_width = j.value("blur_width", history.blur_width);
-    history.color_space = j.value("color_space", history.color_space);
+    history.name               = j.value("name", history.name);
+    history.colors             = j.value("colors", history.colors);
+    history.positions          = j.value("positions", history.positions);
+    history.midpoints          = j.value("midpoints", history.midpoints);
+    history.blur_width         = j.value("blur_width", history.blur_width);
+    history.color_space        = j.value("color_space", history.color_space);
     history.interpolation_path = j.value("interpolation_path", history.interpolation_path);
 }
 
@@ -112,15 +111,14 @@ inline void to_json(nlohmann::ordered_json& j, const GradientConfig& config)
     j = nlohmann::ordered_json{
         {"categories", categories},
         {"presets", presets},
-        {"histories", histories}
-    };
+        {"histories", histories}};
 }
 
 inline void from_json(const nlohmann::ordered_json& j, GradientConfig& config)
 {
     config.categories = j.value("categories", config.categories);
-    config.presets = j.value("presets", config.presets);
-    config.histories = j.value("histories", std::vector<GradientHistory>{});
+    config.presets    = j.value("presets", config.presets);
+    config.histories  = j.value("histories", std::vector<GradientHistory>{});
 }
 
 class GradientConfigManager
@@ -131,9 +129,8 @@ public:
 
 private:
     const GradientConfig DEFAULT_PRESET_FILE{GradientConfig{
-            .categories = { DEFAULT_CATEGORY },
-            .presets = { GradientPreset{} }
-        }};
+        .categories = {DEFAULT_CATEGORY},
+        .presets    = {GradientPreset{}}}};
     inline static const char* DEFAULT_PRESET_FILE_JSON = R"(
 {
     "categories": [
@@ -288,10 +285,10 @@ public:
             j                  = nlohmann::ordered_json::parse(ifs);
             result.preset_file = j.get<GradientConfig>();
         } catch (const nlohmann::json::exception& e) {
-            result.error = e.what();
+            result.error       = e.what();
             result.preset_file = DEFAULT_PRESET_FILE;
         } catch (const std::exception& e) {
-            result.error = e.what();
+            result.error       = e.what();
             result.preset_file = DEFAULT_PRESET_FILE;
         }
 
@@ -313,7 +310,7 @@ public:
         std::ofstream ofs(m_preset_path);
         if (!ofs) {
             result.is_success = false;
-            result.error = "failed to open preset file";
+            result.error      = "failed to open preset file";
             return result;
         }
 
@@ -321,11 +318,11 @@ public:
             std::string serialized_string = j.dump(4);
             ofs << serialized_string;
         } catch (const nlohmann::json::exception& e) {
-            result.error = e.what();
+            result.error      = e.what();
             result.is_success = false;
             return result;
         } catch (const std::exception& e) {
-            result.error = e.what();
+            result.error      = e.what();
             result.is_success = false;
             return result;
         }
@@ -439,12 +436,12 @@ public:
             return false;
         };
 
-        std::string original_name  =  std::string{preset_name};
+        std::string original_name  = std::string{preset_name};
         std::string candidate_name = original_name;
         while (has_duplicate_name(candidate_name)) {  // 重複がある限りループし続ける
             candidate_name += "_copy";
         }
-        preset.name = candidate_name;
+        preset.name     = candidate_name;
         preset.category = category_name;
 
         cfg.presets.push_back(preset);
@@ -455,7 +452,7 @@ public:
     PresetWriteResult deletePreset(GradientConfig& cfg, const uint32_t preset_index)
     {
         if (preset_index < 0 || static_cast<uint32_t>(std::ssize(cfg.presets)) <= preset_index) {
-            return { false, "The specified preset index is invalid." };
+            return {false, "The specified preset index is invalid."};
         }
 
         cfg.presets.erase(cfg.presets.begin() + preset_index);
@@ -466,11 +463,11 @@ public:
     PresetWriteResult overwritePreset(GradientConfig& cfg, GradientPreset preset, const uint32_t preset_index, std::string_view preset_name, std::string_view category_name)
     {
         if (preset_index < 0 || static_cast<uint32_t>(std::ssize(cfg.presets)) <= preset_index) {
-            return { false, "The specified preset index is invalid." };
+            return {false, "The specified preset index is invalid."};
         }
 
-        preset.name         = preset_name;
-        preset.category     = category_name;
+        preset.name               = preset_name;
+        preset.category           = category_name;
         cfg.presets[preset_index] = preset;
 
         return writePresetFile(cfg);
@@ -480,7 +477,7 @@ public:
     {
         if ((a < 0 || static_cast<uint32_t>(std::ssize(cfg.presets)) <= a) ||
             (b < 0 || static_cast<uint32_t>(std::ssize(cfg.presets)) <= b)) {
-            return { false, "The specified preset index is invalid." };
+            return {false, "The specified preset index is invalid."};
         }
 
         auto tmp       = cfg.presets[a];
@@ -501,7 +498,7 @@ public:
     PresetWriteResult changeCategory(GradientConfig& cfg, const uint32_t preset_index, std::string_view category_name)
     {
         if (preset_index < 0 || static_cast<uint32_t>(std::ssize(cfg.presets)) <= preset_index) {
-            return { false, "The specified preset index is invalid." };
+            return {false, "The specified preset index is invalid."};
         }
 
         cfg.presets[preset_index].category = category_name;
@@ -558,9 +555,8 @@ public:
         // target_category に属するプリセットを削除
         cfg.presets.erase(
             std::remove_if(cfg.presets.begin(), cfg.presets.end(),
-            [&](const auto& p) { return p.category == target_category; }),
-            cfg.presets.end()
-        );
+                           [&](const auto& p) { return p.category == target_category; }),
+            cfg.presets.end());
 
         return writePresetFile(cfg);
     }

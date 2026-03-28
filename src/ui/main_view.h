@@ -4,9 +4,9 @@
 #include "app_state.h"
 #include "config2_wrapper_interface.h"
 #include "gradient_config.h"
+#include "history_window.h"
 #include "logger_wrapper_interface.h"
 #include "preset_window.h"
-#include "history_window.h"
 #include "script_bridge.h"
 
 class MainView {
@@ -17,7 +17,7 @@ public:
 
 private:
     struct WindowVisible {
-        bool preset_window = true;
+        bool preset_window  = true;
         bool history_window = true;
     };
 

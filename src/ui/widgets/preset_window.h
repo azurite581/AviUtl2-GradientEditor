@@ -3,10 +3,10 @@
 
 #include <unordered_set>
 
-#include "gradient_data.h"
-#include "gradient_config.h"
-#include "logger_wrapper_interface.h"
 #include "config2_wrapper_interface.h"
+#include "gradient_config.h"
+#include "gradient_data.h"
+#include "logger_wrapper_interface.h"
 
 class PresetWindow {
 public:
@@ -23,7 +23,7 @@ public:
     void setTargetGradientData(const GradientData& data) noexcept { m_target_gradient_data = data; }
 
 private:
-    static constexpr float MODAL_WINDOW_WIDTH = 120.0f;
+    static constexpr float MODAL_WINDOW_WIDTH   = 120.0f;
     static constexpr float ITEM_SPACING_SCALE_Y = 0.25f;
 
     LoggerWrapperInterface* m_logger_wrapper;
@@ -31,7 +31,7 @@ private:
 
     std::string m_preset_name{};
     std::string m_old_category_name{};
-    bool m_is_initialized = false;
+    bool m_is_initialized    = false;
     bool m_is_clicked_preset = false;
     GradientData m_selected_gradient;
     int32_t m_selected_preset_index = -1;  // -1 == 未選択

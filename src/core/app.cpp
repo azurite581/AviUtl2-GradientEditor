@@ -4,17 +4,17 @@
 #include <vector>
 
 #include "IconsMaterialSymbols.h"
+#include "color_conv.h"
+#include "config2_wrapper_interface.h"
 #include "constants.h"
-#include "material_symbols.cpp"
+#include "font_loader.h"
+#include "gradient_widget.h"
 #include "imgui.h"
-#include "imgui_internal.h"
 #include "imgui_impl_dx11.h"
 #include "imgui_impl_win32.h"
-#include "gradient_widget.h"
-#include "color_conv.h"
-#include "font_loader.h"
+#include "imgui_internal.h"
 #include "logger_wrapper_interface.h"
-#include "config2_wrapper_interface.h"
+#include "material_symbols.cpp"
 
 extern LRESULT CALLBACK wnd_proc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam);
 
@@ -169,8 +169,7 @@ void App::run(std::promise<HWND>&& hwnd_promise)
     // コンストラクタ内でプリセットの初期化を行う
     m_main_view = std::make_unique<MainView>(
         get_logger_wrapper_interface(gradient_editor::g_app_state.log_handle),
-        get_config_wrapper_interface(gradient_editor::g_app_state.config_handle)
-    );
+        get_config_wrapper_interface(gradient_editor::g_app_state.config_handle));
 
     // WM_SIZE で ImGui のレンダリング処理を呼び出すために保存する
     gradient_editor::g_app_state.render = [this]() {
@@ -198,9 +197,9 @@ void App::run(std::promise<HWND>&& hwnd_promise)
 void App::renderFrame()
 {
     static bool was_visible = true;
-    bool is_visible = gradient_editor::g_app_state.is_window_visible;
-    bool just_hidden = (was_visible && !is_visible);
-    was_visible = is_visible;
+    bool is_visible         = gradient_editor::g_app_state.is_window_visible;
+    bool just_hidden        = (was_visible && !is_visible);
+    was_visible             = is_visible;
 
     // 非表示になった瞬間だけはオクルージョン判定を無視
     if (!just_hidden && gradient_editor::g_app_state.d3d_manager.isSwapChainOccluded() && gradient_editor::g_app_state.d3d_manager.getSwapChain()->Present(0, DXGI_PRESENT_TEST) == DXGI_STATUS_OCCLUDED) {
@@ -247,7 +246,7 @@ void App::renderFrame()
 
 void App::cleanup()
 {
-    writeSettings();  // ウィンドウのレイアウト等の設定をファイルに書き込む
+    writeSettings();                      // ウィンドウのレイアウト等の設定をファイルに書き込む
     m_main_view.get()->writeHistories();  // グラデーションの履歴をファイルに書き込む
 
     gradient_editor::g_app_state.render = nullptr;
@@ -303,4 +302,3 @@ void App::writeSettings()
     std::ofstream ofs(gradient_editor::g_app_state.settings_file_path);
     ofs << settings_data_str;
 }
-

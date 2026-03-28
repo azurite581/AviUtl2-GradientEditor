@@ -159,7 +159,7 @@ void PresetWindow::render(GradientConfigManager& manager, GradientConfig& cfg)
 
                     if (ImGui::IsWindowAppearing()) {
                         category_name          = m_categories[j];
-                        m_old_category_name = m_categories[j];
+                        m_old_category_name    = m_categories[j];
                         contains_same_category = false;
                     }
 
@@ -203,7 +203,7 @@ void PresetWindow::render(GradientConfigManager& manager, GradientConfig& cfg)
                                 loadCategories();
                             }
 
-                            m_old_category_name = category_name;
+                            m_old_category_name    = category_name;
                             contains_same_category = false;
                         }
                     }
@@ -669,4 +669,3 @@ void PresetWindow::renderPresetList(GradientConfigManager& manager, GradientConf
         ImGui::OpenPopup((m_config_wrapper->tr(L"削除") + "###delete_confirmation").c_str());
     }
 }
-
