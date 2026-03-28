@@ -9,8 +9,6 @@
 #include "history_window.h"
 #include "script_bridge.h"
 
-namespace gradient_editor {
-
 class MainView {
 public:
     MainView(LoggerWrapperInterface* logger_wrapper, ConfigWrapperInterface* config_wrapper);
@@ -52,7 +50,5 @@ private:
     ImU32 m_object_video_color_stop  = 0;
     ImU32 m_frame_cursor_color       = 0;
 };
-
-}  // namespace gradient_editor
 
 #endif  // MAIN_VIEW_H

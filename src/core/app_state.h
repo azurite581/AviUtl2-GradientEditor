@@ -17,8 +17,6 @@
 #include "d3d_manager.h"
 #include "window_manager.h"
 
-namespace gradient_editor {
-
 /// @brief アプリケーション全体の状態を管理する構造体
 struct ApplicationState {
     // AviUtl2 SDK ハンドラー
@@ -51,8 +49,8 @@ struct ApplicationState {
     }
 };
 
+namespace gradient_editor {
 extern ApplicationState g_app_state;
-
-}  // namespace gradient_editor
+}
 
 #endif  // APP_STATE_H

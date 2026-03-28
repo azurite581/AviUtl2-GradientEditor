@@ -427,7 +427,7 @@ public:
         return history;
     }
 
-    PresetWriteResult addPreset(GradientConfig& cfg, GradientPreset preset, std::string_view name, std::string_view category)
+    PresetWriteResult addPreset(GradientConfig& cfg, GradientPreset preset, std::string_view preset_name, std::string_view category_name)
     {
         // 追加する前に名前の重複を避ける
         auto has_duplicate_name = [&cfg](std::string& target_name) {
@@ -439,13 +439,13 @@ public:
             return false;
         };
 
-        std::string original_name  =  std::string{name};
+        std::string original_name  =  std::string{preset_name};
         std::string candidate_name = original_name;
         while (has_duplicate_name(candidate_name)) {  // 重複がある限りループし続ける
             candidate_name += "_copy";
         }
         preset.name = candidate_name;
-        preset.category = category;
+        preset.category = category_name;
 
         cfg.presets.push_back(preset);
 
@@ -463,14 +463,14 @@ public:
         return writePresetFile(cfg);
     }
 
-    PresetWriteResult overwritePreset(GradientConfig& cfg, GradientPreset preset, const uint32_t preset_index, std::string_view name, std::string_view category)
+    PresetWriteResult overwritePreset(GradientConfig& cfg, GradientPreset preset, const uint32_t preset_index, std::string_view preset_name, std::string_view category_name)
     {
         if (preset_index < 0 || static_cast<uint32_t>(std::ssize(cfg.presets)) <= preset_index) {
             return { false, "The specified preset index is invalid." };
         }
 
-        preset.name         = name;
-        preset.category     = category;
+        preset.name         = preset_name;
+        preset.category     = category_name;
         cfg.presets[preset_index] = preset;
 
         return writePresetFile(cfg);
@@ -490,31 +490,31 @@ public:
         return writePresetFile(cfg);
     }
 
-    PresetWriteResult addCategory(GradientConfig& cfg, std::string_view category)
+    PresetWriteResult addCategory(GradientConfig& cfg, std::string_view category_name)
     {
         for (const auto& c : cfg.categories) {
-            if (c == category) {
+            if (c == category_name) {
                 return { false, "A category with this name already exists." };
             }
         }
-        cfg.categories.push_back(std::string{category});
+        cfg.categories.push_back(std::string{category_name});
 
         return writePresetFile(cfg);
     }
 
     // 指定したプリセットのカテゴリーを変更する
-    PresetWriteResult changeCategory(GradientConfig& cfg, const uint32_t preset_index, std::string_view category)
+    PresetWriteResult changeCategory(GradientConfig& cfg, const uint32_t preset_index, std::string_view category_name)
     {
         if (preset_index < 0 || static_cast<uint32_t>(std::ssize(cfg.presets)) <= preset_index) {
             return { false, "The specified preset index is invalid." };
         }
 
-        cfg.presets[preset_index].category = category;
+        cfg.presets[preset_index].category = category_name;
 
         return writePresetFile(cfg);
     }
 
-    // 指定したカテゴリーを別のカテゴリーに置き換える
+    // 各プリセットのカテゴリーを置き換える
     PresetWriteResult changeCategory(GradientConfig& cfg, std::string_view a, std::string_view b)
     {
         for (auto& preset : cfg.presets) {
@@ -527,9 +527,9 @@ public:
     }
 
     // カテゴリーの配列を置き換える
-    PresetWriteResult changeCategories(GradientConfig& cfg, const std::vector<std::string>& categories)
+    PresetWriteResult changeCategories(GradientConfig& cfg, const std::vector<std::string>& new_categories)
     {
-        cfg.categories = categories;
+        cfg.categories = new_categories;
 
         return writePresetFile(cfg);
     }
@@ -567,6 +567,13 @@ public:
             cfg.presets.end()
         );
 
+        return writePresetFile(cfg);
+    }
+
+    // 全ての履歴を削除する
+    PresetWriteResult deleteHistory(GradientConfig& cfg)
+    {
+        cfg.histories.clear();
         return writePresetFile(cfg);
     }
 };

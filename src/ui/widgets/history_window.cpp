@@ -4,7 +4,10 @@
 #include <format>
 #include <string>
 
+#include "IconsMaterialSymbols.h"
 #include "gradient_widget.h"
+#include "imgui_utils.h"
+
 #include "imgui.h"
 
 void HistoryWindow::pushHistory(const GradientData& gradient_data)
@@ -16,7 +19,7 @@ void HistoryWindow::pushHistory(const GradientData& gradient_data)
         auto latest_history = m_history_data.back();
         if (latest_history.data != gradient_data) {
             m_history_data.push_back({tz, gradient_data});
-            if (static_cast<uint32_t>(std::ssize(m_history_data)) > HISTORY_MAX_COUNT) {
+            if (static_cast<int32_t>(std::ssize(m_history_data)) > HISTORY_MAX_COUNT) {
                 m_history_data.pop_front();
             }
         }
@@ -28,17 +31,47 @@ void HistoryWindow::pushHistory(const GradientData& gradient_data)
 void HistoryWindow::render(GradientConfigManager& manager, GradientConfig& cfg)
 {
     if (ImGui::Begin((m_config_wrapper->tr(L"履歴") + "###history_window").c_str())) {
-        // 初回のみ履歴を取得
-        if (!m_is_initialized) {
-            m_is_initialized = true;
+        // 履歴を読み込む
+        auto loadHistory = [&]() {
+            m_history_data.clear();
 
             for (const auto& history : cfg.histories) {
                 m_history_data.push_back({history.name, manager.history2gradient(history)});
-                if (static_cast<uint32_t>(std::ssize(m_history_data)) > HISTORY_MAX_COUNT) {
+                if (static_cast<int32_t>(std::ssize(m_history_data)) > HISTORY_MAX_COUNT) {
                     m_history_data.pop_front();
                 }
             }
+        };
+
+        // 初回のみ履歴を取得
+        if (!m_is_initialized) {
+            m_is_initialized = true;
+            loadHistory();
         }
+
+        float item_spacing_x = ImGui::GetStyle().ItemSpacing.x * 0.5f;
+        ImGui::PushStyleVar(ImGuiStyleVar_CellPadding, ImVec2(item_spacing_x, 0));
+        if (ImGui::BeginTable("##align_table1", 2)) {
+            std::string text = m_config_wrapper->tr(L"履歴を削除");
+            float text_width = ImGui::CalcTextSize(text.c_str()).x;
+            ImGui::TableSetupColumn("##text", ImGuiTableColumnFlags_WidthFixed, text_width);
+            ImGui::TableSetupColumn("##button", ImGuiTableColumnFlags_WidthFixed, ImGui::GetFrameHeight());
+
+            ImGui::TableNextRow();
+            ImGui::TableNextColumn();
+
+            ImGui::AlignTextToFramePadding();
+            ImGui::TextUnformatted(text.c_str());
+
+            ImGui::TableNextColumn();
+            if (imgui_utils::squareIconButton(ICON_MS_DELETE_HISTORY, "##delete_history")) {
+                manager.deleteHistory(cfg);
+                loadHistory();
+            }
+
+            ImGui::EndTable();
+        }
+        ImGui::PopStyleVar();
 
         int32_t history_num = static_cast<int32_t>(std::ssize(m_history_data));
         if (history_num >= 1) {

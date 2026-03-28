@@ -4,8 +4,6 @@
 #pragma comment(lib, "d3d11.lib")
 #pragma comment(lib, "dxgi.lib")
 
-namespace gradient_editor {
-
 bool D3DManager::initialize(HWND hwnd)
 {
     return createDeviceD3D(hwnd);
@@ -118,4 +116,3 @@ void D3DManager::handleWindowResize()
     }
 }
 
-}  // namespace gradient_editor

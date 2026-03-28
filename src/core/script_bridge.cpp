@@ -7,8 +7,6 @@
 #include "plugin2_utils.h"
 #include "str_conv.h"
 
-namespace gradient_editor {
-
 void ScriptBridge::loadGradientFromScript(EDIT_SECTION* edit,
                                           GradientData& data,
                                           const std::wstring& effect_name,
@@ -171,4 +169,3 @@ void ScriptBridge::resetScriptData(EDIT_SECTION* edit,
     }
 }
 
-}  // namespace gradient_editor

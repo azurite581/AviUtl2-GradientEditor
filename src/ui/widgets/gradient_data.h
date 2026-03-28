@@ -70,7 +70,7 @@ public:
     void setGradientDisplayWidth(const float gradient_display_width) noexcept { m_gradient_display_width = gradient_display_width; }
     void setGradientDisplayHeight(const float gradient_display_height) noexcept { m_gradient_display_height = gradient_display_height; }
 
-    gradient_editor::GradientRenderer::PixelConstantBuffer gradientData2pixelConstantBuffer();
+    GradientRenderer::PixelConstantBuffer gradientData2pixelConstantBuffer();
 
     bool init(Microsoft::WRL::ComPtr<ID3D11Device> d3d_device, const int32_t texture_width, const int32_t texture_height);
 

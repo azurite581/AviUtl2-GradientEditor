@@ -8,8 +8,6 @@
 #include "logger_wrapper_interface.h"
 #include "config2_wrapper_interface.h"
 
-namespace gradient_editor {
-
 class PresetWindow {
 public:
     PresetWindow() {}
@@ -25,6 +23,9 @@ public:
     void setTargetGradientData(const GradientData& data) noexcept { m_target_gradient_data = data; }
 
 private:
+    static constexpr float MODAL_WINDOW_WIDTH = 120.0f;
+    static constexpr float ITEM_SPACING_SCALE_Y = 0.25f;
+
     LoggerWrapperInterface* m_logger_wrapper;
     ConfigWrapperInterface* m_config_wrapper;
 
@@ -39,7 +40,5 @@ private:
 
     void renderPresetList(GradientConfigManager& manager, GradientConfig& file, std::string_view category);
 };
-
-}  // namespace gradient_editor
 
 #endif

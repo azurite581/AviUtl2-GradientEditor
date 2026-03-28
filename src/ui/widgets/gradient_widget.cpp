@@ -4,7 +4,7 @@ namespace CustomUI {
 
 Microsoft::WRL::ComPtr<ID3D11Device> g_d3d_device                = nullptr;
 Microsoft::WRL::ComPtr<ID3D11DeviceContext> g_d3d_device_context = nullptr;
-gradient_editor::GradientRenderer::RenderResources g_resources;
+GradientRenderer::RenderResources g_resources;
 
 // グラデーションデータを保持するマップ
 std::unordered_map<std::string, std::unique_ptr<GradientData>> g_editor_gradients;
@@ -14,7 +14,7 @@ void initDX11(Microsoft::WRL::ComPtr<ID3D11Device> device, Microsoft::WRL::ComPt
 {
     g_d3d_device         = device;
     g_d3d_device_context = context;
-    gradient_editor::GradientRenderer::init(g_d3d_device, g_d3d_device_context, g_resources);
+    GradientRenderer::init(g_d3d_device, g_d3d_device_context, g_resources);
 }
 
 void cleanup()
@@ -86,9 +86,9 @@ GradientData* drawGradientEditor(
     gradient_data->setGradientDisplayHeight(display_size.y);
 
     // ピクセルシェーダーに渡すコンスタントバッファーの値を設定
-    gradient_editor::GradientRenderer::PixelConstantBuffer buffer_values = gradient_data->gradientData2pixelConstantBuffer();
+    GradientRenderer::PixelConstantBuffer buffer_values = gradient_data->gradientData2pixelConstantBuffer();
     // グラデーションをレンダリング
-    gradient_editor::GradientRenderer::runOffscreenRendering(
+    GradientRenderer::runOffscreenRendering(
         g_d3d_device_context,
         g_resources,
         gradient_data->getPixelConstantBuffer(),
@@ -236,10 +236,10 @@ ID3D11ShaderResourceView* getGradientSrv(
     gradient_data->setGradientDisplayHeight(display_size.y);
 
     // ピクセルシェーダーに渡すコンスタントバッファーの値を設定
-    gradient_editor::GradientRenderer::PixelConstantBuffer buffer_values = gradient_data->gradientData2pixelConstantBuffer();
+    GradientRenderer::PixelConstantBuffer buffer_values = gradient_data->gradientData2pixelConstantBuffer();
 
     // グラデーションをレンダリング
-    gradient_editor::GradientRenderer::runOffscreenRendering(
+    GradientRenderer::runOffscreenRendering(
         g_d3d_device_context,
         g_resources,
         gradient_data->getPixelConstantBuffer(),

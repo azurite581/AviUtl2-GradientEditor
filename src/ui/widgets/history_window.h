@@ -31,7 +31,7 @@ public:
     std::deque<HistoryData> m_history_data;
 
 private:
-    static constexpr uint32_t HISTORY_MAX_COUNT = 30;
+    static constexpr int32_t HISTORY_MAX_COUNT = 50;
 
     LoggerWrapperInterface* m_logger_wrapper;
     ConfigWrapperInterface* m_config_wrapper;

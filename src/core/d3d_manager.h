@@ -7,15 +7,12 @@
 #include <windows.h>
 #include <wrl/client.h>
 
-namespace gradient_editor {
-
 /// @brief Direct3D 11 リソース管理クラス
 /// @note デバイス、スワップチェーン、レンダーターゲットの管理を担当
 class D3DManager {
 public:
     D3DManager() = default;
 
-    // コピー・ムーブ禁止
     D3DManager(const D3DManager&)            = delete;
     D3DManager& operator=(const D3DManager&) = delete;
     D3DManager(D3DManager&&)                 = delete;
@@ -62,7 +59,5 @@ private:
     UINT m_resize_width        = 0;
     UINT m_resize_height       = 0;
 };
-
-}  // namespace gradient_editor
 
 #endif  // D3D_MANAGER_H

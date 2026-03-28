@@ -4,8 +4,6 @@
 #include <cstdint>
 #include <string>
 
-namespace gradient_editor {
-
 namespace scale {
 // ImGui::GetFrameHeight() を基準とした相対スケール
 namespace relative {
@@ -34,7 +32,6 @@ constexpr float ICON_FONT_GLYPHOFFSET_Y = 1.5f;
 constexpr const wchar_t* WINDOW_NAME_DEFAULT = L"GradientEditor";
 constexpr const char* PRESET_FOLDER_NAME     = "GradientEditorPreset";
 constexpr const char* PRESET_FILE_NAME       = "gradient_editor_preset.json";
-constexpr const wchar_t* PLUGIN_INFORMATION  = L"Gradient Editor for AviUtl2";
 
 #ifdef MARKER_COUNT
 inline constexpr uint32_t MAX_MARKER_COUNT = MARKER_COUNT;
@@ -49,7 +46,5 @@ inline constexpr const wchar_t* EFFECT_NAMES[]    = {
 
 constexpr const char* COLOR_SPACE_NAMES[] = {"sRGB", "Linear sRGB", "HSV", "HSL", "L*a*b", "LCh", "Oklab", "Oklch"};
 inline const char* INTERP_DIR_NAMES[]     = {reinterpret_cast<const char*>(u8"短経路"), reinterpret_cast<const char*>(u8"長経路")};
-
-}  // namespace gradient_editor
 
 #endif  // CONSTANTS_H
