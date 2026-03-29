@@ -367,7 +367,7 @@ Image by <a href="https://pixabay.com/users/pavanprasad_ind-22614562/?utm_source
 - `name` : `string`  
   プリセット名
 - `colors` : `array<string>`  
-色の配列（`0xRRGGBBAA0xRRGGBBAA` 形式）
+色の配列（`0xRRGGBBAA` 形式）
 - `positions` : `array<number>`  
 各色の位置（0.0〜1.0）
 - `midpoints` : `array<number>`  
