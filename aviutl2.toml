@@ -3,7 +3,7 @@
 [project]
 id = "gradient-editor"
 name = "GradientEditor"
-version = "0.3.0"
+version = "0.4.0"
 
 [artifacts.GradientEditor_aux2]
 destination = "Plugin/GradientEditor.aux2"
@@ -29,6 +29,14 @@ destination = "Language/English.GradientEditor.aul2"
 source = "./i18n/简体中文.GradientEditor.aul2"
 destination = "Language/简体中文.GradientEditor.aul2"
 
+[artifacts.GradientEditor_ini]
+source = "./GradientEditor.ini"
+destination = "Plugin/GradientEditor.ini"
+
+[artifacts.GradientEditor_default_preset_json]
+source = "./preset/gradient_editor_default_preset.json"
+destination = "Plugin/GradientEditorPreset/gradient_editor_default_preset.json"
+
 [development]
 aviutl2_version = "latest"
 
@@ -39,4 +47,4 @@ package_template = "package.txt"
 profile = "release"
 output_dir = "release"
 zip_name = "{name}-v{version}"
-include = ["GradientEditor_aux2", "GradientEditor_anm2", "English_GradientEditor_aul2", "SimplifiedChinese_GradientEditor_aul2"]
+include = ["GradientEditor_aux2", "GradientEditor_anm2", "English_GradientEditor_aul2", "SimplifiedChinese_GradientEditor_aul2", "GradientEditor_ini", "GradientEditor_default_preset_json"]

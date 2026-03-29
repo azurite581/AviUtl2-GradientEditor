@@ -2,6 +2,7 @@
 #define GRADIENT_MARKER_H
 
 #include <algorithm>
+#include <compare>
 #include <cstdint>
 #include <functional>
 #include <iterator>
@@ -14,10 +15,42 @@ struct GradientMarkerData {
     int32_t id{0};
     float pos{0.0f};
     ImVec4 color{1.0f, 1.0f, 1.0f, 1.0f};
+
     struct Midpoint {
         float ratio{0.5f};
         float pos{0.0f};
+
+        std::partial_ordering operator<=>(const Midpoint& other) const
+        {
+            if (auto cmp = ratio <=> other.ratio; cmp != 0) return cmp;
+            return pos <=> other.pos;
+        }
+
+        bool operator==(const Midpoint& other) const
+        {
+            return ratio == other.ratio && pos == other.pos;
+        }
     } midpoint{};
+
+    std::partial_ordering operator<=>(const GradientMarkerData& other) const
+    {
+        if (auto cmp = id <=> other.id; cmp != 0) return cmp;
+        if (auto cmp = pos <=> other.pos; cmp != 0) return cmp;
+        if (auto cmp = color.x <=> other.color.x; cmp != 0) return cmp;
+        if (auto cmp = color.y <=> other.color.y; cmp != 0) return cmp;
+        if (auto cmp = color.z <=> other.color.z; cmp != 0) return cmp;
+        if (auto cmp = color.w <=> other.color.w; cmp != 0) return cmp;
+
+        return midpoint <=> other.midpoint;
+    }
+
+    bool operator==(const GradientMarkerData& other) const
+    {
+        return id == other.id &&
+               pos == other.pos &&
+               color.x == other.color.x && color.y == other.color.y && color.z == other.color.z && color.w == other.color.w &&
+               midpoint == other.midpoint;
+    }
 };
 
 class GradientMarkerManager {
@@ -58,9 +91,21 @@ private:
         OutSide  = -4
     };
 
+    bool m_io_enable = true;
+
 public:
     GradientMarkerManager()
     {
+    }
+
+    std::partial_ordering operator<=>(const GradientMarkerManager& other) const
+    {
+        return m_markers <=> other.m_markers;
+    }
+
+    bool operator==(const GradientMarkerManager& other) const
+    {
+        return m_markers == other.m_markers;
     }
 
     //
@@ -122,6 +167,7 @@ public:
 
     void setMarkerColorPickerColor(const ImVec4& color) noexcept { m_state.picker_cur_color = color; }
     void setBackupPickerColor(const ImVec4& color) noexcept { m_state.picker_backup_color = color; }
+    void setIOEnable(const bool enable) noexcept { m_io_enable = enable; }
 
     //
     // 操作

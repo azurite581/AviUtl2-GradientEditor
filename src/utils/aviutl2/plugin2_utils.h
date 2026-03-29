@@ -16,8 +16,8 @@ namespace plugin2_utils {
 /// @tparam T セットする値の型
 /// @param edit 編集セクション構造体
 /// @param object オブジェクトハンドル
-/// @param effect_name 対象のエフェクト名
-/// @param effect_index 対象のエフェクトのインデックス
+/// @param effect_name 対象のスクリプト名
+/// @param effect_index 対象のスクリプトのインデックス
 /// @param item_name 対象の設定項目の名称
 /// @param value セットする値
 /// @param default_value セットする値のデフォルト値
@@ -56,8 +56,8 @@ void setObjectItemValue(const EDIT_SECTION* edit, const OBJECT_HANDLE object, co
 /// @tparam T デフォルト値の型
 /// @param edit 編集セクション構造体
 /// @param object オブジェクトハンドル
-/// @param effect_name 対象のエフェクト名
-/// @param effect_index 対象のエフェクトのインデックス
+/// @param effect_name 対象のスクリプト名
+/// @param effect_index 対象のスクリプトのインデックス
 /// @param item_name 対象の設定項目の名称
 /// @param default_value 取得する値のデフォルト値。値が取得できなかった場合に返される
 /// @param section_index セクションのインデックス

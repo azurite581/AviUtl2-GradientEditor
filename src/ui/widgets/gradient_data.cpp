@@ -1,10 +1,8 @@
 #include "gradient_data.h"
 
-namespace gradient_editor {
-
-gradient_editor::GradientRenderer::PixelConstantBuffer GradientData::gradientData2pixelConstantBuffer()
+GradientRenderer::PixelConstantBuffer GradientData::gradientData2pixelConstantBuffer()
 {
-    gradient_editor::GradientRenderer::PixelConstantBuffer buffer_values;
+    GradientRenderer::PixelConstantBuffer buffer_values;
 
     auto markers = m_marker_manager.getMarkers();
     for (const auto& [i, merker] : markers | std::views::take(std::ssize(markers) - 1) | std::views::enumerate) {
@@ -42,7 +40,7 @@ bool GradientData::init(Microsoft::WRL::ComPtr<ID3D11Device> d3d_device, const i
 
     // コンスタントバッファーを初期化
     if (!m_pixel_constant_buffer) {
-        if (!gradient_editor::GradientRenderer::initPixelConstantBuffer(d3d_device, m_pixel_constant_buffer)) {
+        if (!GradientRenderer::initPixelConstantBuffer(d3d_device, m_pixel_constant_buffer)) {
             OutputDebugStringA("Failed to initialize constant buffer\n");
             return false;
         }
@@ -51,7 +49,7 @@ bool GradientData::init(Microsoft::WRL::ComPtr<ID3D11Device> d3d_device, const i
     // 入力用テクスチャを作成
     UINT white_color[4] = {255, 255, 255, 255};
     if (!m_srv) {
-        auto result = gradient_editor::GradientRenderer::createSolidColorTexture(d3d_device, texture_width, texture_height, white_color, nullptr, m_srv.ReleaseAndGetAddressOf());
+        auto result = GradientRenderer::createSolidColorTexture(d3d_device, texture_width, texture_height, white_color, nullptr, m_srv.ReleaseAndGetAddressOf());
         if (!result) {
             OutputDebugStringA(result.error().c_str());
             return false;
@@ -60,7 +58,7 @@ bool GradientData::init(Microsoft::WRL::ComPtr<ID3D11Device> d3d_device, const i
 
     // 出力用テクスチャを作成
     if (!m_rtv) {
-        auto result = gradient_editor::GradientRenderer::createSolidColorTexture(d3d_device, texture_width, texture_height, white_color, m_rtv.ReleaseAndGetAddressOf(), m_output_srv.ReleaseAndGetAddressOf());
+        auto result = GradientRenderer::createSolidColorTexture(d3d_device, texture_width, texture_height, white_color, m_rtv.ReleaseAndGetAddressOf(), m_output_srv.ReleaseAndGetAddressOf());
         if (!result) {
             OutputDebugStringA(result.error().c_str());
             return false;
@@ -76,12 +74,10 @@ std::vector<float> GradientData::getTextureColor(Microsoft::WRL::ComPtr<ID3D11De
     Microsoft::WRL::ComPtr<ID3D11Texture2D> texure;
     resource.As(&texure);
 
-    auto result = gradient_editor::GradientRenderer::readPixelColorFromTexture2D(d3d_device, d3d_device_context, texure.Get(), x, y);
+    auto result = GradientRenderer::readPixelColorFromTexture2D(d3d_device, d3d_device_context, texure.Get(), x, y);
     if (result) {
         return result.value();
     } else {
         return {0.0f, 0.0f, 0.0f, 0.0f};
     }
 }
-
-}  // namespace gradient_editor

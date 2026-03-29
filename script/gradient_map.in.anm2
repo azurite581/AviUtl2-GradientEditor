@@ -18,6 +18,18 @@ local bg_alpha = 0
 ---Rec. 709=1
 local luma_mode = 0
 
+---$track:シフト
+---min=-1000
+---max=1000
+---step=0.01
+local shift = 0
+
+---$select:境界モード
+---境界色=0
+---ループ=1
+---ミラー=2
+local edge_mode = 0
+
 ---$select:合成モード
 ---通常=0
 ---加算=1
@@ -853,12 +865,6 @@ local function pack(colors, alphas, positions, midpoints, color_space, interp_di
     return packed
 end
 
-local function rotate(deg)
-    local rad = math.rad(deg)
-    return {math.cos(rad), -math.sin(rad),
-            math.sin(rad),  math.cos(rad)}
-end
-
 local constants = pack(colors, alphas, positions, midpoints, color_space, interp_dir, blur_width, marker_num)
 local PAD = 0.0
 
@@ -870,7 +876,7 @@ obj.draw(0.0, 0.0, 0.0, 1.0, (100 - bg_alpha) / 100)
 
 obj.pixelshader("psmain", "object", {"object"},
     {
-        luma_mode, PAD, PAD, PAD,
+        luma_mode, shift / 100, edge_mode, PAD,
         unpack(constants),
     },
     "copy"

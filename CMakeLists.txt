@@ -31,12 +31,11 @@ add_library(${PROJECT_NAME} SHARED
     src/ui/widgets/gradient_marker.cpp
     src/ui/widgets/gradient_renderer.cpp
     src/ui/widgets/gradient_widget.cpp
-    src/ui/widgets/preset_controller.cpp
     src/ui/widgets/preset_window.cpp
+    src/ui/widgets/history_window.cpp
     src/main.cpp
     src/utils/aviutl2/logger_wrapper_interface.cpp
     src/utils/aviutl2/config2_wrapper_interface.cpp
-    src/utils/imgui/imgui_utils.cpp
     ${GENERATED_CPP}
     ${COMPILED_PIXEL_SHADER}
     ${COMPILED_VERTEX_SHADER}
@@ -60,6 +59,7 @@ add_library(imgui STATIC
     ${IMGUI_SOURCE}/imgui_draw.cpp
     ${IMGUI_SOURCE}/imgui_tables.cpp
     ${IMGUI_SOURCE}/imgui_widgets.cpp
+    ${IMGUI_SOURCE}/misc/cpp/imgui_stdlib.cpp
 )
 target_include_directories(imgui PUBLIC ${IMGUI_SOURCE})
 add_library(imgui_dx11 STATIC
@@ -83,6 +83,7 @@ target_include_directories(${PROJECT_NAME} PRIVATE src/ui/widgets)
 target_include_directories(${PROJECT_NAME} PRIVATE src/utils/aviutl2)
 target_include_directories(${PROJECT_NAME} PRIVATE src/utils/common)
 target_include_directories(${PROJECT_NAME} PRIVATE src/utils/imgui)
+target_include_directories(${PROJECT_NAME} PRIVATE preset)
 
 # AviUtl2 SDK
 target_include_directories(${PROJECT_NAME} PRIVATE third_party/aviutl2_sdk_mirror/include)

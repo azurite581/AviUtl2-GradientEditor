@@ -26,7 +26,7 @@
 #define PLUGIN_FILE_NAME "GradientEditor"
 #define PLUGIN_AUTHOR "azurite"
 #ifndef PLUGIN_VERSION_CORE
-#define PLUGIN_VERSION_CORE 0.3.0
+#define PLUGIN_VERSION_CORE 0.4.0
 #endif
 
 #define PLUGIN_VERSION_STR L"v" WIDEN(STRINGIFY(PLUGIN_VERSION_CORE))
@@ -34,11 +34,8 @@
     WIDEN(PLUGIN_NAME) \
     L" " PLUGIN_VERSION_STR L" " WIDEN(PLUGIN_AUTHOR)
 
-using namespace gradient_editor;
-
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam);
 
-namespace gradient_editor {
 //---------------------------------------------------------------------
 //	ウィンドウプロシージャ
 //---------------------------------------------------------------------
@@ -48,16 +45,16 @@ LRESULT CALLBACK wnd_proc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
         return true;
     switch (msg) {
         case WM_MOUSEACTIVATE:
-            ::SetFocus(g_app_state.window_manager.getWindowHandle());
+            ::SetFocus(gradient_editor::g_app_state.window_manager.getWindowHandle());
             return MA_ACTIVATE;
         case WM_CONTEXTMENU:
             return 0;
         case WM_SIZE:
             if (wparam == SIZE_MINIMIZED) return 0;
-            g_app_state.d3d_manager.setResizeWidth(static_cast<UINT>(LOWORD(lparam)));
-            g_app_state.d3d_manager.setResizeHeight(static_cast<UINT>(HIWORD(lparam)));
-            if (!g_app_state.window_manager.isResizing() && g_app_state.render) {
-                g_app_state.render();
+            gradient_editor::g_app_state.d3d_manager.setResizeWidth(static_cast<UINT>(LOWORD(lparam)));
+            gradient_editor::g_app_state.d3d_manager.setResizeHeight(static_cast<UINT>(HIWORD(lparam)));
+            if (!gradient_editor::g_app_state.window_manager.isResizing() && gradient_editor::g_app_state.render) {
+                gradient_editor::g_app_state.render();
             }
             return 0;
         case WM_SYSCOMMAND:
@@ -67,10 +64,10 @@ LRESULT CALLBACK wnd_proc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
             ::PostQuitMessage(0);
             return 0;
         case WM_ENTERSIZEMOVE:
-            g_app_state.window_manager.setResizing(true);
+            gradient_editor::g_app_state.window_manager.setResizing(true);
             return 0;
         case WM_EXITSIZEMOVE:
-            g_app_state.window_manager.setResizing(false);
+            gradient_editor::g_app_state.window_manager.setResizing(false);
             return 0;
     }
     return ::DefWindowProcW(hwnd, msg, wparam, lparam);
@@ -84,8 +81,6 @@ void guiThreadMain(std::promise<HWND>&& hwnd_promise)
     App app;
     app.run(std::move(hwnd_promise));
 }
-
-}  // namespace gradient_editor
 
 //---------------------------------------------------------------------
 //	AviUtl2 Plugin 関連
@@ -102,19 +97,19 @@ EXTERN_C __declspec(dllexport) DWORD RequiredVersion()
 
 EXTERN_C __declspec(dllexport) void InitializeLogger(LOG_HANDLE* handle)
 {
-    g_app_state.log_handle = handle;
+    gradient_editor::g_app_state.log_handle = handle;
 }
 
 EXTERN_C __declspec(dllexport) void InitializeConfig(CONFIG_HANDLE* handle)
 {
-    g_app_state.config_handle = handle;
+    gradient_editor::g_app_state.config_handle = handle;
 
     // 設定ファイルの作成
-    std::filesystem::path settings_file_path{g_app_state.config_handle->app_data_path};
+    std::filesystem::path settings_file_path{gradient_editor::g_app_state.config_handle->app_data_path};
     settings_file_path /= "Plugin";
     settings_file_path /= PLUGIN_FILE_NAME;
     settings_file_path.replace_extension("ini");
-    g_app_state.settings_file_path = settings_file_path;
+    gradient_editor::g_app_state.settings_file_path = settings_file_path;
 
     if (!std::filesystem::exists(settings_file_path)) {
         std::ofstream ofs(settings_file_path);
@@ -123,7 +118,7 @@ EXTERN_C __declspec(dllexport) void InitializeConfig(CONFIG_HANDLE* handle)
 
 EXTERN_C __declspec(dllexport) bool InitializePlugin(DWORD version)
 {
-    g_app_state.version = version;
+    gradient_editor::g_app_state.version = version;
     if (version < 2003600) {
         return false;
     }
@@ -133,11 +128,11 @@ EXTERN_C __declspec(dllexport) bool InitializePlugin(DWORD version)
 EXTERN_C __declspec(dllexport) void UninitializePlugin()
 {
     // WM_QUIT を App::run() 内のメッセージループに通知
-    HWND hwnd = g_app_state.window_manager.getWindowHandle();
+    HWND hwnd = gradient_editor::g_app_state.window_manager.getWindowHandle();
     if (hwnd) {
         ::PostMessage(hwnd, WM_QUIT, 0, 0);
     }
-    g_app_state.cleanup();
+    gradient_editor::g_app_state.cleanup();
 }
 
 EXTERN_C __declspec(dllexport) COMMON_PLUGIN_TABLE* GetCommonPluginTable(void)
@@ -147,15 +142,15 @@ EXTERN_C __declspec(dllexport) COMMON_PLUGIN_TABLE* GetCommonPluginTable(void)
 
 EXTERN_C __declspec(dllexport) void RegisterPlugin(HOST_APP_TABLE* host)
 {
-    if (g_app_state.version < 2003500) {
-        host->set_plugin_information(PLUGIN_INFORMATION);
+    if (gradient_editor::g_app_state.version < 2003500) {
+        host->set_plugin_information(PLUGIN_INFO);
     }
-    g_app_state.edit_handle = host->create_edit_handle();
+    gradient_editor::g_app_state.edit_handle = host->create_edit_handle();
 
     std::promise<HWND> p;
     auto f                 = p.get_future();
-    g_app_state.gui_thread = std::thread(guiThreadMain, std::move(p));
+    gradient_editor::g_app_state.gui_thread = std::thread(guiThreadMain, std::move(p));
 
     HWND hwnd = f.get();
-    host->register_window_client(g_app_state.config_handle->translate(g_app_state.config_handle, WINDOW_NAME_DEFAULT), hwnd);
+    host->register_window_client(gradient_editor::g_app_state.config_handle->translate(gradient_editor::g_app_state.config_handle, WINDOW_NAME_DEFAULT), hwnd);
 }

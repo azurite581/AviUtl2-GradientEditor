@@ -5,8 +5,6 @@
 #define NOMINMAX
 #include <windows.h>
 
-namespace gradient_editor {
-
 class WindowManager {
 public:
     WindowManager() = default;
@@ -31,7 +29,5 @@ private:
     WNDCLASSEXW m_wc   = {};
     bool m_is_resizing = false;
 };
-
-}  // namespace gradient_editor
 
 #endif WINDOW_MANAGER_H

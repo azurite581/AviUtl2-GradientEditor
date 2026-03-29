@@ -28,20 +28,21 @@ void initDX11(Microsoft::WRL::ComPtr<ID3D11Device> device, Microsoft::WRL::ComPt
 void cleanup();
 
 ID3D11ShaderResourceView* getGradientSrv(
-    std::unordered_map<std::string, std::unique_ptr<gradient_editor::GradientData>>& gradient_datas,
+    std::unordered_map<std::string, std::unique_ptr<GradientData>>& gradient_datas,
     const std::string label,
     const ImVec2& display_size,
-    const gradient_editor::GradientData& data);
+    const GradientData& data);
 
 bool drawGradientButton(
     const std::string label,
     const ImVec2& display_size,
-    const gradient_editor::GradientData& data);
+    const GradientData& data);
 
 // 描画前にユーザーが設定できるオプション
 struct GradientEditorConfig {
     uint32_t max_marker_count = 30;     // 最大マーカー数。最大マーカー数を超えると新規マーカー追加不可
     float marker_width        = 20.0f;  // マーカーの幅
+    bool io_enable = true;              // マウス入力を受け付けるかどうか
 };
 
 /// @brief グラデーションを描画する関数
@@ -52,10 +53,10 @@ struct GradientEditorConfig {
 /// @param replace_data グラデーションデータを data で置き換えるかどうか
 /// @param config グラデーションエディターの設定
 /// @return グラデーションエディターのハンドル
-gradient_editor::GradientData* drawGradientEditor(
+GradientData* drawGradientEditor(
     const std::string label,
     const ImVec2& display_size,
-    const gradient_editor::GradientData& data,
+    const GradientData& data,
     GradientEditorFlags flags   = GradientEditorFlags_None,
     bool replace_data           = false,
     GradientEditorConfig config = GradientEditorConfig());

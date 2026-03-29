@@ -70,7 +70,7 @@ vcpkg_installed/
 Testing/
 .cache/
 
-# -----------------------------------------
+# VSCode settings
 .vscode/
 
 # Build directories
@@ -80,8 +80,6 @@ out_script/
 # tools
 aulua/
 aviutl2-cil/
-
-imgui.ini
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd

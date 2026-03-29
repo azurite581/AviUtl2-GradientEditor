@@ -14,8 +14,6 @@
 
 #include "aviutl2_sdk/plugin2.h"
 
-namespace gradient_editor {
-
 class ScriptBridge {
 public:
     // スクリプトからグラデーションデータを読み込む
@@ -109,7 +107,5 @@ private:
 
     bool m_is_changed_values = false;
 };
-
-}  // namespace gradient_editor
 
 #endif

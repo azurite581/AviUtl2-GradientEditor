@@ -12,8 +12,6 @@
 #define NOMINMAX
 #include <windows.h>
 
-namespace gradient_editor {
-
 class App {
 public:
     App();
@@ -24,13 +22,10 @@ public:
 
 private:
     void cleanup();
-
     void readSettings();
     void writeSettings();
 
     std::unique_ptr<MainView> m_main_view;
 };
-
-}  // namespace gradient_editor
 
 #endif  // APP_H

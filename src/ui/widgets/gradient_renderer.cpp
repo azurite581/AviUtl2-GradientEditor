@@ -1,7 +1,5 @@
 #include "gradient_renderer.h"
 
-namespace gradient_editor {
-
 bool GradientRenderer::init(
     Microsoft::WRL::ComPtr<ID3D11Device> d3d_device,
     Microsoft::WRL::ComPtr<ID3D11DeviceContext> d3d_device_context,
@@ -427,4 +425,3 @@ std::expected<std::vector<float>, std::string> GradientRenderer::readPixelColorF
 
     return color;
 }
-}  // namespace gradient_editor

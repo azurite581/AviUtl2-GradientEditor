@@ -4,21 +4,18 @@
 #include <vector>
 
 #include "IconsMaterialSymbols.h"
+#include "color_conv.h"
+#include "config2_wrapper_interface.h"
 #include "constants.h"
-#include "material_symbols.cpp"
+#include "font_loader.h"
+#include "gradient_widget.h"
 #include "imgui.h"
-#include "imgui_internal.h"
 #include "imgui_impl_dx11.h"
 #include "imgui_impl_win32.h"
-#include "gradient_widget.h"
-#include "color_conv.h"
-#include "font_loader.h"
+#include "imgui_internal.h"
 #include "logger_wrapper_interface.h"
-#include "config2_wrapper_interface.h"
+#include "material_symbols.cpp"
 
-namespace gradient_editor {
-
-// Forward declare message handler
 extern LRESULT CALLBACK wnd_proc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam);
 
 App::App() = default;
@@ -35,20 +32,20 @@ void App::run(std::promise<HWND>&& hwnd_promise)
     float main_scale = ImGui_ImplWin32_GetDpiScaleForMonitor(::MonitorFromPoint(POINT{0, 0}, MONITOR_DEFAULTTOPRIMARY));
 
     // ウィンドウの作成
-    if (!g_app_state.window_manager.createPluginWindow(WINDOW_NAME_DEFAULT, main_scale, wnd_proc)) {
+    if (!gradient_editor::g_app_state.window_manager.createPluginWindow(WINDOW_NAME_DEFAULT, main_scale, wnd_proc)) {
         hwnd_promise.set_exception(std::make_exception_ptr(std::runtime_error("Failed to create window")));
         return;
     }
 
-    HWND hwnd = g_app_state.window_manager.getWindowHandle();
+    HWND hwnd = gradient_editor::g_app_state.window_manager.getWindowHandle();
     hwnd_promise.set_value(hwnd);
 
     //
     // D3D の初期化
     //
-    if (!g_app_state.d3d_manager.initialize(hwnd)) {
-        g_app_state.d3d_manager.cleanup();
-        g_app_state.window_manager.unregisterClass();
+    if (!gradient_editor::g_app_state.d3d_manager.initialize(hwnd)) {
+        gradient_editor::g_app_state.d3d_manager.cleanup();
+        gradient_editor::g_app_state.window_manager.unregisterClass();
         return;
     }
 
@@ -84,7 +81,7 @@ void App::run(std::promise<HWND>&& hwnd_promise)
     readSettings();  // 設定を読み込む
 
     ImGui_ImplWin32_Init(hwnd);
-    ImGui_ImplDX11_Init(g_app_state.d3d_manager.getDevice().Get(), g_app_state.d3d_manager.getDeviceContext().Get());
+    ImGui_ImplDX11_Init(gradient_editor::g_app_state.d3d_manager.getDevice().Get(), gradient_editor::g_app_state.d3d_manager.getDeviceContext().Get());
 
     //
     // フォントの設定
@@ -94,7 +91,7 @@ void App::run(std::promise<HWND>&& hwnd_promise)
     config1.GlyphExcludeRanges = exclude_ranges;
 
     // sytle.conf からフォント名を取得
-    FONT_INFO* font_info = g_app_state.config_handle->get_font_info(g_app_state.config_handle, "DefaultFamily");
+    FONT_INFO* font_info = gradient_editor::g_app_state.config_handle->get_font_info(gradient_editor::g_app_state.config_handle, "DefaultFamily");
     // フォント名からフォントデータを取得
     std::vector<unsigned char> font_data = getFontDataByName(font_info->name);
 
@@ -119,7 +116,7 @@ void App::run(std::promise<HWND>&& hwnd_promise)
     // テーマ設定
     //
     auto aulColor2imVec4 = [](const std::string& name) -> ImVec4 {
-        return color_conv::u32Rgb2Vec4Rgba<ImVec4>(g_app_state.config_handle->get_color_code(g_app_state.config_handle, name.c_str()));
+        return color_conv::u32Rgb2Vec4Rgba<ImVec4>(gradient_editor::g_app_state.config_handle->get_color_code(gradient_editor::g_app_state.config_handle, name.c_str()));
     };
 
     // ウィンドウ
@@ -163,7 +160,7 @@ void App::run(std::promise<HWND>&& hwnd_promise)
     //
     // グラデーションエディタ用の D3D を初期化
     //
-    CustomUI::initDX11(g_app_state.d3d_manager.getDevice(), g_app_state.d3d_manager.getDeviceContext());
+    CustomUI::initDX11(gradient_editor::g_app_state.d3d_manager.getDevice(), gradient_editor::g_app_state.d3d_manager.getDeviceContext());
 
     ::ShowWindow(hwnd, SW_SHOWDEFAULT);
     ::UpdateWindow(hwnd);
@@ -171,12 +168,11 @@ void App::run(std::promise<HWND>&& hwnd_promise)
     // メインビューの初期化
     // コンストラクタ内でプリセットの初期化を行う
     m_main_view = std::make_unique<MainView>(
-        get_logger_wrapper_interface(g_app_state.log_handle),
-        get_config_wrapper_interface(g_app_state.config_handle)
-    );
+        get_logger_wrapper_interface(gradient_editor::g_app_state.log_handle),
+        get_config_wrapper_interface(gradient_editor::g_app_state.config_handle));
 
     // WM_SIZE で ImGui のレンダリング処理を呼び出すために保存する
-    g_app_state.render = [this]() {
+    gradient_editor::g_app_state.render = [this]() {
         renderFrame();
     };
 
@@ -192,7 +188,7 @@ void App::run(std::promise<HWND>&& hwnd_promise)
         if (done) break;
 
         // ウィンドウの表示状態を取得する
-        g_app_state.is_window_visible = (::IsWindowVisible(g_app_state.window_manager.getWindowHandle()) != 0);
+        gradient_editor::g_app_state.is_window_visible = (::IsWindowVisible(gradient_editor::g_app_state.window_manager.getWindowHandle()) != 0);
 
         renderFrame();
     }
@@ -201,18 +197,18 @@ void App::run(std::promise<HWND>&& hwnd_promise)
 void App::renderFrame()
 {
     static bool was_visible = true;
-    bool is_visible = g_app_state.is_window_visible;
-    bool just_hidden = (was_visible && !is_visible);
-    was_visible = is_visible;
+    bool is_visible         = gradient_editor::g_app_state.is_window_visible;
+    bool just_hidden        = (was_visible && !is_visible);
+    was_visible             = is_visible;
 
     // 非表示になった瞬間だけはオクルージョン判定を無視
-    if (!just_hidden && g_app_state.d3d_manager.isSwapChainOccluded() && g_app_state.d3d_manager.getSwapChain()->Present(0, DXGI_PRESENT_TEST) == DXGI_STATUS_OCCLUDED) {
+    if (!just_hidden && gradient_editor::g_app_state.d3d_manager.isSwapChainOccluded() && gradient_editor::g_app_state.d3d_manager.getSwapChain()->Present(0, DXGI_PRESENT_TEST) == DXGI_STATUS_OCCLUDED) {
         ::Sleep(10);
         return;
     }
 
-    g_app_state.d3d_manager.setSwapChainOccluded(false);
-    g_app_state.d3d_manager.handleWindowResize();
+    gradient_editor::g_app_state.d3d_manager.setSwapChainOccluded(false);
+    gradient_editor::g_app_state.d3d_manager.handleWindowResize();
 
     ImGui_ImplDX11_NewFrame();
     ImGui_ImplWin32_NewFrame();
@@ -223,19 +219,17 @@ void App::renderFrame()
         ImGui::ClosePopupsOverWindow(nullptr, false);
     }
 
-    // 表示状態のときのみ描画する
-    if (is_visible) {
-        m_main_view->render();
-    }
+    // 非表示の時でもウィンドウ等の状態を維持するために描画処理を呼び出す
+    m_main_view->render();
 
     ImGui::Render();
 
-    ImVec4 clear_color                    = color_conv::u32Rgb2Vec4Rgba<ImVec4>(g_app_state.config_handle->get_color_code(g_app_state.config_handle, "Background"));
+    ImVec4 clear_color                    = color_conv::u32Rgb2Vec4Rgba<ImVec4>(gradient_editor::g_app_state.config_handle->get_color_code(gradient_editor::g_app_state.config_handle, "Background"));
     const float clear_color_with_alpha[4] = {clear_color.x * clear_color.w, clear_color.y * clear_color.w, clear_color.z * clear_color.w, clear_color.w};
 
-    auto rtv = g_app_state.d3d_manager.getRenderTargetView();
-    g_app_state.d3d_manager.getDeviceContext()->OMSetRenderTargets(1, rtv.GetAddressOf(), nullptr);
-    g_app_state.d3d_manager.getDeviceContext()->ClearRenderTargetView(rtv.Get(), clear_color_with_alpha);
+    auto rtv = gradient_editor::g_app_state.d3d_manager.getRenderTargetView();
+    gradient_editor::g_app_state.d3d_manager.getDeviceContext()->OMSetRenderTargets(1, rtv.GetAddressOf(), nullptr);
+    gradient_editor::g_app_state.d3d_manager.getDeviceContext()->ClearRenderTargetView(rtv.Get(), clear_color_with_alpha);
 
     ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
 
@@ -244,16 +238,16 @@ void App::renderFrame()
         ImGui::RenderPlatformWindowsDefault();
     }
 
-    HRESULT hr = g_app_state.d3d_manager.getSwapChain()->Present(1, 0);
-    g_app_state.d3d_manager.setSwapChainOccluded(hr == DXGI_STATUS_OCCLUDED);
+    HRESULT hr = gradient_editor::g_app_state.d3d_manager.getSwapChain()->Present(1, 0);
+    gradient_editor::g_app_state.d3d_manager.setSwapChainOccluded(hr == DXGI_STATUS_OCCLUDED);
 }
 
 void App::cleanup()
 {
-    // 設定を書き込む
-    writeSettings();
+    writeSettings();                      // ウィンドウのレイアウト等の設定をファイルに書き込む
+    m_main_view.get()->writeHistories();  // グラデーションの履歴をファイルに書き込む
 
-    g_app_state.render = nullptr;
+    gradient_editor::g_app_state.render = nullptr;
     m_main_view.reset();
     CustomUI::cleanup();
 
@@ -261,13 +255,13 @@ void App::cleanup()
     ImGui_ImplWin32_Shutdown();
     ImGui::DestroyContext();
 
-    g_app_state.d3d_manager.cleanup();
+    gradient_editor::g_app_state.d3d_manager.cleanup();
 }
 
 void App::readSettings()
 {
     // 設定ファイル全体を読み込む
-    std::ifstream ifs(g_app_state.settings_file_path);
+    std::ifstream ifs(gradient_editor::g_app_state.settings_file_path);
     std::string settings_content((std::istreambuf_iterator<char>(ifs)), std::istreambuf_iterator<char>());
 
     // [imgui] セクションを抽出
@@ -291,7 +285,7 @@ void App::readSettings()
 void App::writeSettings()
 {
     {
-        std::ofstream ofs(g_app_state.settings_file_path);
+        std::ofstream ofs(gradient_editor::g_app_state.settings_file_path);
         ofs.clear();
     }
 
@@ -303,8 +297,6 @@ void App::writeSettings()
     // 再書き込み
     std::string settings_data_str = "[imgui]\n";
     settings_data_str += imgui_data_str;
-    std::ofstream ofs(g_app_state.settings_file_path);
+    std::ofstream ofs(gradient_editor::g_app_state.settings_file_path);
     ofs << settings_data_str;
 }
-
-}  // namespace gradient_editor

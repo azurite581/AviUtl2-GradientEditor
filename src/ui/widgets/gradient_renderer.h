@@ -16,7 +16,6 @@ namespace {
 #include "vertex_shader.h"
 }  // namespace
 
-namespace gradient_editor {
 class D3DStateSaver {
     Microsoft::WRL::ComPtr<ID3D11DeviceContext> m_ctx;
     ID3D11RenderTargetView* m_old_rtv   = nullptr;
@@ -184,6 +183,5 @@ public:
         int32_t x,
         int32_t y);
 };
-}  // namespace gradient_editor
 
 #endif  // !GRADIENT_RENDERER_H

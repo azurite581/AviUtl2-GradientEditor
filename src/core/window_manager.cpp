@@ -1,7 +1,5 @@
 #include "window_manager.h"
 
-namespace gradient_editor {
-
 bool WindowManager::createPluginWindow(const wchar_t* window_name, const float scale, WNDPROC wnd_proc)
 {
     // 自身のウィンドウを作成
@@ -35,4 +33,3 @@ void WindowManager::destroyPluginWindow()
     ::UnregisterClassW(m_wc.lpszClassName, m_wc.hInstance);
 }
 
-}  // namespace gradient_editor

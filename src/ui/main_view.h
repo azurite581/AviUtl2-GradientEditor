@@ -3,36 +3,40 @@
 
 #include "app_state.h"
 #include "config2_wrapper_interface.h"
-#include "gradient_preset.h"
+#include "gradient_config.h"
+#include "history_window.h"
 #include "logger_wrapper_interface.h"
-#include "preset_controller.h"
 #include "preset_window.h"
 #include "script_bridge.h"
-
-namespace gradient_editor {
 
 class MainView {
 public:
     MainView(LoggerWrapperInterface* logger_wrapper, ConfigWrapperInterface* config_wrapper);
     void render();
+    void writeHistories();
 
 private:
-    LoggerWrapperInterface* m_logger_wrapper;
-    ConfigWrapperInterface* m_config_wrapper;
+    struct WindowVisible {
+        bool preset_window  = true;
+        bool history_window = true;
+    };
 
     void renderGradientEditor();
     void renderPropertyEditor(GradientData* data);
 
+    LoggerWrapperInterface* m_logger_wrapper;
+    ConfigWrapperInterface* m_config_wrapper;
+
+    GradientData* m_data = nullptr;
     ScriptBridge m_script_bridge;
-    PresetManager m_preset_manager;
-    preset_file::GradientPresetFile m_preset_file;
+    GradientConfigManager m_config_manager;
+    PresetConfig m_preset_config;
+    HistoryConfig m_history_config;
+
     PresetWindow m_preset_window;
-    struct WindowVisible {
-        bool preset_window = true;
-    };
+    HistoryWindow m_history_window;
     WindowVisible m_window_visible;
 
-    // UI State
     uint32_t m_effect_name_index     = 0;
     int32_t m_effect_index           = 0;
     int32_t m_target_move_index      = 0;
@@ -43,12 +47,9 @@ private:
     bool m_load    = false;
     bool m_is_init = false;
 
-    // Colors for AviUtl2 objects
     ImU32 m_object_video_color_start = 0;
     ImU32 m_object_video_color_stop  = 0;
     ImU32 m_frame_cursor_color       = 0;
 };
-
-}  // namespace gradient_editor
 
 #endif  // MAIN_VIEW_H

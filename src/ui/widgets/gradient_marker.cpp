@@ -306,6 +306,7 @@ void GradientMarkerManager::addMarker(const int32_t id, const float marker_pos, 
 
 void GradientMarkerManager::onClickedMarker(const ImVec2& mouse_pos, bool use_default_action, std::move_only_function<void(void*)> func, void* param)
 {
+    if (!m_io_enable) return;
     if (use_default_action) {
         return;
     } else if (ImGui::IsMouseClicked(ImGuiMouseButton_Left) && !m_state.is_open_popup) {
@@ -355,6 +356,7 @@ void GradientMarkerManager::showColorPickerPopup()
 
 void GradientMarkerManager::onDoubleClickedMarker(const ImVec2& mouse_pos, bool use_default_action, std::move_only_function<void(void*)> func, void* param)
 {
+    if (!m_io_enable) return;
     ImGui::PushID(this);
     // デフォルトの挙動はカラーピッカーを開く
     if (use_default_action) {
@@ -410,6 +412,8 @@ void GradientMarkerManager::updateMarkerId()
 
 void GradientMarkerManager::updateMarker(const ImVec2& mouse_pos, const ImVec4& new_marker_color, const uint32_t max_marker_count)
 {
+    if (!m_io_enable) return;
+
     // クリックされた位置にあるマーカーIDを取得
     if (ImGui::IsMouseClicked(ImGuiMouseButton_Left) && !m_state.is_open_popup) {
         m_state.clicked_marker_id = getMarkerIdUnderMouse(mouse_pos);
@@ -443,6 +447,8 @@ void GradientMarkerManager::updateMarker(const ImVec2& mouse_pos, const ImVec4& 
 
 void GradientMarkerManager::updateMidpoint(const ImVec2& mouse_pos)
 {
+    if (!m_io_enable) return;
+
     // クリックされた位置にあるマーカーIDを取得
     if (ImGui::IsMouseClicked(ImGuiMouseButton_Left) && !m_state.is_open_popup) {
         m_state.clicked_midpoint_id = getMidpointIdUnderMouse(mouse_pos);
