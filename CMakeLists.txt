@@ -83,6 +83,7 @@ target_include_directories(${PROJECT_NAME} PRIVATE src/ui/widgets)
 target_include_directories(${PROJECT_NAME} PRIVATE src/utils/aviutl2)
 target_include_directories(${PROJECT_NAME} PRIVATE src/utils/common)
 target_include_directories(${PROJECT_NAME} PRIVATE src/utils/imgui)
+target_include_directories(${PROJECT_NAME} PRIVATE preset)
 
 # AviUtl2 SDK
 target_include_directories(${PROJECT_NAME} PRIVATE third_party/aviutl2_sdk_mirror/include)

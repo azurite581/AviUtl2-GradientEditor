@@ -6,19 +6,25 @@ AviUtl2 用のグラデーションエディタ。
 [ インストールされるファイル ]
 
 ・GradientEditor.aux2
-@GradientEditor.anm2 に含まれるエフェクト編集するための汎用プラグイン。
+@GradientEditor.anm2 に含まれるスクリプト編集するための汎用プラグイン。
 
 ・@GradientEditor.anm2
-グラデーションのエディタ用のスクリプト。次のエフェクトが含まれます。
+グラデーションのエディタ用のスクリプト。次のスクリプトが含まれます。
 
   ・多色グラデーション（MultiGradient@GradientEditor）
-  2 色以上のグラデーションを作成するエフェクト。デフォルトでは `色調整` カテゴリの中にあります。
+  2 色以上のグラデーションを作成するスクリプト。デフォルトでは `色調整` カテゴリの中にあります。
 
   ・グラデーションマップ（GradientMap@GradientEditor）
-  グラデーションマップを適用するエフェクト。デフォルトでは `色調整` カテゴリの中にあります。
+  グラデーションマップを適用するスクリプト。デフォルトでは `色調整` カテゴリの中にあります。
 
 ・English.GradientEditor.aul2、简体中文.GradientEditor.aul2
-翻訳ファイル
+翻訳ファイル。
+
+・GradientEditor.ini
+グラデーションエディタ内のレイアウトを保存する設定ファイル。
+
+・gradient_editor_default_preset.json
+デフォルトプリセットファイル。
 
 
 [ 使い方 ]
