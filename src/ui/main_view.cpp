@@ -112,8 +112,6 @@ void MainView::render()
     static ImGuiWindowClass window_class;
     window_class.DockNodeFlagsOverrideSet = ImGuiDockNodeFlags_NoTabBar;
     ImGui::SetNextWindowClass(&window_class);
-    ImGui::SetNextWindowSize(ImVec2(540, 0), ImGuiCond_FirstUseEver);
-
     ImGui::Begin("###gradient_editor_window", nullptr, window_flags);
 
     // メニューバーの描画
