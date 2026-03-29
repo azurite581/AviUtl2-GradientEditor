@@ -5,7 +5,7 @@
 表示=显示
 プリセット=预设
 対象=目标
-編集対象のエフェクト名=目标效果名
+編集対象のスクリプト名=编辑目标脚本名称
 セクション=区段
 次のセクションに移動=移动至下一区段
 前のセクションに移動=移动至上一区段
@@ -25,7 +25,7 @@
 新規保存=另存为
 はい=是
 いいえ=否
-編集対象のエフェクトのインデックス=目标效果索引
+編集対象のスクリプトのインデックス=编辑目标脚本的索引
 スクリプトへ値を反映=将值应用至脚本
 スクリプトから値を読み込む=从脚本中读取值
 選択オブジェクトの再読み込み=重新读取选中物件
@@ -36,9 +36,7 @@
 選択中のマーカーを削除=删除选中色标
 リセット=重置
 
-; v0.4.0
-; The following additional items have been translated by machine translation.
-; Please feel free to request any corrections if you find any errors.
+; Added in v0.4.0
 カテゴリー=分类
 カテゴリーを編集=编辑分类
 カテゴリーを検索または作成=搜索或创建分类
@@ -156,6 +154,9 @@ MultiGradient@GradientEditor=多重渐变@GradientEditor
 長経路=长路径
 マーカー数=色标数
 
+; Added in v0.4.0
+背景透明度=背景透明度
+
 [GradientMap@GradientEditor]
 GradientMap@GradientEditor=渐变图@GradientEditor
 強さ=强度
@@ -241,3 +242,11 @@ GradientMap@GradientEditor=渐变图@GradientEditor
 短経路=短路径
 長経路=长路径
 マーカー数=色标数
+
+; Added in v0.4.0
+背景透明度=背景透明度
+シフト=偏移
+境界モード=边缘模式
+境界色=边缘颜色
+ループ=循环
+ミラー=镜像

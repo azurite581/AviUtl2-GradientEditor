@@ -4,7 +4,9 @@ SamplerState samp : register(s0);
 static const int GRADIENT_MAX_COUNT = 30;
 cbuffer constant0 : register(b0) {
     float luma_mode;
-    float3 pad;
+    float shift;
+    float edge_mode;
+    float pad;
     float color_space;
     float interp_dir;
     float gradient_w;
@@ -177,7 +179,7 @@ float4 psmain(float4 pos : SV_Position, float2 uv : TEXCOORD) : SV_Target {
     float3 unpremul_col = unpremulti(tex_col).rgb;
 
     float luma;
-    switch (luma_mode) {
+    switch ((int)luma_mode) {
         case 0:  // Rec. 601
         {
             luma = dot(unpremul_col, float3(0.299, 0.587, 0.114));
@@ -195,20 +197,41 @@ float4 psmain(float4 pos : SV_Position, float2 uv : TEXCOORD) : SV_Target {
         }
     }
 
-    float x = luma;
+    switch ((int)edge_mode) {
+        case 0:  // 境界色
+        {
+            luma = clamp(luma + shift, 0.0, 1.0);
+            break;
+        }
+        case 1:  // ループ
+        {
+            luma = frac(luma + shift);
+            break;
+        }
+        case 2:  // ミラー
+        {
+            luma = abs(frac((luma + shift) * 0.5 + 0.5) * 2.0 - 1.0);
+            break;
+        }
+        default:
+        {
+            luma = clamp(luma + shift, 0.0, 1.0);
+            break;
+        }
+    }
 
     int safe_count = min(gradient_count, GRADIENT_MAX_COUNT);
-    float4 out_col = (x <= pos_and_mid[0].x) ? start_col[0] : start_col[safe_count - 1];
+    float4 out_col = (luma <= pos_and_mid[0].x) ? start_col[0] : start_col[safe_count - 1];
     out_col.rgb *= out_col.a;
     for (int i = 0; i < safe_count; i++) {
         float p_curr = pos_and_mid[i].x;
         float p_next = pos_and_mid[i].y;
 
-        // x が現在の区間内にある場合
-        if (x >= p_curr && x < p_next) {
+        // luma が現在の区間内にある場合
+        if (luma >= p_curr && luma < p_next) {
             float dist = p_next - p_curr;
 
-            float t = (x - p_curr) / dist;
+            float t = (luma - p_curr) / dist;
 
             out_col = makeGradient(start_col[i], stop_col[i], t, pos_and_mid[i].z, gradient_w, color_space, interp_dir);
             break;

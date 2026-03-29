@@ -3,7 +3,7 @@
 表示=View
 プリセット=Preset
 対象=Target
-編集対象のエフェクト名=Target effect name
+編集対象のスクリプト名=Target script name
 セクション=Section
 次のセクションに移動=Next Section
 前のセクションに移動=Previous Section
@@ -24,7 +24,7 @@
 新規保存=Save As
 はい=Yes
 いいえ=No
-編集対象のエフェクトのインデックス=Index of the effect
+編集対象のスクリプトのインデックス=Index of the script
 スクリプトへ値を反映=Apply values to the script
 スクリプトから値を読み込む=Load values from the script
 選択オブジェクトの再読み込み=Reload selected object
@@ -218,6 +218,7 @@
 短経路=Shorter
 長経路=Longer
 マーカー数=Marker Count
+背景透明度=BG Transparency
 
 [GradientMap@GradientEditor]
 強さ=Intensity
@@ -367,3 +368,9 @@
 短経路=Shorter
 長経路=Longer
 マーカー数=Marker Count
+背景透明度=BG Transparency
+シフト=Shift
+境界モード=Edge Mode
+境界色=Edge Color
+ループ=Repeat
+ミラー=Mirror
