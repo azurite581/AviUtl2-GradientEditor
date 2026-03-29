@@ -42,6 +42,7 @@ bool drawGradientButton(
 struct GradientEditorConfig {
     uint32_t max_marker_count = 30;     // 最大マーカー数。最大マーカー数を超えると新規マーカー追加不可
     float marker_width        = 20.0f;  // マーカーの幅
+    bool io_enable = true;              // マウス入力を受け付けるかどうか
 };
 
 /// @brief グラデーションを描画する関数

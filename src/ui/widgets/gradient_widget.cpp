@@ -98,6 +98,7 @@ GradientData* drawGradientEditor(
 
     float marker_half_width = gradient_marker->getMarkerWidth() * 0.5f;
 
+    gradient_marker->setIOEnable(config.io_enable);
     gradient_marker->setMarkerWidth(static_cast<uint32_t>(config.marker_width));  // マーカーの幅をセット
 
     // 中間点を描画

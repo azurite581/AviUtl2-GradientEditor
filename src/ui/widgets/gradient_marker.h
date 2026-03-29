@@ -91,6 +91,8 @@ private:
         OutSide  = -4
     };
 
+    bool m_io_enable = true;
+
 public:
     GradientMarkerManager()
     {
@@ -165,6 +167,7 @@ public:
 
     void setMarkerColorPickerColor(const ImVec4& color) noexcept { m_state.picker_cur_color = color; }
     void setBackupPickerColor(const ImVec4& color) noexcept { m_state.picker_backup_color = color; }
+    void setIOEnable(const bool enable) noexcept { m_io_enable = enable; }
 
     //
     // 操作

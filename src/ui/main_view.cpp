@@ -233,7 +233,7 @@ void MainView::renderGradientEditor()
     ImGui::Dummy(ImVec2(0.0f, 0.0f));
 
     //
-    // エフェクト選択
+    // スクリプト選択
     //
     static std::vector<std::string> effect_names_vec = []() {
         std::vector<std::string> res;
@@ -245,7 +245,7 @@ void MainView::renderGradientEditor()
     ImGui::AlignTextToFramePadding();
     ImGui::Text(m_config_wrapper->tr(L"対象").c_str());
     ImGui::SameLine();
-    if (ImGui::BeginCombo("##エフェクト", effect_names_vec[m_effect_name_index].c_str(), ImGuiComboFlags_WidthFitPreview)) {
+    if (ImGui::BeginCombo("##スクリプト", effect_names_vec[m_effect_name_index].c_str(), ImGuiComboFlags_WidthFitPreview)) {
         for (uint32_t i = 0; i < effect_names_vec.size(); ++i) {
             if (ImGui::Selectable(effect_names_vec[i].c_str(), m_effect_name_index == i)) {
                 is_changed_section_effect = true;
@@ -255,7 +255,7 @@ void MainView::renderGradientEditor()
         ImGui::EndCombo();
     }
     std::wstring effect_full_name = std::wstring(EFFECT_NAMES[m_effect_name_index]) + EFFECT_GROUP_NAME;
-    if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNormal)) ImGui::SetTooltip(m_config_wrapper->tr(L"編集対象のエフェクト名").c_str());
+    if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNormal)) ImGui::SetTooltip(m_config_wrapper->tr(L"編集対象のスクリプト名").c_str());
 
     bool is_changed_effect_index = false;
     ImGui::SameLine();
@@ -269,7 +269,7 @@ void MainView::renderGradientEditor()
         m_effect_index = std::clamp(m_effect_index, 0, count == 0 ? 0 : count - 1);
     }
     ImGui::PopItemWidth();
-    if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNormal)) ImGui::SetTooltip(m_config_wrapper->tr(L"編集対象のエフェクトのインデックス").c_str());
+    if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNormal)) ImGui::SetTooltip(m_config_wrapper->tr(L"編集対象のスクリプトのインデックス").c_str());
 
     //
     // 各種データ操作ボタン
@@ -313,6 +313,7 @@ void MainView::renderGradientEditor()
     static CustomUI::GradientEditorConfig config;
     config.max_marker_count = MAX_MARKER_COUNT;
     config.marker_width     = frame_height * scale::relative::GRADIENT_MARKER_WIDTH;
+    config.io_enable        = !ImGui::IsPopupOpen(nullptr, ImGuiPopupFlags_AnyPopupId);  // ポップアップが開いているときはマーカーの操作を受け付けない
 
     // プリセット、履歴がクリックされたときはそのグラデーションを使用する
     if (m_preset_window.isPresetClicked()) {
@@ -411,8 +412,8 @@ void MainView::renderGradientEditor()
                         m_preset_window.isPresetClicked() ||  // プリセットがクリックされた
                         is_refresh ||                         // 更新ボタンが押された
                         is_changed_section ||                 // セクションが変更された
-                        is_changed_section_effect ||          // 対象とするエフェクトが変更された
-                        is_changed_effect_index ||            // 同じエフェクトが複数ある際、対象とするエフェクトのインデックスが変更された
+                        is_changed_section_effect ||          // 対象とするスクリプトが変更された
+                        is_changed_effect_index ||            // 同じスクリプトが複数ある際、対象とするスクリプトのインデックスが変更された
                         is_reverse                            // マーカー反転のボタンが押された
                         ));
     // または各値がグラデーションエディタ側で変更された
