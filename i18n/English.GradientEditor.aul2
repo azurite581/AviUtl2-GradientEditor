@@ -22,7 +22,6 @@
 削除=Delete
 上書き保存=Save
 新規保存=Save As
-プリセット "%s" を現在のグラデーションで "%s" として上書きしますか?=Overwrite preset "%s" using the current gradient as "%s"?
 はい=Yes
 いいえ=No
 編集対象のエフェクトのインデックス=Index of the effect
@@ -43,6 +42,9 @@
 名前を変更=Rename
 すでに同じ名前のカテゴリが存在します=A category with the same name already exists
 すでに同じ名前のプリセットが存在します=A preset with the same name already exists
+プリセット名=Preset name
+プリセット名が空です=The preset name is empty
+プリセットが未選択です=No preset selected
 プリセットをまとめて移動=Move Presets in Bulk
 プリセット "%s" を削除しますか?=Delete preset "%s"?
 移動=Move
@@ -51,10 +53,10 @@
 プリセットごと=With Presets
 保存=Save
 閉じる=Close
-名前=Name
+キャンセル=Cancel
 カテゴリーをクリックしてプリセットを移動します=Click a category to move the preset
 履歴=History
-履歴を削除=Delete History
+すべての履歴を削除=Delete All History
 
 [MultiGradient@GradientEditor]
 強さ=Intensity

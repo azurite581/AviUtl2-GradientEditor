@@ -50,29 +50,16 @@ void HistoryWindow::render(GradientConfigManager& manager, HistoryConfig& cfg)
             loadHistory();
         }
 
-        float item_spacing_x = ImGui::GetStyle().ItemSpacing.x * 0.5f;
-        ImGui::PushStyleVar(ImGuiStyleVar_CellPadding, ImVec2(item_spacing_x, 0));
-        if (ImGui::BeginTable("##align_table1", 2)) {
-            std::string text = m_config_wrapper->tr(L"履歴を削除");
-            float text_width = ImGui::CalcTextSize(text.c_str()).x;
-            ImGui::TableSetupColumn("##text", ImGuiTableColumnFlags_WidthFixed, text_width);
-            ImGui::TableSetupColumn("##button", ImGuiTableColumnFlags_WidthFixed, ImGui::GetFrameHeight());
-
-            ImGui::TableNextRow();
-            ImGui::TableNextColumn();
-
-            ImGui::AlignTextToFramePadding();
-            ImGui::TextUnformatted(text.c_str());
-
-            ImGui::TableNextColumn();
-            if (imgui_utils::squareIconButton(ICON_MS_DELETE_HISTORY, "##delete_history")) {
-                manager.deleteHistory(cfg);
-                loadHistory();
-            }
-
-            ImGui::EndTable();
+        imgui_utils::alignForWidth(ImGui::GetFrameHeight(), 1.0f);  // 右揃え
+        if (imgui_utils::squareIconButton(ICON_MS_DELETE_HISTORY, "##delete_history")) {
+            manager.deleteHistory(cfg);
+            loadHistory();
         }
-        ImGui::PopStyleVar();
+
+        if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNormal | ImGuiHoveredFlags_NoSharedDelay | ImGuiHoveredFlags_AllowWhenDisabled)) {
+            ImGui::SetTooltip(m_config_wrapper->tr(L"すべての履歴を削除").c_str(), ImGui::GetStyle().HoverDelayNormal);
+        }
+
 
         int32_t history_num = static_cast<int32_t>(std::ssize(m_history_data));
         if (history_num >= 1) {

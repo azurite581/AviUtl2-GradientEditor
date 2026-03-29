@@ -328,11 +328,11 @@ void PresetWindow::render(GradientConfigManager& manager, PresetConfig& cfg)
     // プリセット名入力欄
     ImGui::PushStyleVar(ImGuiStyleVar_CellPadding, ImVec2(item_spacing_x, 0));
     if (ImGui::BeginTable("##align_table2", 4)) {
-        std::string input_text = m_config_wrapper->tr(L"名前");
+        std::string input_text = (m_config_wrapper->tr(L"プリセット名") + ":");
         float text_width       = ImGui::CalcTextSize(input_text.c_str()).x;
 
-        ImGui::TableSetupColumn("##text", ImGuiTableColumnFlags_WidthFixed, text_width);
-        ImGui::TableSetupColumn("##combo", ImGuiTableColumnFlags_WidthStretch);
+        ImGui::TableSetupColumn("##text1", ImGuiTableColumnFlags_WidthFixed, text_width);
+        ImGui::TableSetupColumn("##text2", ImGuiTableColumnFlags_WidthStretch);
         ImGui::TableSetupColumn("##button1", ImGuiTableColumnFlags_WidthFixed, ImGui::GetFrameHeight());
         ImGui::TableSetupColumn("##button2", ImGuiTableColumnFlags_WidthFixed, ImGui::GetFrameHeight());
 
@@ -343,91 +343,155 @@ void PresetWindow::render(GradientConfigManager& manager, PresetConfig& cfg)
         ImGui::AlignTextToFramePadding();
         ImGui::TextUnformatted(input_text.c_str());
 
-        // 名前入力欄
+        // 最後に選択されたプリセット名を表示
         ImGui::TableNextColumn();
         ImGui::SetNextItemWidth(-FLT_MIN);
-        ImGui::InputText("##preset_name", &m_preset_name, ImGuiInputTextFlags_CharsNoBlank | ImGuiInputTextFlags_AutoSelectAll);
-
-        // 入力された文字列のチェック
-        bool exist_same_preset_name = false;
-        for (const auto& p : cfg.presets) {
-            if (p.name == m_preset_name) {
-                exist_same_preset_name = true;
-                break;
-            }
-        }
-        bool is_empty = m_preset_name == "";
+        ImGui::AlignTextToFramePadding();
+        ImGui::TextUnformatted(m_preset_name.c_str());
 
         // 上書きボタン
         ImGui::TableNextColumn();
-        if (is_empty || m_selected_preset_index == -1) ImGui::BeginDisabled(true);
+        if (m_selected_preset_index == -1) ImGui::BeginDisabled();
         if (imgui_utils::squareIconButton(ICON_MS_SAVE, "##overwrite")) {
             ImGui::OpenPopup((m_config_wrapper->tr(L"上書き保存") + "###overwrite_confirmation").c_str());
         }
-        if (is_empty || m_selected_preset_index == -1) ImGui::EndDisabled();
+        if (m_selected_preset_index == -1) ImGui::EndDisabled();
 
         if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNormal | ImGuiHoveredFlags_NoSharedDelay | ImGuiHoveredFlags_AllowWhenDisabled)) {
-            ImGui::SetTooltip(m_config_wrapper->tr(L"上書き保存").c_str(), ImGui::GetStyle().HoverDelayNormal);
+            if (m_selected_preset_index == -1) {
+                ImGui::SetTooltip(m_config_wrapper->tr(L"プリセットが未選択です").c_str(), ImGui::GetStyle().HoverDelayNormal);
+            } else {
+                ImGui::SetTooltip(m_config_wrapper->tr(L"上書き保存").c_str(), ImGui::GetStyle().HoverDelayNormal);
+            }
         }
 
-        // 上書き確認ダイアログ
+        static ImGuiWindowFlags modal_flags = ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoMove;
         ImVec2 center = ImGui::GetMainViewport()->GetCenter();
         ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
-        ImGuiWindowFlags modal_flags = ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoMove;
         if (ImGui::BeginPopupModal((m_config_wrapper->tr(L"上書き保存") + "###overwrite_confirmation").c_str(), nullptr, modal_flags)) {
-            std::string replace_preset_name = cfg.presets[m_selected_preset_index].name;
-            ImGui::Text(m_config_wrapper->tr(L"プリセット \"%s\" を現在のグラデーションで \"%s\" として上書きしますか?").c_str(), replace_preset_name.c_str(), m_preset_name.c_str());
-            ImGui::Dummy(ImVec2(0, ImGui::GetFrameHeight() * ITEM_SPACING_SCALE_Y));
-            ImGui::Separator();
+
+            static std::string original_preset_name = cfg.presets[m_selected_preset_index].name;
+            static std::string input_preset_name    = original_preset_name;
+            if (ImGui::IsWindowAppearing()) {
+                original_preset_name = cfg.presets[m_selected_preset_index].name;
+                input_preset_name    = original_preset_name;
+            }
+
+            ImGui::Text(m_config_wrapper->tr(L"元の名前").c_str());
+            ImGui::SameLine();
+            ImGui::Text(": \"%s\"", original_preset_name.c_str());
+
             ImGui::Dummy(ImVec2(0, ImGui::GetFrameHeight() * ITEM_SPACING_SCALE_Y));
 
-            // 中央に配置
+            ImGui::InputTextWithHint("##preset_name", original_preset_name.c_str(), &input_preset_name, ImGuiInputTextFlags_CharsNoBlank | ImGuiInputTextFlags_AutoSelectAll);
+            bool is_empty = input_preset_name == "";
+
+            ImGui::Dummy(ImVec2(0, ImGui::GetFrameHeight() * ITEM_SPACING_SCALE_Y));
+
+            // 2つのボタンを中央に配置
             float btn_width = MODAL_WINDOW_WIDTH * 2 + ImGui::GetStyle().ItemSpacing.x * 1;
             float avail     = ImGui::GetContentRegionAvail().x;
             float off       = (avail - btn_width) * 0.5f;
             if (off > 0.0f) ImGui::SetCursorPosX(ImGui::GetCursorPosX() + off);
 
-            if (ImGui::Button((m_config_wrapper->tr(L"はい") + "###yes").c_str(), ImVec2(MODAL_WINDOW_WIDTH, 0))) {
+            if (ImGui::Button((m_config_wrapper->tr(L"キャンセル") + "###cancel").c_str(), ImVec2(MODAL_WINDOW_WIDTH, 0))) {
+                ImGui::CloseCurrentPopup();
+            }
+            ImGui::SetItemDefaultFocus();
+            ImGui::SameLine();
+
+            if (is_empty) ImGui::BeginDisabled();
+            if (ImGui::Button((m_config_wrapper->tr(L"上書き保存") + "###overwrite").c_str(), ImVec2(MODAL_WINDOW_WIDTH, 0))) {
                 auto preset = manager.gradient2preset(m_target_gradient_data);
-                auto result = manager.overwritePreset(cfg, preset, m_selected_preset_index, m_preset_name, selected_category_name);
+                auto result = manager.overwritePreset(cfg, preset, m_selected_preset_index, input_preset_name, selected_category_name);
                 if (!result.is_success) {
                     m_logger_wrapper->error("{}", result.error);
                 } else {
                     loadCategories();
                 }
+                m_preset_name = input_preset_name;
+
                 ImGui::CloseCurrentPopup();
             }
-            ImGui::SetItemDefaultFocus();
-            ImGui::SameLine();
-            if (ImGui::Button((m_config_wrapper->tr(L"いいえ") + "###no").c_str(), ImVec2(MODAL_WINDOW_WIDTH, 0))) {
-                ImGui::CloseCurrentPopup();
+            if (is_empty) ImGui::EndDisabled();
+
+            if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNormal | ImGuiHoveredFlags_NoSharedDelay | ImGuiHoveredFlags_AllowWhenDisabled)) {
+                if (is_empty) {
+                    ImGui::SetTooltip(m_config_wrapper->tr(L"プリセット名が空です").c_str(), ImGui::GetStyle().HoverDelayNormal);
+                }
             }
+
             ImGui::EndPopup();
         }
 
         // 新規保存ボタン
         ImGui::TableNextColumn();
-        if (exist_same_preset_name || is_empty) ImGui::BeginDisabled(true);
-        if (imgui_utils::squareIconButton(ICON_MS_SAVE_AS, "##add")) {
-            auto preset = manager.gradient2preset(m_target_gradient_data);
-            auto result = manager.addPreset(cfg, preset, m_preset_name, selected_category_name);
-            if (!result.is_success) {
-                m_logger_wrapper->error("{}", result.error);
-            } else {
-                loadCategories();
-                // 追加されたプリセットを選択状態にする
-                m_selected_preset_index = static_cast<int32_t>(cfg.presets.size()) - 1;
-                m_selected_gradient     = manager.preset2gradient(cfg.presets.back());
-            }
+        if (imgui_utils::squareIconButton(ICON_MS_SAVE_AS, "##save_as")) {
+            ImGui::OpenPopup((m_config_wrapper->tr(L"新規保存") + "###save_as_confirmation").c_str());
         }
-        if (exist_same_preset_name || is_empty) ImGui::EndDisabled();
 
         if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNormal | ImGuiHoveredFlags_NoSharedDelay | ImGuiHoveredFlags_AllowWhenDisabled)) {
-            if (exist_same_preset_name) {
-                ImGui::SetTooltip(m_config_wrapper->tr(L"すでに同じ名前のプリセットが存在します").c_str(), ImGui::GetStyle().HoverDelayNormal);
-            } else {
-                ImGui::SetTooltip(m_config_wrapper->tr(L"新規保存").c_str(), ImGui::GetStyle().HoverDelayNormal);
+            ImGui::SetTooltip(m_config_wrapper->tr(L"新規保存").c_str(), ImGui::GetStyle().HoverDelayNormal);
+        }
+
+        ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
+        if (ImGui::BeginPopupModal((m_config_wrapper->tr(L"新規保存") + "###save_as_confirmation").c_str(), nullptr, modal_flags)) {
+
+            static std::string input_preset_name = m_preset_name;
+            if (ImGui::IsWindowAppearing()) {
+                input_preset_name = m_preset_name;
             }
+
+            ImGui::InputTextWithHint("##preset_name", m_config_wrapper->tr(L"プリセット名").c_str(), &input_preset_name, ImGuiInputTextFlags_CharsNoBlank | ImGuiInputTextFlags_AutoSelectAll);
+            bool is_empty = input_preset_name == "";
+            bool exist_same_preset_name = false;
+            for (const auto& p : cfg.presets) {
+                if (p.name == input_preset_name) {
+                    exist_same_preset_name = true;
+                    break;
+                }
+            }
+
+            ImGui::Dummy(ImVec2(0, ImGui::GetFrameHeight() * ITEM_SPACING_SCALE_Y));
+
+            float btn_width = MODAL_WINDOW_WIDTH * 2 + ImGui::GetStyle().ItemSpacing.x * 1;
+            float avail     = ImGui::GetContentRegionAvail().x;
+            float off       = (avail - btn_width) * 0.5f;
+            if (off > 0.0f) ImGui::SetCursorPosX(ImGui::GetCursorPosX() + off);
+
+            if (ImGui::Button((m_config_wrapper->tr(L"キャンセル") + "###cancel").c_str(), ImVec2(MODAL_WINDOW_WIDTH, 0))) {
+                ImGui::CloseCurrentPopup();
+            }
+            ImGui::SameLine();
+
+            if (is_empty || exist_same_preset_name) ImGui::BeginDisabled(true);
+            if (ImGui::Button((m_config_wrapper->tr(L"保存") + "###save").c_str(), ImVec2(MODAL_WINDOW_WIDTH, 0))) {
+                auto preset = manager.gradient2preset(m_target_gradient_data);
+                auto result = manager.addPreset(cfg, preset, input_preset_name, selected_category_name);
+                if (!result.is_success) {
+                    m_logger_wrapper->error("{}", result.error);
+                } else {
+                    loadCategories();
+                    // 追加されたプリセットを選択状態にする
+                    m_selected_preset_index = static_cast<int32_t>(cfg.presets.size()) - 1;
+                    m_selected_gradient     = manager.preset2gradient(cfg.presets.back());
+                }
+                m_preset_name = input_preset_name;
+
+                ImGui::CloseCurrentPopup();
+            }
+            ImGui::SetItemDefaultFocus();
+            if (is_empty || exist_same_preset_name) ImGui::EndDisabled();
+
+            if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNormal | ImGuiHoveredFlags_NoSharedDelay | ImGuiHoveredFlags_AllowWhenDisabled)) {
+                if (is_empty) {
+                    ImGui::SetTooltip(m_config_wrapper->tr(L"プリセット名が空です").c_str(), ImGui::GetStyle().HoverDelayNormal);
+                } else if (exist_same_preset_name) {
+                    ImGui::SetTooltip(m_config_wrapper->tr(L"すでに同じ名前のプリセットが存在します").c_str(), ImGui::GetStyle().HoverDelayNormal);
+                }
+            }
+
+            ImGui::EndPopup();
         }
 
         m_is_clicked_preset = false;
