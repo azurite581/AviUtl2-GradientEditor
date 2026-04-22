@@ -15,6 +15,7 @@ constexpr float EFFECT_INDEX_SPIN_WIDTH = 4.0f;
 }  // namespace relative
 
 namespace absolute {
+constexpr float FRAME_ROUNDING         = 2.0f;
 constexpr float GRAB_MIN_SIZE          = 2.0f;
 constexpr float FRAME_BORDER_SIZE      = 1.0f;
 constexpr float TAB_ROUNDING           = 0.0f;
@@ -22,6 +23,7 @@ constexpr float DOCKING_SEPARATOR_SIZE = 1.0f;
 constexpr float ITEM_SPACING_X         = 5.0f;
 constexpr float ITEM_SPACING_Y         = 2.0f;
 constexpr float ITEM_INNER_SPACING_X   = 1.0f;
+constexpr float SCROLLBAR_ROUNDING      = 0.0f;
 }  // namespace absolute
 }  // namespace scale
 

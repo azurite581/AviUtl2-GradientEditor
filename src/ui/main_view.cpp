@@ -437,6 +437,7 @@ void MainView::renderGradientEditor()
 
 void MainView::renderPropertyEditor(GradientData* data)
 {
+    ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 0.0f);
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
     float height      = ImGui::GetFrameHeight() * 6 + ImGui::GetStyle().ItemSpacing.y * 5;
     float label_width = ImGui::GetFrameHeight() * scale::relative::ITEM_NAME_BUTTON_WIDTH;
@@ -457,7 +458,7 @@ void MainView::renderPropertyEditor(GradientData* data)
         ImGui::PopStyleColor(3);
     }
     ImGui::EndChild();
-    ImGui::PopStyleVar();
+    ImGui::PopStyleVar(2);
 
     ImGui::SameLine();
     ImGui::BeginGroup();
@@ -488,15 +489,15 @@ void MainView::renderPropertyEditor(GradientData* data)
 
         ImGui::SetNextItemWidth(width);
         float pos = curr.selected_marker_pos * 100.0f;
-        if (ImGui::SliderFloat("##marker_pos", &pos, 0.0f, 100.0f, "%.2f")) data->getMarkerManager()->setSelectedMarkerPos(pos / 100.0f);
+        if (ImGui::DragFloat("##marker_pos", &pos, 0.01f, 0.0f, 100.0f, "%.2f")) data->getMarkerManager()->setSelectedMarkerPos(pos / 100.0f);
 
         ImGui::SetNextItemWidth(width);
         float mid = curr.selected_midpoint_ratio * 100.0f;
-        if (ImGui::SliderFloat("##midpoint_ratio", &mid, 0.0f, 100.0f, "%.2f")) data->getMarkerManager()->setSelectedMidpointRatio(mid / 100.0f);
+        if (ImGui::DragFloat("##midpoint_ratio", &mid, 0.01f, 0.0f, 100.0f, "%.2f")) data->getMarkerManager()->setSelectedMidpointRatio(mid / 100.0f);
 
         ImGui::SetNextItemWidth(width);
         float blur = curr.blur_width * 100.0f;
-        if (ImGui::SliderFloat("##blur_width", &blur, 0.0f, 100.0f, "%.0f")) data->setBlurWidth(blur / 100.0f);
+        if (ImGui::DragFloat("##blur_width", &blur, 0.1f, 0.0f, 100.0f, "%.0f")) data->setBlurWidth(blur / 100.0f);
 
         ImGui::SetNextItemWidth(width);
         if (ImGui::BeginCombo("##color_space", COLOR_SPACE_NAMES[curr.color_space_index])) {

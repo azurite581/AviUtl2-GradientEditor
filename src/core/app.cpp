@@ -59,12 +59,14 @@ void App::run(std::promise<HWND>&& hwnd_promise)
 
     ImGui::StyleColorsDark();
     ImGuiStyle& style          = ImGui::GetStyle();
+    style.FrameRounding        = scale::absolute::FRAME_ROUNDING;
     style.GrabMinSize          = scale::absolute::GRAB_MIN_SIZE;
     style.FrameBorderSize      = scale::absolute::FRAME_BORDER_SIZE;
     style.TabRounding          = scale::absolute::TAB_ROUNDING;
     style.DockingSeparatorSize = scale::absolute::DOCKING_SEPARATOR_SIZE;
     style.ItemSpacing          = ImVec2(scale::absolute::ITEM_SPACING_X, scale::absolute::ITEM_SPACING_Y);
     style.ItemInnerSpacing     = ImVec2(scale::absolute::ITEM_INNER_SPACING_X, style.ItemInnerSpacing.y);
+    style.ScrollbarRounding    = scale::absolute::SCROLLBAR_ROUNDING;
 
     style.ScaleAllSizes(main_scale);
     style.FontScaleDpi         = main_scale;
@@ -123,21 +125,18 @@ void App::run(std::promise<HWND>&& hwnd_promise)
     style.Colors[ImGuiCol_WindowBg] = aulColor2imVec4("Grouping");
     style.Colors[ImGuiCol_PopupBg]  = aulColor2imVec4("Grouping");
     style.Colors[ImGuiCol_Border]   = aulColor2imVec4("Border");
-
     // テキスト
     style.Colors[ImGuiCol_Text] = aulColor2imVec4("Text");
-
-    // ボタン & フレーム
+    // ボタン
     style.Colors[ImGuiCol_Button]         = aulColor2imVec4("ButtonBody");
     style.Colors[ImGuiCol_ButtonHovered]  = aulColor2imVec4("ButtonBodyHover");
     style.Colors[ImGuiCol_ButtonActive]   = aulColor2imVec4("ButtonBodyPress");
+    // フレーム
     style.Colors[ImGuiCol_FrameBg]        = aulColor2imVec4("ButtonBody");
     style.Colors[ImGuiCol_FrameBgHovered] = aulColor2imVec4("ButtonBodyHover");
     style.Colors[ImGuiCol_FrameBgActive]  = aulColor2imVec4("ButtonBodySelect");
-
     // メニューバー
-    style.Colors[ImGuiCol_MenuBarBg] = aulColor2imVec4("TitleHeader");
-
+    style.Colors[ImGuiCol_MenuBarBg] = aulColor2imVec4("GroupingHover");
     // タブ
     style.Colors[ImGuiCol_TitleBg]             = aulColor2imVec4("Background");
     style.Colors[ImGuiCol_TitleBgActive]       = aulColor2imVec4("Background");
@@ -147,15 +146,20 @@ void App::run(std::promise<HWND>&& hwnd_promise)
     style.Colors[ImGuiCol_TabSelected]         = aulColor2imVec4("GroupingSelect");
     style.Colors[ImGuiCol_TabHovered]          = aulColor2imVec4("GroupingSelect");
     style.Colors[ImGuiCol_TabSelectedOverline] = aulColor2imVec4("BorderFocus");
-
-    // コンボボックスの選択している項目 & ホバー中の項目
+    // コンボボックス
     style.Colors[ImGuiCol_Header]        = aulColor2imVec4("ButtonBodySelect");
     style.Colors[ImGuiCol_HeaderHovered] = aulColor2imVec4("ButtonBodySelect");
     style.Colors[ImGuiCol_HeaderActive]  = aulColor2imVec4("ButtonBodySelect");
-
     // スライダー
     style.Colors[ImGuiCol_SliderGrab]       = aulColor2imVec4("SliderCursor");
     style.Colors[ImGuiCol_SliderGrabActive] = aulColor2imVec4("SliderCursor");
+    // ドラッグ&ドロップ時の枠線
+    style.Colors[ImGuiCol_DragDropTarget] = aulColor2imVec4("BorderFocus");
+    // スクロールバー
+    style.Colors[ImGuiCol_ScrollbarBg] = aulColor2imVec4("Background");
+    style.Colors[ImGuiCol_ScrollbarGrab] = aulColor2imVec4("ButtonBody");
+    style.Colors[ImGuiCol_ScrollbarGrabHovered] = aulColor2imVec4("ButtonBodyHover");
+    style.Colors[ImGuiCol_ScrollbarGrabActive] = aulColor2imVec4("ButtonBodyPress");
 
     //
     // グラデーションエディタ用の D3D を初期化
