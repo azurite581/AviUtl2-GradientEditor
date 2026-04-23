@@ -155,6 +155,9 @@ void App::run(std::promise<HWND>&& hwnd_promise)
     style.Colors[ImGuiCol_SliderGrabActive] = aulColor2imVec4("SliderCursor");
     // ドラッグ&ドロップ時の枠線
     style.Colors[ImGuiCol_DragDropTarget] = aulColor2imVec4("BorderFocus");
+    // ドッキングウィンドウの分割線
+    style.Colors[ImGuiCol_ResizeGripHovered] = aulColor2imVec4("Border");
+    style.Colors[ImGuiCol_ResizeGripActive]  = aulColor2imVec4("BorderFocus");
     // スクロールバー
     style.Colors[ImGuiCol_ScrollbarBg] = aulColor2imVec4("Background");
     style.Colors[ImGuiCol_ScrollbarGrab] = aulColor2imVec4("ButtonBody");
