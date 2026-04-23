@@ -1,14 +1,18 @@
 Texture2D<float4> src : register(t0);
 SamplerState samp : register(s0);
 
+#define EPS 1e-6
 static const int GRADIENT_MAX_COUNT = 30;
+
 cbuffer constant0 : register(b0) {
     float2 resolution;
     float2 center;
     float radius;
     float gradient_type;
     float is_fit;
-    float pad1;
+    float shift;
+    float edge_mode;
+    float3 pad1;
     float2x2 angle;
     float2 pad2;
     float color_space;
@@ -27,7 +31,7 @@ float4 blend_colors(float4 color1, float4 color2, float t, float color_space, in
     float alpha1 = color1.a;
     float alpha2 = color2.a;
     float3 result = float3(0.0, 0.0, 0.0);
-    float mixed_alpha = max(alpha_mix(alpha1, alpha2, t), 1e-6);
+    float mixed_alpha = max(alpha_mix(alpha1, alpha2, t), EPS);
     switch (color_space) {
         case 0:  // sRGB
         {
@@ -183,7 +187,7 @@ float4 psmain(float4 pos : SV_Position, float2 uv : TEXCOORD) : SV_Target {
     float2 st = ((pos.xy - center) * 2.0 - resolution.xy) / aspect;
 
     switch (gradient_type) {
-        case 0: // 線形
+        case 0:  // 線形
         {
             if (is_fit <= 0) {
                 float2 st = (pos.xy - center) / resolution.y;
@@ -209,24 +213,24 @@ float4 psmain(float4 pos : SV_Position, float2 uv : TEXCOORD) : SV_Target {
                 float max_y = max(max(y0, y1), max(y2, y3));
 
                 float py = mul(angle, (pos.xy - center)).y;
-                x = (py - min_y) / max(max_y - min_y, 1e-6);
+                x = (py - min_y) / max(max_y - min_y, EPS);
             }
             break;
         }
-        case 1: // 円形
+        case 1:  // 円形
         {
             float2 st = ((pos.xy - center) * 2.0 - resolution.xy) / max(resolution.x, resolution.y);
             float scale = (is_fit <= 0) ? radius / max(resolution.x, resolution.y) : min(resolution.x, resolution.y) / max(resolution.x, resolution.y);
             st = mul(angle, st);
-            x = length(st) / max(scale * 2.0, 1e-6);
+            x = length(st) / max(scale * 2.0, EPS);
             break;
         }
-        case 2: // 矩形
+        case 2:  // 矩形
         {
             float2 st = ((pos.xy - center) * 2.0 - resolution.xy) / max(resolution.x, resolution.y);
             float scale = (is_fit <= 0) ? radius / max(resolution.x, resolution.y) : min(resolution.x, resolution.y) / max(resolution.x, resolution.y);
             st = mul(angle, st);
-            x = (abs(st.x) + abs(st.y)) / max(scale * 2.0, 1e-6);
+            x = (abs(st.x) + abs(st.y)) / max(scale * 2.0, EPS);
             break;
         }
         case 3:  // 凸形
@@ -235,7 +239,7 @@ float4 psmain(float4 pos : SV_Position, float2 uv : TEXCOORD) : SV_Target {
                 float2 st = ((pos.xy - center) * 2.0 - resolution.xy) / max(resolution.x, resolution.y);
                 float scale = radius / max(resolution.x, resolution.y);
                 st = mul(angle, st);
-                x = abs(st.y) / max(scale * 2.0, 1e-6);
+                x = abs(st.y) / max(scale * 2.0, EPS);
                 break;
             } else {
                 // 4隅の絶対座標
@@ -254,38 +258,38 @@ float4 psmain(float4 pos : SV_Position, float2 uv : TEXCOORD) : SV_Target {
                 float max_y = max(max(y0, y1), max(y2, y3));
 
                 float py = mul(angle, (pos.xy - center)).y;
-                float t = (py - min_y) / max(max_y - min_y, 1e-6);
+                float t = (py - min_y) / max(max_y - min_y, EPS);
                 x = abs(t * 2.0 - 1.0);
                 break;
             }
         }
-        case 4: // 円形ループ
+        case 4:  // 円形ループ
         {
             float2 st = ((pos.xy - center) * 2.0 - resolution.xy) / max(resolution.x, resolution.y);
             // ループ形状では radius が 0 だとモアレがあまりきれいではないので最低でも 1 にする
             float scale = max(radius, 1.0) / max(resolution.x, resolution.y);
             st = mul(angle, st);
-            float w = length(st) / max(scale * 2.0, 1e-6);
+            float w = length(st) / max(scale * 2.0, EPS);
             float saw = fmod(w, 2.0);
             x = 1.0 - abs(1.0 - saw);
             break;
         }
-        case 5: // 矩形ループ
+        case 5:  // 矩形ループ
         {
             float2 st = ((pos.xy - center) * 2.0 - resolution.xy) / max(resolution.x, resolution.y);
             float scale = max(radius, 1.0) / max(resolution.x, resolution.y);
             st = mul(angle, st);
-            float w = (abs(st.x) + abs(st.y)) / max(scale * 2.0, 1e-6);
+            float w = (abs(st.x) + abs(st.y)) / max(scale * 2.0, EPS);
             float saw = fmod(w, 2.0);
             x = 1.0 - abs(1.0 - saw);
             break;
         }
-        case 6: // 凸形ループ
+        case 6:  // 凸形ループ
         {
             float2 st = ((pos.xy - center) * 2.0 - resolution.xy) / max(resolution.x, resolution.y);
             float scale = max(radius, 1.0) / max(resolution.x, resolution.y);
             st = mul(angle, st);
-            float w = st.y / max(scale * 2.0, 1e-6);
+            float w = st.y / max(scale * 2.0, EPS);
             float saw = w - 2.0 * floor(w / 2.0);  // mod(w, 2.0)
             x = 1.0 - abs(1.0 - saw);
             break;
@@ -298,6 +302,29 @@ float4 psmain(float4 pos : SV_Position, float2 uv : TEXCOORD) : SV_Target {
             st = mul(angle, st);
             st += (resolution.xy / (resolution.y * 2.0));
             x = (st.y - 0.5) / scale + 0.5;
+            break;
+        }
+    }
+
+    switch ((int)edge_mode) {
+        case 0:  // 境界色
+        {
+            x = clamp(x + shift, 0.0, 1.0);
+            break;
+        }
+        case 1:  // ループ
+        {
+            x = frac(x + shift);
+            break;
+        }
+        case 2:  // ミラー
+        {
+            x = abs(frac((x + shift) * 0.5 + 0.5) * 2.0 - 1.0);
+            break;
+        }
+        default:
+        {
+            x = clamp(x + shift, 0.0, 1.0);
             break;
         }
     }
