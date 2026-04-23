@@ -356,7 +356,7 @@ void MainView::renderGradientEditor()
     bool is_reset_midpoint = imgui_utils::squareIconButton(ICON_MS_STAT_0, "##reset_midpoints");
     if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNormal)) ImGui::SetTooltip(m_config_wrapper->tr(L"すべての中間点を中央に再配置").c_str());
     ImGui::SameLine();
-    bool is_reverse = imgui_utils::squareIconButton(ICON_MS_SYNC_ALT, "##reverse");
+    bool is_reverse = imgui_utils::squareIconButton(ICON_MS_SWITCH_LEFT, "##reverse");
     if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNormal)) ImGui::SetTooltip(m_config_wrapper->tr(L"マーカーを反転").c_str());
     ImGui::SameLine();
     bool is_del = imgui_utils::squareIconButton(ICON_MS_DELETE, "##delete");
@@ -439,6 +439,9 @@ void MainView::renderPropertyEditor(GradientData* data)
 {
     ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 0.0f);
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
+    ImGui::PushStyleColor(ImGuiCol_SeparatorHovered, ImVec4(0, 0, 0, 0));
+    ImGui::PushStyleColor(ImGuiCol_SeparatorActive, ImVec4(0, 0, 0, 0));
+
     float height      = ImGui::GetFrameHeight() * 6 + ImGui::GetStyle().ItemSpacing.y * 5;
     float label_width = ImGui::GetFrameHeight() * scale::relative::ITEM_NAME_BUTTON_WIDTH;
 
@@ -459,6 +462,7 @@ void MainView::renderPropertyEditor(GradientData* data)
     }
     ImGui::EndChild();
     ImGui::PopStyleVar(2);
+    ImGui::PopStyleColor(2);
 
     ImGui::SameLine();
     ImGui::BeginGroup();
