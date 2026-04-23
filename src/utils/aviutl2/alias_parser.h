@@ -2,12 +2,95 @@
 #define ALIAS_PARSER_H
 
 #include <algorithm>
+#include <charconv>
+#include <cctype>
+#include <cstdint>
+#include <expected>
+#include <ranges>
 #include <regex>
 #include <sstream>
 #include <string>
 #include <string_view>
 
 namespace alias_parser {
+
+template <typename T>
+std::expected<T, std::string> parseValue(std::string_view sv);
+
+template <std::integral T>
+inline std::expected<T, std::string> parseValue(std::string_view s)
+{
+    int32_t base = 10;
+    if (s.empty() || base < 2 || base > 36) return std::unexpected("Invalid input");
+
+    if (s.starts_with("0x") || s.starts_with("0X")) {
+        base = 16;
+        s.remove_prefix(2);
+    } else if (s.starts_with("0b") || s.starts_with("0B")) {
+        base = 2;
+        s.remove_prefix(2);
+    }
+
+    T value{};
+    auto [ptr, ec] = std::from_chars(s.data(), s.data() + s.size(), value, base);
+    if (ec == std::errc()) return value;
+    return std::unexpected("Failed to parse value");
+}
+
+template <>
+inline std::expected<float, std::string> parseValue<float>(std::string_view sv) {
+    try {
+        size_t idx;
+        float v = std::stof(std::string(sv), &idx);
+        if (idx != sv.size()) return std::unexpected("Invalid value");
+        return v;
+    } catch (...) {
+        return std::unexpected("Failed to parse value");
+    }
+}
+
+template <>
+inline std::expected<double, std::string> parseValue<double>(std::string_view sv) {
+    try {
+        size_t idx;
+        double v = std::stod(std::string(sv), &idx);
+        if (idx != sv.size()) return std::unexpected("Invalid value");
+        return v;
+    } catch (...) {
+        return std::unexpected("Failed to parse value");
+    }
+}
+
+template <>
+inline std::expected<std::string, std::string> parseValue<std::string>(std::string_view sv) {
+    return std::string(sv);
+}
+
+inline std::string_view trim(std::string_view sv) {
+    auto is_space = [](unsigned char c) { return std::isspace(c); };
+
+    while (!sv.empty() && is_space(sv.front())) sv.remove_prefix(1);
+    while (!sv.empty() && is_space(sv.back()))  sv.remove_suffix(1);
+
+    return sv;
+}
+
+template <typename T>
+inline std::expected<std::vector<T>, std::string> splitStr(std::string_view s, std::string_view delim) {
+    std::vector<T> result;
+
+    for (auto sv : s | std::views::split(delim)) {
+        auto part = trim(std::string_view{sv.begin(), sv.end()});
+
+        auto v = parseValue<T>(part);
+        if (!v) return std::unexpected(v.error());
+
+        result.push_back(*v);
+    }
+
+    return result;
+}
+
 /// @brief エイリアスから指定したセクションの値を文字列で取得する
 /// @param src エイリアス文字列 1 行分
 /// @param index 取得したい値があるセクションのインデックス

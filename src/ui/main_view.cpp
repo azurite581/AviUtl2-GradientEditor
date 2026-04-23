@@ -18,10 +18,12 @@
 MainView::MainView(LoggerWrapperInterface* logger_wrapper, ConfigWrapperInterface* config_wrapper)
     : m_logger_wrapper{logger_wrapper}, m_config_wrapper{config_wrapper}
 {
+    // ロガーとコンフィグのセット
     m_preset_window.setLoggerWrapper(m_logger_wrapper);
     m_preset_window.setConfigWrapper(m_config_wrapper);
     m_history_window.setLoggerWrapper(m_logger_wrapper);
     m_history_window.setConfigWrapper(m_config_wrapper);
+    m_script_bridge.setLoggerWrapper(m_logger_wrapper);
 
     std::filesystem::path data_path = str_conv::wideCharToMultiByte(gradient_editor::g_app_state.config_handle->app_data_path);
     std::filesystem::path config_folder_path = data_path / "Plugin" / CONFIG_FOLDER_NAME;
@@ -386,9 +388,7 @@ void MainView::renderGradientEditor()
     // スクリプトからグラデーションエディタに値を読み込む
     if (m_load) {
         m_load = false;
-
-        // 置き換える前のグラデーションデータを履歴に保存
-        m_history_window.pushHistory(*m_data);
+        m_history_window.pushHistory(*m_data);  // 置き換える前のグラデーションデータを履歴に保存
 
         plugin2_utils::call_edit_lambda(gradient_editor::g_app_state.edit_handle->call_edit_section_param, [&](EDIT_SECTION* edit) {
             OBJECT_HANDLE object_handle = edit->get_focus_object();

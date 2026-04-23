@@ -1,6 +1,8 @@
 #ifndef SCRIPT_BRIDGE_H
 #define SCRIPT_BRIDGE_H
 
+#include "logger_wrapper_interface.h"
+
 #include <cstdint>
 #include <string>
 #include <vector>
@@ -16,6 +18,8 @@
 
 class ScriptBridge {
 public:
+    void setLoggerWrapper(LoggerWrapperInterface* logger_wrapper) noexcept { m_logger_wrapper = logger_wrapper; }
+
     // スクリプトからグラデーションデータを読み込む
     void loadGradientFromScript(EDIT_SECTION* edit,
                                 GradientData& data,
@@ -102,6 +106,8 @@ public:
     Values getValues() const noexcept { return m_curr_values; }
 
 private:
+    LoggerWrapperInterface* m_logger_wrapper;
+
     Values m_prev_values;
     Values m_curr_values;
 
