@@ -9,11 +9,11 @@ version = "0.4.0"
 destination = "Plugin/GradientEditor.aux2"
 
 [artifacts.GradientEditor_aux2.profiles.debug]
-source = "./out/build/windows-x64-debug/Debug/GradientEditor.aux2"
+source = "./out/build/windows-x64/Debug/GradientEditor.aux2"
 build = "cmake --workflow debug-flow"
 
 [artifacts.GradientEditor_aux2.profiles.release]
-source = "./out/build/windows-x64-release/Release/GradientEditor.aux2"
+source = "./out/build/windows-x64/Release/GradientEditor.aux2"
 build = "cmake --workflow release-flow"
 
 [artifacts.GradientEditor_anm2]
@@ -30,6 +30,7 @@ source = "./i18n/简体中文.GradientEditor.aul2"
 destination = "Language/简体中文.GradientEditor.aul2"
 
 [artifacts.GradientEditor_ini]
+build = "type nul > GradientEditor.ini"
 source = "./GradientEditor.ini"
 destination = "Plugin/GradientEditor.ini"
 

@@ -86,3 +86,6 @@ FodyWeavers.xsd
 # AviUtl2 CLI
 /.aviutl2-cli
 /release
+
+compile_commands.json
+*.ini

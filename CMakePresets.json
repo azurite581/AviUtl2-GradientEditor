@@ -4,7 +4,7 @@
         {
             "name": "windows-base",
             "hidden": true,
-            "generator": "Visual Studio 17 2022",
+            "generator": "Ninja Multi-Config",
             "binaryDir": "${sourceDir}/out/build/${presetName}",
             "cacheVariables": {
                 "CMAKE_C_COMPILER": "cl.exe",
@@ -12,63 +12,35 @@
             }
         },
         {
-            "name": "windows-x64-debug",
-            "inherits": "windows-base",
-            "architecture": {
-                "value": "x64",
-                "strategy": "set"
-            }
-        },
-        {
-            "name": "windows-x64-release",
-            "inherits": "windows-base",
-            "architecture": {
-                "value": "x64",
-                "strategy": "set"
-            }
+            "name": "windows-x64",
+            "inherits": "windows-base"
         }
     ],
     "buildPresets": [
         {
             "name": "windows-x64-debug",
-            "configurePreset": "windows-x64-debug",
+            "configurePreset": "windows-x64",
             "configuration": "Debug"
         },
         {
             "name": "windows-x64-release",
-            "configurePreset": "windows-x64-release",
+            "configurePreset": "windows-x64",
             "configuration": "Release"
         }
     ],
     "workflowPresets": [
         {
             "name": "release-flow",
-            "displayName": "Release Workflow",
-            "description": "Configure and Build for Release",
             "steps": [
-                {
-                    "type": "configure",
-                    "name": "windows-x64-release"
-                },
-                {
-                    "type": "build",
-                    "name": "windows-x64-release"
-                }
+                { "type": "configure", "name": "windows-x64" },
+                { "type": "build", "name": "windows-x64-release" }
             ]
         },
         {
             "name": "debug-flow",
-            "displayName": "Debug Workflow",
-            "description": "Configure and Build for Debug",
             "steps": [
-                {
-                    "type": "configure",
-                    "name": "windows-x64-debug"
-                },
-                {
-                    "type": "build",
-                    "name": "windows-x64-debug"
-                }
+                { "type": "configure", "name": "windows-x64" },
+                { "type": "build", "name": "windows-x64-debug" }
             ]
         }
     ]

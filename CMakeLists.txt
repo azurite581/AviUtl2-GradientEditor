@@ -6,6 +6,7 @@ endif()
 
 project(GradientEditor LANGUAGES CXX)
 
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(IMGUI_SOURCE third_party/imgui)
 set(MARKER_COUNT 30 CACHE STRING "marker count")
 set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
@@ -116,3 +117,11 @@ if("${CMAKE_CXX_COMPILER_ID}" MATCHES "MSVC")
     )
 endif()
 
+if(CMAKE_EXPORT_COMPILE_COMMANDS)
+    add_custom_target(copy_compile_commands ALL
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            ${CMAKE_BINARY_DIR}/compile_commands.json
+            ${CMAKE_SOURCE_DIR}/compile_commands.json
+        DEPENDS ${CMAKE_BINARY_DIR}/compile_commands.json
+    )
+endif()
