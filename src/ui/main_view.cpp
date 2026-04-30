@@ -328,7 +328,7 @@ void MainView::renderGradientEditor()
         "gradient",
         ImVec2(std::clamp(ImGui::GetContentRegionAvail().x, 1.0f, 4096.0f), frame_height * scale::relative::GRADIENT_HEIGHT),
         replace_data,
-        CustomUI::GradientEditorFlags_None,
+        CustomUI::GradientEditorFlags_None | CustomUI::GradientEditorFlags_MidpointBelowGradient,
         should_replace,
         config);
 

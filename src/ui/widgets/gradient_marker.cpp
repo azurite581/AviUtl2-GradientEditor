@@ -413,6 +413,7 @@ void GradientMarkerManager::updateMarkerId()
 void GradientMarkerManager::updateMarker(const ImVec2& mouse_pos, const ImVec4& new_marker_color, const uint32_t max_marker_count)
 {
     if (!m_io_enable) return;
+    if (m_state.clicked_midpoint_id >= 0) return;
 
     // クリックされた位置にあるマーカーIDを取得
     if (ImGui::IsMouseClicked(ImGuiMouseButton_Left) && !m_state.is_open_popup) {
@@ -428,7 +429,7 @@ void GradientMarkerManager::updateMarker(const ImVec2& mouse_pos, const ImVec4& 
         float marker_pos        = getMarkerPosFromMousePos(mouse_pos);
         moveMarker(m_state.selected_marker_id, marker_pos);
     } else if (m_state.clicked_marker_id == std::to_underlying(Region::Marker) && ImGui::IsMouseClicked(ImGuiMouseButton_Left) && !m_state.is_open_popup && std::ssize(m_markers) < max_marker_count) {
-        // クリックされた位置がマーカー描画領域内かつ、マーカーの最大数未満なら
+        // クリックされた位置に中間点が無く、マーカー描画領域内かつ、現在のマーカー数がマーカーの最大数未満なら
         // クリック位置にマーカーを作成
         float marker_pos = getMarkerPosFromMousePos(mouse_pos);
         addMarker(m_state.marker_id_counter, marker_pos, new_marker_color);
@@ -449,7 +450,7 @@ void GradientMarkerManager::updateMidpoint(const ImVec2& mouse_pos)
 {
     if (!m_io_enable) return;
 
-    // クリックされた位置にあるマーカーIDを取得
+    // クリックされた中間点に紐づくマーカーIDを取得
     if (ImGui::IsMouseClicked(ImGuiMouseButton_Left) && !m_state.is_open_popup) {
         m_state.clicked_midpoint_id = getMidpointIdUnderMouse(mouse_pos);
         if (m_state.clicked_midpoint_id >= 0) {
@@ -457,10 +458,9 @@ void GradientMarkerManager::updateMidpoint(const ImVec2& mouse_pos)
         }
     }
 
-    // マーカーをクリックかつドラッグ状態ならマーカーを動かす
+    //　中間点をクリックかつドラッグ状態なら中間点を動かす
     if (m_state.clicked_midpoint_id >= 0 && ImGui ::IsMouseDragging(ImGuiMouseButton_Left) && !m_state.is_open_popup) {
         m_state.selected_midpoint_id = m_state.clicked_midpoint_id;
-
         float marker_pos = getMarkerPosFromMousePos(mouse_pos);
         moveMidpoint(m_state.selected_midpoint_id, marker_pos);
     }

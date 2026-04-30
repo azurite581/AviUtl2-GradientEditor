@@ -101,8 +101,8 @@ GradientData* drawGradientEditor(
     gradient_marker->setIOEnable(config.io_enable);
     gradient_marker->setMarkerWidth(static_cast<uint32_t>(config.marker_width));  // マーカーの幅をセット
 
-    // 中間点を描画
-    if (!(flags & GradientEditorFlags_NoMidpoint)) {
+    // 中間点をグラデーションの上に描画
+    if (!(flags & GradientEditorFlags_NoMidpoint) && !((flags & GradientEditorFlags_MidpointBelowGradient))) {
         ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(ImGui::GetStyle().ItemSpacing.x, 0.0f));
         ImVec2 midpoint_region_size = ImVec2(display_size.x, static_cast<float>(gradient_marker->getMidpointHeight()));
         if (!(flags & GradientEditorFlags_NotAlignSideToMarker)) {
@@ -153,8 +153,16 @@ GradientData* drawGradientEditor(
         ImGui::InvisibleButton("markers", marker_region_size);
         p0 = ImGui::GetItemRectMin();
         p1 = ImGui::GetItemRectMax();
+
         gradient_marker->setMarkerRegion(p0, p1);
         gradient_marker->drawMarkers();
+
+        // 中間点をグラデーションの下に描画する場合はここで描画
+        // マーカーと中間点が重なっていた場合に中間点を優先するため、マーカーの更新は中間点の更新より後に行う
+        if (!(flags & GradientEditorFlags_NoMidpoint) && (flags & GradientEditorFlags_MidpointBelowGradient)) {
+            gradient_marker->setMidpointRegion(p0, p1);
+            gradient_marker->drawMidpoints();
+        }
     }
 
     ImVec2 mouse_pos = ImGui::GetIO().MousePos;
@@ -181,8 +189,10 @@ GradientData* drawGradientEditor(
     }
     ImGui::Dummy({0, 0});
 
-    gradient_marker->updateMarker(mouse_pos, new_marker_color, config.max_marker_count);
+    // 中間点をクリックしているかに基づいてマーカーの更新を行うかどうかを判断するため、マーカーの更新は中間点の更新より後に行う必要がある
     gradient_marker->updateMidpoint(mouse_pos);
+    gradient_marker->updateMarker(mouse_pos, new_marker_color, config.max_marker_count);
+
 
     ImGui::PushID(gradient_marker);
     gradient_marker->showColorPickerPopup();

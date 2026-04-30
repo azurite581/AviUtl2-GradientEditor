@@ -20,6 +20,7 @@ enum GradientEditorFlags_ {
     GradientEditorFlags_NoMarker                = 1 << 2,  // マーカー非表示
     GradientEditorFlags_NotAlignSideToMarker    = 1 << 3,  // グラデーションの両端（幅）をマーカーに合わせない
     GradientEditorFlags_newMarkerColorFromClick = 1 << 4,  // 新規マーカーの色をクリック位置の色にする
+    GradientEditorFlags_MidpointBelowGradient   = 1 << 5   // 中間点の位置をグラデーションの下にする（デフォルトは上）
 };
 using GradientEditorFlags = int32_t;
 
