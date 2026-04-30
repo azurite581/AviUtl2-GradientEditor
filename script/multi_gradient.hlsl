@@ -2,7 +2,8 @@ Texture2D<float4> src : register(t0);
 SamplerState samp : register(s0);
 
 #define EPS 1e-6
-static const int GRADIENT_MAX_COUNT = 30;
+static const int MARKER_MAX_COUNT = 30;
+static const int GRADIENT_MAX_COUNT = MARKER_MAX_COUNT - 1;
 
 cbuffer constant0 : register(b0) {
     float2 resolution;
@@ -18,10 +19,13 @@ cbuffer constant0 : register(b0) {
     float color_space;
     float interp_dir;
     float gradient_w;
-    float gradient_count;  // 実際のグラデーションの数
-    float4 start_col[GRADIENT_MAX_COUNT];
-    float4 stop_col[GRADIENT_MAX_COUNT];
+    float marker_count;
+    float4 start_col[MARKER_MAX_COUNT];
+    float4 stop_col[MARKER_MAX_COUNT];
     float4 pos_and_mid[GRADIENT_MAX_COUNT];
+    float trans_marker_count;
+    float3 pad3;
+    float4 trans_pos_and_value[GRADIENT_MAX_COUNT];
 }
 
 float4 blend_colors(float4 color1, float4 color2, float t, float color_space, int interp_dir)
@@ -175,8 +179,10 @@ float4 makeGradient(float4 col1, float4 col2, float t, float mid, float width, f
 }
 
 float4 psmain(float4 pos : SV_Position, float2 uv : TEXCOORD) : SV_Target {
-    int safe_count = min(gradient_count, GRADIENT_MAX_COUNT);
-    if (safe_count <= 0) return float4(1, 1, 1, 1);
+    int safe_marker_count = min(marker_count, MARKER_MAX_COUNT);
+    int safe_gradient_count = clamp(safe_marker_count - 1, 1, MARKER_MAX_COUNT - 1);
+
+    if (safe_marker_count <= 0) return float4(1, 1, 1, 1);
 
     float x = 1.0;
 
@@ -330,21 +336,47 @@ float4 psmain(float4 pos : SV_Position, float2 uv : TEXCOORD) : SV_Target {
     }
 
     x = 1.0 - x;
-    float4 out_col = (x <= pos_and_mid[0].x) ? start_col[0] : start_col[safe_count - 1];
+    float4 out_col = (x <= pos_and_mid[0].x) ? start_col[0] : start_col[safe_marker_count - 1];
     out_col.rgb *= out_col.a;
     x = saturate(x);
 
-    for (int i = 0; i < safe_count; i++) {
-        float p_curr = pos_and_mid[i].x;
-        float p_next = pos_and_mid[i].y;
+    // 区間ごとにグラデーションを作る
+    for (int i = 0; i < safe_gradient_count; i++) {
+        float p_curr = pos_and_mid[i].x;  // 区間の開始位置
+        float p_next = pos_and_mid[i].y;  // 区間の終了位置
 
         // x が現在の区間内にある場合
-        if (x >= p_curr && x < p_next) {
+        if (p_curr <= x && x < p_next) {
             float dist = p_next - p_curr;
-
             float t = (x - p_curr) / dist;
-
             out_col = makeGradient(start_col[i], stop_col[i], t, pos_and_mid[i].z, gradient_w, color_space, interp_dir);
+            break;
+        }
+    }
+
+    float trans = 1.0;
+    if (x < trans_pos_and_value[0].x) {
+        trans = trans_pos_and_value[0].z;
+        out_col.a *= trans;
+        out_col.rgb *= out_col.a;
+        return out_col;
+    } else if (x >= trans_pos_and_value[(int)trans_marker_count - 2].y) {
+        trans = trans_pos_and_value[(int)trans_marker_count - 2].w;
+        out_col.a *= trans;
+        out_col.rgb *= out_col.a;
+        return out_col;
+    }
+    for (int j = 0; j < (int)trans_marker_count - 1; j++) {
+        float p_curr = trans_pos_and_value[j].x;  // 区間の開始位置
+        float p_next = trans_pos_and_value[j].y;  // 区間の終了位置
+
+        // x が現在の区間内にある場合
+        if (p_curr <= x && x < p_next) {
+            float dist = p_next - p_curr;
+            float t = (x - p_curr) / dist;
+            trans = lerp(trans_pos_and_value[j].z, trans_pos_and_value[j].w, t);
+            out_col.a *= trans;
+            out_col.rgb *= out_col.a;
             break;
         }
     }

@@ -45,12 +45,12 @@ void ScriptBridge::loadGradientFromScript(EDIT_SECTION* edit,
 
     std::string color_array_str = edit->get_object_item_value(object_handle, effect_name.c_str(), L"色");
     auto color_result = alias_parser::splitStr<uint32_t>(color_array_str, ",");
-    std::string alpha_array_str = edit->get_object_item_value(object_handle, effect_name.c_str(), L"透明度");
+    std::string alpha_array_str = edit->get_object_item_value(object_handle, effect_name.c_str(), L"色の透明度");
     auto alpha_result = alias_parser::splitStr<float>(alpha_array_str, ",");
     if (!color_result) {
         m_logger_wrapper->error("Failed to parse 色: {}", color_result.error());
     } else if (!alpha_result) {
-        m_logger_wrapper->error("Failed to parse 透明度: {}", alpha_result.error());
+        m_logger_wrapper->error("Failed to parse 色の透明度: {}", alpha_result.error());
     } else {
         for (uint32_t i = 0; i < markers.size(); ++i) {
             uint32_t hex_rgb = color_result.value()[i];
@@ -132,7 +132,7 @@ void ScriptBridge::applyGradientToScript(EDIT_SECTION* edit,
         }
     }
     edit->set_object_item_value(object_handle, effect_name.c_str(), L"色", col_array_str.c_str());
-    edit->set_object_item_value(object_handle, effect_name.c_str(), L"透明度", alpha_array_str.c_str());
+    edit->set_object_item_value(object_handle, effect_name.c_str(), L"色の透明度", alpha_array_str.c_str());
     edit->set_object_item_value(object_handle, effect_name.c_str(), L"位置", pos_array_str.c_str());
     edit->set_object_item_value(object_handle, effect_name.c_str(), L"中間点", mid_array_str.c_str());
 
