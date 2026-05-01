@@ -98,7 +98,6 @@ jobs:
     - name: Build project
       run: |
         mkdir release
-        cargo set-version "$env:VERSION"
         au2 release --set-version "$env:VERSION"
       env:
         VERSION: ${{ steps.extract-version.outputs.version }}
