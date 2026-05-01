@@ -108,6 +108,7 @@ if("${CMAKE_CXX_COMPILER_ID}" MATCHES "MSVC")
         $<IF:$<CONFIG:Debug>,/GL-,/GL>
         $<IF:$<CONFIG:Debug>,/Gy-,/Gy>
         $<$<CONFIG:Debug>:/Zi>
+        /EHsc
     )
     target_link_options(${PROJECT_NAME} PRIVATE
         $<$<CONFIG:Release>:/LTCG>
