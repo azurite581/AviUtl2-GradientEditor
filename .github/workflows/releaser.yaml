@@ -121,3 +121,4 @@ jobs:
         gh release create "v$env:VERSION" --notes-file EXTRACTED.md "*.au2pkg.zip"
       env:
         VERSION: ${{ steps.extract-version.outputs.version }}
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
