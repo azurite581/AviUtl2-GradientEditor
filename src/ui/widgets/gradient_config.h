@@ -134,10 +134,6 @@ class GradientConfigManager {
 public:
     inline static const char* DEFAULT_CATEGORY = "Uncategorized";
 
-
-    // デフォルトのプリセットJSON
-    std::filesystem::path m_default_preset_path;
-
     // デフォルトのプリセットファイルが存在しない場合に書き出すプリセット
     static constexpr const char* DEFAULT_PRESET_FILE_JSON = R"(
 {
@@ -187,8 +183,14 @@ private:
         try {
             nlohmann::ordered_json j = nlohmann::ordered_json::parse(ifs);
             result.config = j.get<T>();
+        } catch (const nlohmann::json::exception& e) {
+            result.error  = e.what();
+            result.config = default_cfg;
         } catch (const std::exception& e) {
             result.error  = e.what();
+            result.config = default_cfg;
+        } catch (...) {
+            result.error  = "unknown error";
             result.config = default_cfg;
         }
 
@@ -206,8 +208,12 @@ private:
         try {
             nlohmann::ordered_json j = cfg;
             ofs << j.dump(4);
+        } catch (const nlohmann::json::exception& e) {
+            return {false, e.what()};
         } catch (const std::exception& e) {
             return {false, e.what()};
+        } catch (...) {
+            return {false, "unknown error"};
         }
 
         return {true, {}};
@@ -224,7 +230,6 @@ public:
 
     void setPresetFilePath(const std::filesystem::path& path)  { m_preset_path  = path; }
     void setHistoryFilePath(const std::filesystem::path& path) { m_history_path = path; }
-    void setDefaultPresetFilePath(const std::filesystem::path& path) { m_default_preset_path = path; }
 
     ConfigLoadResult<PresetConfig> loadPresetConfig() const
     {
