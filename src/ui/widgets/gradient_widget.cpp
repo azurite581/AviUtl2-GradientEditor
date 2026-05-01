@@ -182,6 +182,7 @@ GradientData* drawGradientEditor(
 
     // マーカーをダブルクリックしたときにカラーピッカーを表示する
     gradient_marker->onDoubleClickedMarker(mouse_pos);
+    gradient_marker->onDoubleClickedAlphaMarker(mouse_pos);
 
     // 新しく挿入されるマーカーの色
     ImVec4 new_marker_color = ImVec4(1.0f, 1.0f, 1.0f, 1.0f);
@@ -209,6 +210,7 @@ GradientData* drawGradientEditor(
 
     ImGui::PushID(gradient_marker);
     gradient_marker->showColorPickerPopup();
+    gradient_marker->showAlphaSliderPopup();
     ImGui::PopID();
 
     return gradient_data;

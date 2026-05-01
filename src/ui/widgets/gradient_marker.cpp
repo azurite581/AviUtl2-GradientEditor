@@ -22,6 +22,13 @@ float GradientMarkerManager::getMidpointRatio(const int32_t id) const
     return m_markers[idx].midpoint.ratio;
 }
 
+float GradientMarkerManager::getAlphaMarkerValue(const int32_t id) const
+{
+    int32_t idx = getAlphaIndexById(id);
+    if (idx == -1) return 1.0f;
+    return m_alpha_markers[idx].value;
+}
+
 float GradientMarkerManager::getSelectedMarkerPos() const
 {
     int32_t idx = getIndexById(m_state.selected_marker_id);
@@ -120,6 +127,13 @@ void GradientMarkerManager::setMarkerColor(const int32_t id, const ImVec4& color
 void GradientMarkerManager::setMidpointRatio(const int32_t id, const float ratio)
 {
     moveMidpointRatio(id, ratio);
+}
+
+void GradientMarkerManager::setAlphaMarkerValue(const int32_t id, const float value)
+{
+    int32_t idx = getAlphaIndexById(id);
+    if (idx == -1) return;
+    m_alpha_markers[idx].value = std::clamp(value, 0.0f, 1.0f);
 }
 
 void GradientMarkerManager::setSelectedMarkerPos(const float pos)
@@ -402,9 +416,20 @@ void GradientMarkerManager::showColorPickerPopup()
     ImGui::PopStyleVar(2);
 }
 
+void GradientMarkerManager::showAlphaSliderPopup()
+{
+    if (ImGui::BeginPopup("alpha_slider_popup")) {
+        if (ImGui::SliderFloat("##alpha_value", &m_state.cur_alpha_value, 0.0f, 1.0f, "%.2f")) {
+            setAlphaMarkerValue(m_state.selected_alpha_marker_id, m_state.cur_alpha_value);
+        }
+        ImGui::EndPopup();
+    }
+}
+
 void GradientMarkerManager::onDoubleClickedMarker(const ImVec2& mouse_pos, bool use_default_action, std::move_only_function<void(void*)> func, void* param)
 {
     if (!m_io_enable) return;
+
     ImGui::PushID(this);
     // デフォルトの挙動はカラーピッカーを開く
     if (use_default_action) {
@@ -423,7 +448,29 @@ void GradientMarkerManager::onDoubleClickedMarker(const ImVec2& mouse_pos, bool 
             }
         }
     }
+    ImGui::PopID();
+}
 
+void GradientMarkerManager::onDoubleClickedAlphaMarker(const ImVec2& mouse_pos, bool use_default_action, std::move_only_function<void(void*)> func, void* param)
+{
+    if (!m_io_enable) return;
+
+    ImGui::PushID(this);
+    if (use_default_action) {
+        if (ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left) && !m_state.is_open_popup) {
+            if (getAlphaMarkerIdUnderMouse(mouse_pos) >= 0) {
+                m_state.selected_alpha_marker_id  = getAlphaMarkerIdUnderMouse(mouse_pos);
+                m_state.cur_alpha_value = getAlphaMarkerValue(m_state.selected_alpha_marker_id);
+                ImGui::OpenPopup("alpha_slider_popup");
+            }
+        }
+    } else {
+        if (ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left) && !m_state.is_open_popup) {
+            if (getAlphaMarkerIdUnderMouse(mouse_pos) >= 0) {
+                func(param);
+            }
+        }
+    }
     ImGui::PopID();
 }
 

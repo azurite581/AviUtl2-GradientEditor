@@ -101,6 +101,7 @@ private:
         bool is_alpha_marker_added{false};
         ImVec4 picker_cur_color{1.0f, 1.0f, 1.0f, 1.0f};
         ImVec4 picker_backup_color{1.0f, 1.0f, 1.0f, 1.0f};
+        float cur_alpha_value{1.0f};
         bool is_open_popup = false;
     } m_state;
 
@@ -160,6 +161,7 @@ public:
     [[nodiscard]] float getMarkerPos(const int32_t id) const;
     [[nodiscard]] ImVec4 getMarkerColor(const int32_t id) const;
     [[nodiscard]] float getMidpointRatio(const int32_t id) const;
+    [[nodiscard]] float getAlphaMarkerValue(const int32_t id) const;
 
     [[nodiscard]] float getSelectedMarkerPos() const;
     [[nodiscard]] ImVec4 getSelectedMarkerColor() const;
@@ -191,6 +193,7 @@ public:
     void setMarkerPos(const int32_t id, const float pos);
     void setMarkerColor(const int32_t id, const ImVec4& color);
     void setMidpointRatio(const int32_t id, const float ratio);
+    void setAlphaMarkerValue(const int32_t id, const float value);
 
     void setSelectedMarkerPos(const float pos);
     void setSelectedMarkerColor(const ImVec4& color);
@@ -225,6 +228,7 @@ public:
     void addAlphaMarker(const int32_t id, const float marker_pos, const float value);
     void changeColor(const int32_t id, const ImVec4& new_color);
     void showColorPickerPopup();
+    void showAlphaSliderPopup();
     void deleteMarker(const int32_t id);
     void deleteSelectedMarker();
     void distributeMarkersEvenly();
@@ -235,6 +239,7 @@ public:
     //
     void onClickedMarker(const ImVec2& mouse_pos, bool use_default_action, std::move_only_function<void(void*)> func, void* param);
     void onDoubleClickedMarker(const ImVec2& mouse_pos, bool use_default_action = true, std::move_only_function<void(void*)> func = nullptr, void* param = nullptr);
+    void onDoubleClickedAlphaMarker(const ImVec2& mouse_pos, bool use_default_action = true, std::move_only_function<void(void*)> func = nullptr, void* param = nullptr);
 
     //
     // 更新
