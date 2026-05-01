@@ -18,53 +18,42 @@ namespace str_conv {
 /// @param str マルチバイト文字列
 /// @param code_page コードページ (デフォルト: CP_UTF8)
 /// @return 変換されたワイド文字列
-inline std::wstring multiByteToWideChar(std::string_view str, uint32_t code_page = CP_UTF8)
+inline std::wstring multiByteToWideChar(std::string_view str, const uint32_t code_page = CP_UTF8)
 {
-    if (str.empty()) {
-        return {};
-    }
+    if (str.empty()) return {};
 
     // 必要なバッファサイズを取得
-    int size_needed = ::MultiByteToWideChar(
+    int32_t size_needed = ::MultiByteToWideChar(
         code_page,
         0,
         str.data(),
-        static_cast<int>(str.size()),
+        static_cast<int32_t>(str.size()),
         nullptr,
         0);
 
-    if (size_needed <= 0) {
-        return {};
-    }
-
+    if (size_needed <= 0) return {};
     std::wstring result(size_needed, L'\0');
 
     ::MultiByteToWideChar(
         code_page,
         0,
         str.data(),
-        static_cast<int>(str.size()),
+        static_cast<int32_t>(str.size()),
         result.data(),
         size_needed);
 
     return result;
 }
 
-/// @brief ワイド文字(UTF-16)をマルチバイト文字(UTF-8等)に変換する
+/// @brief ワイド文字をマルチバイト文字に変換する
 /// @param str ワイド文字列
 /// @param code_page コードページ (デフォルト: CP_UTF8)
 /// @return 変換されたマルチバイト文字列
-inline std::string wideCharToMultiByte(std::wstring_view str, uint32_t code_page = CP_UTF8)
+inline std::string wideCharToMultiByte(std::wstring_view str, const uint32_t code_page = CP_UTF8)
 {
-    if (str.empty()) {
-        return {};
-    }
+    if (str.empty()) return {};
 
     DWORD flags = 0;
-    if (code_page == CP_UTF8) {
-        flags = WC_ERR_INVALID_CHARS;
-    }
-
     // 必要なバッファサイズを取得
     int size_needed = ::WideCharToMultiByte(
         code_page,
@@ -76,10 +65,7 @@ inline std::string wideCharToMultiByte(std::wstring_view str, uint32_t code_page
         nullptr,
         nullptr);
 
-    if (size_needed <= 0) {
-        return {};
-    }
-
+    if (size_needed <= 0) return {};
     std::string result(size_needed, '\0');
 
     ::WideCharToMultiByte(
