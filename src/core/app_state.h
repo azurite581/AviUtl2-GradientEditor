@@ -3,7 +3,6 @@
 
 #include <d3d11.h>
 
-#include <atomic>
 #include <filesystem>
 #include <functional>
 #include <thread>

@@ -1,7 +1,6 @@
 #include "main_view.h"
 
 #include <algorithm>
-#include <cstdio>
 #include <filesystem>
 #include <iostream>
 
@@ -18,18 +17,21 @@
 MainView::MainView(LoggerWrapperInterface* logger_wrapper, ConfigWrapperInterface* config_wrapper)
     : m_logger_wrapper{logger_wrapper}, m_config_wrapper{config_wrapper}
 {
+    // std::cout の出力先をファイルにリダイレクトする（デバッグ用）
+    //std::ofstream file("log.txt");
+    //std::cout.rdbuf(file.rdbuf());
+
     m_preset_window.setLoggerWrapper(m_logger_wrapper);
     m_preset_window.setConfigWrapper(m_config_wrapper);
     m_history_window.setLoggerWrapper(m_logger_wrapper);
     m_history_window.setConfigWrapper(m_config_wrapper);
 
-    std::filesystem::path data_path = str_conv::wideCharToMultiByte(gradient_editor::g_app_state.config_handle->app_data_path);
-    std::filesystem::path config_folder_path = data_path / "Plugin" / CONFIG_FOLDER_NAME;
-    m_config_manager.setDefaultPresetFilePath(config_folder_path / "gradient_editor_default_preset.json");
+    std::filesystem::path data_path = gradient_editor::g_app_state.config_handle->app_data_path;
+    std::filesystem::path config_folder_path = data_path / L"Plugin" / CONFIG_FOLDER_NAME;
 
     // プリセットフォルダがなければ作成
     if (!std::filesystem::exists(config_folder_path) || !std::filesystem::is_directory(config_folder_path)) {
-        std::filesystem::create_directory(config_folder_path);
+        std::filesystem::create_directories(config_folder_path);
     }
 
     // プリセットファイルがなければ作成
@@ -38,7 +40,7 @@ MainView::MainView(LoggerWrapperInterface* logger_wrapper, ConfigWrapperInterfac
         std::error_code ec;
 
         bool is_copied = std::filesystem::copy_file(
-            config_folder_path / "gradient_editor_default_preset.json",
+            config_folder_path / L"gradient_editor_default_preset.json",
             preset_path,
             std::filesystem::copy_options::skip_existing,
             ec
@@ -68,8 +70,8 @@ MainView::MainView(LoggerWrapperInterface* logger_wrapper, ConfigWrapperInterfac
     // 履歴ファイルがなければ作成
     std::filesystem::path history_path = config_folder_path / HISTORY_FILE_NAME;
     if (!std::filesystem::exists(history_path)) {
-        std::ofstream file(history_path);
-        if (!file) {
+        std::ofstream history_file(history_path);
+        if (!history_file) {
             m_logger_wrapper->error("{}", "Failed to create history file.");
         }
     }
@@ -78,7 +80,7 @@ MainView::MainView(LoggerWrapperInterface* logger_wrapper, ConfigWrapperInterfac
     m_config_manager.setHistoryFilePath(history_path);
     auto history_load_result = m_config_manager.loadHistoryConfig();
     if (!history_load_result.is_success()) {
-        m_logger_wrapper->error("{}", preset_load_result.error.c_str());
+        m_logger_wrapper->error("{}", history_load_result.error.c_str());
     }
     m_history_config = history_load_result.config;
 
