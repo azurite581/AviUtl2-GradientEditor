@@ -81,7 +81,7 @@ jobs:
     - name: aulua variable update
       run: |
         $version = "v$env:VERSION"
-        yq -i ".project.variables.VERSION = `"$version`"" ./aulua.yaml
+        yq -i ".project.variables.VERSION = `"$version`"" ./script/aulua.yaml
       env:
         VERSION: ${{ steps.extract-version.outputs.version }}
 
