@@ -4,6 +4,10 @@ if (NOT DEFINED CMAKE_CXX_STANDARD)
     set(CMAKE_CXX_STANDARD 23)
 endif()
 
+if(NOT DEFINED PLUGIN_VERSION)
+    set(PLUGIN_VERSION "0.1.0")
+endif()
+
 project(GradientEditor LANGUAGES CXX)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
@@ -48,6 +52,7 @@ set_target_properties(${PROJECT_NAME} PROPERTIES SUFFIX ".aux2")
 # macro definition
 target_compile_definitions(${PROJECT_NAME} PRIVATE
     MARKER_COUNT=${MARKER_COUNT}
+    PLUGIN_VERSION="${PLUGIN_VERSION}"
 )
 
 target_link_libraries(${PROJECT_NAME} PRIVATE compiler_flags)
@@ -118,6 +123,7 @@ if("${CMAKE_CXX_COMPILER_ID}" MATCHES "MSVC")
     )
 endif()
 
+# copy compile_commands.json to source directory for clangd
 if(CMAKE_EXPORT_COMPILE_COMMANDS)
     add_custom_target(copy_compile_commands ALL
         COMMAND ${CMAKE_COMMAND} -E copy_if_different

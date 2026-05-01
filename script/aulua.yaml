@@ -13,8 +13,8 @@ scripts:
       - label: MultiGradient
         path: "multi_gradient.in.anm2"
         variables:
-          INFO: Multi Gradient for AviUtl2
+          INFO: 多色グラデーションスクリプト
       - label: GradientMap
         path: "gradient_map.in.anm2"
         variables:
-          INFO: Gradient Map for AviUtl2
+          INFO: グラデーションマップスクリプト

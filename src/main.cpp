@@ -17,19 +17,17 @@
 //---------------------------------------------------------------------
 //	プラグイン情報用マクロ
 //---------------------------------------------------------------------
-#define STRINGIFY2(x) #x
-#define STRINGIFY(x) STRINGIFY2(x)
 #define WIDEN2(x) L##x
 #define WIDEN(x) WIDEN2(x)
 
 #define PLUGIN_NAME "Gradient Editor"
 #define PLUGIN_FILE_NAME "GradientEditor"
 #define PLUGIN_AUTHOR "azurite"
-#ifndef PLUGIN_VERSION_CORE
-#define PLUGIN_VERSION_CORE 0.4.1
+#ifndef PLUGIN_VERSION
+#define PLUGIN_VERSION "0.4.1"
 #endif
 
-#define PLUGIN_VERSION_STR L"v" WIDEN(STRINGIFY(PLUGIN_VERSION_CORE))
+#define PLUGIN_VERSION_STR L"v" WIDEN(PLUGIN_VERSION)
 #define PLUGIN_INFO    \
     WIDEN(PLUGIN_NAME) \
     L" " PLUGIN_VERSION_STR L" " WIDEN(PLUGIN_AUTHOR)
