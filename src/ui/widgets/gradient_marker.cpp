@@ -52,6 +52,17 @@ int32_t GradientMarkerManager::getIndexById(const int32_t id) const
     return -1;
 }
 
+int32_t GradientMarkerManager::getAlphaIndexById(const int32_t id) const
+{
+    auto it = std::find_if(m_alpha_markers.begin(), m_alpha_markers.end(),
+                           [id](const AlphaMarkerData& m) { return m.id == id; });
+
+    if (it != m_alpha_markers.end()) {
+        return static_cast<int>(std::distance(m_alpha_markers.begin(), it));
+    }
+    return -1;
+}
+
 int32_t GradientMarkerManager::getIdByIndex(const uint32_t index) const
 {
     if (index < 0 || index >= static_cast<uint32_t>(std::ssize(m_markers))) {
@@ -146,6 +157,12 @@ void GradientMarkerManager::setMarkerRegion(const ImVec2& p0, const ImVec2& p1) 
     m_regions.marker_p1 = p1;
 }
 
+void GradientMarkerManager::setAlphaMarkerRegion(const ImVec2& p0, const ImVec2& p1) noexcept
+{
+    m_regions.alpha_marker_p0 = p0;
+    m_regions.alpha_marker_p1 = p1;
+}
+
 void GradientMarkerManager::changeMarkerCount(const uint32_t marker_count)
 {
     if (marker_count < 2) return;
@@ -201,6 +218,14 @@ void GradientMarkerManager::sortMarkers()
               });
 }
 
+void GradientMarkerManager::sortAlphaMarkers()
+{
+    std::sort(m_alpha_markers.begin(), m_alpha_markers.end(),
+              [](const AlphaMarkerData& a, const AlphaMarkerData& b) {
+                  return a.pos < b.pos;
+              });
+}
+
 // ID を基準に昇順にソート
 void GradientMarkerManager::sortMarkersById()
 {
@@ -220,6 +245,17 @@ void GradientMarkerManager::moveMarker(const int32_t id, const float new_pos)
 
     sortMarkers();
     updateMidpointsPos();
+}
+
+void GradientMarkerManager::moveAlphaMarker(const int32_t id, const float new_pos)
+{
+    int32_t idx = getAlphaIndexById(id);
+    if (idx == -1) return;
+
+    // 位置を更新
+    m_alpha_markers[idx].pos = std::clamp(new_pos, 0.0f, 1.0f);
+
+    sortAlphaMarkers();
 }
 
 void GradientMarkerManager::moveMidpoint(const int32_t id, const float new_pos)
@@ -302,6 +338,18 @@ void GradientMarkerManager::addMarker(const int32_t id, const float marker_pos, 
 
     sortMarkers();
     updateMidpointsPos();  // 中間点の位置は追加後に前後のマーカー位置から計算する
+}
+
+void GradientMarkerManager::addAlphaMarker(const int32_t id, const float marker_pos, const float value)
+{
+    AlphaMarkerData new_marker;
+    new_marker.id    = id;
+    new_marker.pos   = marker_pos;
+    new_marker.value = value;
+
+    m_alpha_markers.push_back(new_marker);
+
+    sortAlphaMarkers();
 }
 
 void GradientMarkerManager::onClickedMarker(const ImVec2& mouse_pos, bool use_default_action, std::move_only_function<void(void*)> func, void* param)
@@ -446,6 +494,41 @@ void GradientMarkerManager::updateMarker(const ImVec2& mouse_pos, const ImVec4& 
     return;
 }
 
+void GradientMarkerManager::updateAlphaMarker(const ImVec2& mouse_pos, const float new_value, const uint32_t max_alpha_marker_count)
+{
+    if (!m_io_enable) return;
+
+    // クリックされた位置にあるアルファマーカーIDを取得
+    if (ImGui::IsMouseClicked(ImGuiMouseButton_Left) && !m_state.is_open_popup) {
+        m_state.clicked_alpha_marker_id = getAlphaMarkerIdUnderMouse(mouse_pos);
+        if (m_state.clicked_alpha_marker_id >= 0) {
+            m_state.selected_alpha_marker_id = m_state.clicked_alpha_marker_id;
+        }
+    }
+
+    // アルファマーカーをクリックかつドラッグ状態ならアルファマーカーを動かす
+    if (m_state.clicked_alpha_marker_id >= 0 && ImGui::IsMouseDragging(ImGuiMouseButton_Left) && !m_state.is_open_popup) {
+        m_state.is_alpha_marker_added = false;
+        float marker_pos              = getMarkerPosFromMousePos(mouse_pos);
+        moveAlphaMarker(m_state.selected_alpha_marker_id, marker_pos);
+    } else if (m_state.clicked_alpha_marker_id == std::to_underlying(Region::AlphaMarker) && ImGui::IsMouseClicked(ImGuiMouseButton_Left) && !m_state.is_open_popup && std::ssize(m_alpha_markers) < max_alpha_marker_count) {
+        // クリックされた位置にアルファマーカーが無く、アルファマーカー描画領域内かつ、現在のアルファマーカー数がアルファマーカーの最大数未満なら
+        // クリック位置にアルファマーカーを作成
+        float marker_pos = getMarkerPosFromMousePos(mouse_pos);
+        addAlphaMarker(m_state.alpha_marker_id_counter, marker_pos, new_value);
+        m_state.is_alpha_marker_added = true;
+
+        m_state.selected_alpha_marker_id = m_state.alpha_marker_id_counter;  // 追加したアルファマーカーを選択状態にする
+        m_state.clicked_alpha_marker_id  = m_state.alpha_marker_id_counter;
+
+        ++m_state.alpha_marker_id_counter;
+    } else {
+        m_state.is_alpha_marker_added = false;
+    }
+
+    return;
+}
+
 void GradientMarkerManager::updateMidpoint(const ImVec2& mouse_pos)
 {
     if (!m_io_enable) return;
@@ -487,6 +570,29 @@ int32_t GradientMarkerManager::getMarkerIdUnderMouse(const ImVec2& mouse_pos) co
             }
         }
         return std::to_underlying(Region::Marker);
+    }
+    return std::to_underlying(Region::OutSide);
+}
+
+int32_t GradientMarkerManager::getAlphaMarkerIdUnderMouse(const ImVec2& mouse_pos) const
+{
+    bool is_in_alpha_marker_region =
+        (mouse_pos.x >= m_regions.alpha_marker_p0.x - m_config.marker_width * 0.5f) &&
+        (mouse_pos.x < m_regions.alpha_marker_p1.x + m_config.marker_width * 0.5f) &&
+        (mouse_pos.y >= m_regions.alpha_marker_p0.y) &&
+        (mouse_pos.y < m_regions.alpha_marker_p1.y);
+
+    if (is_in_alpha_marker_region) {
+        for (const auto& marker : m_alpha_markers) {
+            float marker_center_pos_x = m_regions.gradient_p0.x + (m_regions.gradient_p1.x - m_regions.gradient_p0.x) * marker.pos;
+            ImVec2 p0                 = ImVec2(marker_center_pos_x - m_config.marker_width * 0.5f, m_regions.alpha_marker_p0.y);
+            ImVec2 p1                 = ImVec2(marker_center_pos_x + m_config.marker_width * 0.5f, m_regions.alpha_marker_p1.y);
+            if (mouse_pos.x >= p0.x && mouse_pos.x <= p1.x &&
+                mouse_pos.y >= p0.y && mouse_pos.y <= p1.y) {
+                return marker.id;
+            }
+        }
+        return std::to_underlying(Region::AlphaMarker);
     }
     return std::to_underlying(Region::OutSide);
 }
@@ -572,28 +678,40 @@ void GradientMarkerManager::distributeMarkersAndMipointsEvenly()
     }
 }
 
-void GradientMarkerManager::drawMarker(const float pos, const ImVec4& color, const int32_t id) const
+void GradientMarkerManager::drawMarker(ImVec2 p0, ImVec2 p1, const ImVec4& color, const int32_t id, const bool is_upward) const
 {
-    ImVec2 p0             = ImVec2(m_regions.marker_p0.x + (m_regions.marker_p1.x - m_regions.marker_p0.x) * pos - (m_config.marker_width * 0.5f), m_regions.marker_p0.y);
-    ImVec2 p1             = ImVec2(m_regions.marker_p0.x + (m_regions.marker_p1.x - m_regions.marker_p0.x) * pos + (m_config.marker_width * 0.5f), m_regions.marker_p1.y);
     ImDrawList* draw_list = ImGui::GetWindowDrawList();
 
     float triangle_height = static_cast<float>(m_config.triangle_height);
+
     // 三角形を描画
-    draw_list->AddTriangleFilled(
-        ImVec2(p0.x + m_config.marker_width * 0.5f, p0.y),
-        ImVec2(p1.x, p0.y + triangle_height),
-        ImVec2(p0.x, p0.y + triangle_height),
-        ImGui::ColorConvertFloat4ToU32(ImVec4(204.0f / 255.0f, 204.0f / 255.0f, 204.0f / 255.0f, 1.0f)));
+    if (is_upward) {
+        draw_list->AddTriangleFilled(
+            ImVec2(p0.x + m_config.marker_width * 0.5f, p0.y),
+            ImVec2(p1.x, p0.y + triangle_height),
+            ImVec2(p0.x, p0.y + triangle_height),
+            ImGui::ColorConvertFloat4ToU32(ImVec4(204.0f / 255.0f, 204.0f / 255.0f, 204.0f / 255.0f, 1.0f)));
+        draw_list->AddTriangle(
+            ImVec2(p0.x + m_config.marker_width * 0.5f, p0.y),
+            ImVec2(p1.x, p0.y + triangle_height),
+            ImVec2(p0.x, p0.y + triangle_height),
+            IM_COL32(255, 255, 255, 255), 1.0f);
 
-    draw_list->AddTriangle(
-        ImVec2(p0.x + m_config.marker_width * 0.5f, p0.y),
-        ImVec2(p1.x, p0.y + triangle_height),
-        ImVec2(p0.x, p0.y + triangle_height),
-        IM_COL32(255, 255, 255, 255), 1.0f);
+        p0.y += triangle_height;
+    } else {
+        draw_list->AddTriangleFilled(
+            ImVec2(p0.x + m_config.marker_width * 0.5f, p1.y),
+            ImVec2(p1.x, p1.y - triangle_height),
+            ImVec2(p0.x, p1.y - triangle_height),
+            ImGui::ColorConvertFloat4ToU32(ImVec4(204.0f / 255.0f, 204.0f / 255.0f, 204.0f / 255.0f, 1.0f)));
+        draw_list->AddTriangle(
+            ImVec2(p0.x + m_config.marker_width * 0.5f, p1.y),
+            ImVec2(p1.x, p1.y - triangle_height),
+            ImVec2(p0.x, p1.y - triangle_height),
+            IM_COL32(255, 255, 255, 255), 1.0f);
+    }
 
-    p0.y += triangle_height;
-
+    // カラーボタンを描画
     ImGui::PushID(id);
     ImVec2 backup = ImGui::GetCursorScreenPos();
     ImGui::SetCursorScreenPos(p0);
@@ -602,12 +720,19 @@ void GradientMarkerManager::drawMarker(const float pos, const ImVec4& color, con
     ImGui::SetCursorScreenPos(backup);
     ImGui::PopID();
 
+    if (!is_upward) {
+        p1.y -= triangle_height;
+    }
+    // 四角形の枠を描画
     draw_list->AddRect(p0, p1, IM_COL32(0, 0, 0, 255), 0, 0, 3.0f);
     draw_list->AddRect(p0, p1, IM_COL32(255, 255, 255, 255), 0, 0, 1.0f);
 }
 
 void GradientMarkerManager::drawMarkers() const
 {
+    // アルファマーカーはグラデーションの下に描画するため、マーカーは上向き
+    bool is_upward = true;
+
     int32_t selected_marker_idx = -1;
     for (const auto& [i, marker] : m_markers | std::views::enumerate) {
         // 選択中のマーカーは最前面に描画する
@@ -615,12 +740,45 @@ void GradientMarkerManager::drawMarkers() const
             selected_marker_idx = static_cast<int32_t>(i);
             continue;
         }
-        drawMarker(marker.pos, marker.color, marker.id);
+        float pos = marker.pos;
+        ImVec2 p0 = ImVec2(m_regions.marker_p0.x + (m_regions.marker_p1.x - m_regions.marker_p0.x) * pos - (m_config.marker_width * 0.5f), m_regions.marker_p0.y);
+        ImVec2 p1 = ImVec2(m_regions.marker_p0.x + (m_regions.marker_p1.x - m_regions.marker_p0.x) * pos + (m_config.marker_width * 0.5f), m_regions.marker_p1.y);
+        drawMarker(p0, p1, marker.color, marker.id, is_upward);
     }
 
     if (selected_marker_idx >= 0) {
-        drawMarker(m_markers.at(selected_marker_idx).pos, m_markers.at(selected_marker_idx).color, m_markers.at(selected_marker_idx).id);
-        highlightMarker(m_markers.at(selected_marker_idx).pos, ImVec4(1.0f, 1.0f, 1.0f, 1.0f));
+        float pos = m_markers.at(selected_marker_idx).pos;
+        ImVec2 p0 = ImVec2(m_regions.marker_p0.x + (m_regions.marker_p1.x - m_regions.marker_p0.x) * pos - (m_config.marker_width * 0.5f), m_regions.marker_p0.y);
+        ImVec2 p1 = ImVec2(m_regions.marker_p0.x + (m_regions.marker_p1.x - m_regions.marker_p0.x) * pos + (m_config.marker_width * 0.5f), m_regions.marker_p1.y);
+        drawMarker(p0, p1, m_markers.at(selected_marker_idx).color, m_markers.at(selected_marker_idx).id, is_upward);
+        highlightMarker(p0, p1, ImVec4(1.0f, 1.0f, 1.0f, 1.0f), 2.0f, 2.0f, is_upward);
+    }
+}
+
+void GradientMarkerManager::drawAlphaMarkers() const
+{
+    // アルファマーカーはグラデーションの上に描画するため、マーカーは下向き
+    bool is_upward = false;
+
+    int32_t selected_marker_idx = -1;
+    for (const auto& [i, marker] : m_alpha_markers | std::views::enumerate) {
+        // 選択中のマーカーは最前面に描画する
+        if (marker.id == m_state.selected_alpha_marker_id) {
+            selected_marker_idx = static_cast<int32_t>(i);
+            continue;
+        }
+        float pos = marker.pos;
+        ImVec2 p0 = ImVec2(m_regions.alpha_marker_p0.x + (m_regions.alpha_marker_p1.x - m_regions.alpha_marker_p0.x) * pos - (m_config.marker_width * 0.5f), m_regions.alpha_marker_p0.y);
+        ImVec2 p1 = ImVec2(m_regions.alpha_marker_p0.x + (m_regions.alpha_marker_p1.x - m_regions.alpha_marker_p0.x) * pos + (m_config.marker_width * 0.5f), m_regions.alpha_marker_p1.y);
+        drawMarker(p0, p1, ImVec4(0.0f, 0.0f, 0.0f, marker.value), marker.id, is_upward);
+    }
+
+    if (selected_marker_idx >= 0) {
+        float pos = m_alpha_markers.at(selected_marker_idx).pos;
+        ImVec2 p0 = ImVec2(m_regions.alpha_marker_p0.x + (m_regions.alpha_marker_p1.x - m_regions.alpha_marker_p0.x) * pos - (m_config.marker_width * 0.5f), m_regions.alpha_marker_p0.y);
+        ImVec2 p1 = ImVec2(m_regions.alpha_marker_p0.x + (m_regions.alpha_marker_p1.x - m_regions.alpha_marker_p0.x) * pos + (m_config.marker_width * 0.5f), m_regions.alpha_marker_p1.y);
+        drawMarker(p0, p1, ImVec4(0.0f, 0.0f, 0.0f, m_alpha_markers.at(selected_marker_idx).value), m_alpha_markers.at(selected_marker_idx).id, is_upward);
+        highlightMarker(p0, p1, ImVec4(1.0f, 1.0f, 1.0f, 1.0f), 2.0f, 2.0f, is_upward);
     }
 }
 
@@ -652,13 +810,14 @@ void GradientMarkerManager::drawMidpoints() const
     }
 }
 
-void GradientMarkerManager::highlightMarker(const float pos, const ImVec4& highlight_color, const float thickness, const float offset) const
+void GradientMarkerManager::highlightMarker(ImVec2 p0, ImVec2 p1, const ImVec4& highlight_color, const float thickness, const float offset, const bool is_upward) const
 {
-    ImVec2 p0 = ImVec2(m_regions.marker_p0.x + (m_regions.marker_p1.x - m_regions.marker_p0.x) * pos - (m_config.marker_width * 0.5f), m_regions.marker_p0.y);
-    ImVec2 p1 = ImVec2(m_regions.marker_p0.x + (m_regions.marker_p1.x - m_regions.marker_p0.x) * pos + (m_config.marker_width * 0.5f), m_regions.marker_p1.y);
-
-    float height = m_regions.marker_p1.y - m_regions.marker_p0.y;
-    p0.y += height - m_config.marker_width;
+    float triangle_height = static_cast<float>(m_config.triangle_height);
+    if (is_upward) {
+        p0.y += triangle_height;
+    } else {
+        p1.y -= triangle_height;
+    }
 
     p0 = ImVec2(p0.x - offset, p0.y - offset);
     p1 = ImVec2(p1.x + offset, p1.y + offset);

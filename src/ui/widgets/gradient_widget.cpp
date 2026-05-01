@@ -119,11 +119,24 @@ GradientData* drawGradientEditor(
         ImGui::PopStyleVar();
     }
 
-    // グラデーションを描画したテクスチャを使ってボタンを描画
+    if (1) {
+        ImVec2 marker_region_size = ImVec2(display_size.x, static_cast<float>(gradient_marker->getMarkerRegionHeight()));
+        if (!(flags & GradientEditorFlags_NotAlignSideToMarker)) {
+            ImVec2 cursor = ImGui::GetCursorScreenPos();
+            ImGui::SetCursorScreenPos(ImVec2(cursor.x + marker_half_width, cursor.y));
+            marker_region_size.x -= gradient_marker->getMarkerWidth();
+        }
+        ImGui::InvisibleButton("alpha_markers", marker_region_size);
+        ImVec2 p0 = ImGui::GetItemRectMin();
+        ImVec2 p1 = ImGui::GetItemRectMax();
+
+        gradient_marker->setAlphaMarkerRegion(p0, p1);
+        gradient_marker->drawAlphaMarkers();
+    }
+
     if (!(flags & GradientEditorFlags_NoMarker)) ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(ImGui::GetStyle().ItemSpacing.x, 0.0f));
-
     ImVec2 gradient_region_size = display_size;
-
+    // グラデーションを描画
     if (!(flags & GradientEditorFlags_NotAlignSideToMarker)) {
         ImVec2 cursor = ImGui::GetCursorScreenPos();
         ImGui::SetCursorScreenPos(ImVec2(cursor.x + marker_half_width, cursor.y));
@@ -192,7 +205,7 @@ GradientData* drawGradientEditor(
     // 中間点をクリックしているかに基づいてマーカーの更新を行うかどうかを判断するため、マーカーの更新は中間点の更新より後に行う必要がある
     gradient_marker->updateMidpoint(mouse_pos);
     gradient_marker->updateMarker(mouse_pos, new_marker_color, config.max_marker_count);
-
+    gradient_marker->updateAlphaMarker(mouse_pos, 1.0f, config.max_marker_count);
 
     ImGui::PushID(gradient_marker);
     gradient_marker->showColorPickerPopup();

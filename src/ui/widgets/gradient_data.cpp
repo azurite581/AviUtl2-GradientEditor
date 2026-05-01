@@ -21,6 +21,16 @@ GradientRenderer::PixelConstantBuffer GradientData::gradientData2pixelConstantBu
     buffer_values.gradient_display_size[0] = m_gradient_display_width;
     buffer_values.gradient_display_size[1] = m_gradient_display_height;
 
+    auto alpha_markers = m_marker_manager.getAlphaMarkers();
+    auto alpha_sec_num = static_cast<int32_t>(std::ssize(alpha_markers)) - 1;
+    for (int32_t i = 0; i < alpha_sec_num; ++i) {
+        buffer_values.alpha_stops[i].start_pos   = alpha_markers[i].pos;
+        buffer_values.alpha_stops[i].stop_pos    = alpha_markers[i + 1].pos;
+        buffer_values.alpha_stops[i].start_value = alpha_markers[i].value;
+        buffer_values.alpha_stops[i].stop_value  = alpha_markers[i + 1].value;
+    }
+    buffer_values.alpha_sec_num = alpha_sec_num;
+
     return buffer_values;
 }
 

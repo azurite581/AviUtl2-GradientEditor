@@ -79,6 +79,14 @@ public:
         float blur_width;
         float texture_size[2];
         float gradient_display_size[2];
+        struct AlphaMarkerInfo {
+            float start_pos{};
+            float stop_pos{};
+            float start_value{};
+            float stop_value{};
+        } alpha_stops[MAX_MARKER_COUNT];
+        int32_t alpha_sec_num;
+        float pad[3];
     };
 
     // すべてのリソースを保持する構造体

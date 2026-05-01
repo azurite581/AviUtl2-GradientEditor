@@ -1,4 +1,5 @@
 #include "gradient_renderer.h"
+#include <cstdio>
 
 bool GradientRenderer::init(
     Microsoft::WRL::ComPtr<ID3D11Device> d3d_device,
@@ -189,6 +190,11 @@ std::expected<std::monostate, std::string> GradientRenderer::updatePixelConstant
     data_ptr->blur_width    = buffer_values->blur_width;
     std::memcpy(data_ptr->texture_size, buffer_values->texture_size, sizeof(data_ptr->texture_size));
     std::memcpy(data_ptr->gradient_display_size, buffer_values->gradient_display_size, sizeof(data_ptr->gradient_display_size));
+    std::memcpy(data_ptr->alpha_stops, buffer_values->alpha_stops, sizeof(data_ptr->alpha_stops));
+    data_ptr->alpha_sec_num = buffer_values->alpha_sec_num;
+    data_ptr->pad[0]        = buffer_values->pad[0];
+    data_ptr->pad[1]        = buffer_values->pad[1];
+    data_ptr->pad[2]        = buffer_values->pad[2];
 
     d3d_device_context->Unmap(pixel_constant_buffer, 0);
     d3d_device_context->PSSetConstantBuffers(0, 1, &pixel_constant_buffer);
@@ -352,6 +358,11 @@ void GradientRenderer::runOffscreenRendering(
 
     // サンプラー設定
     d3d_device_context->PSSetSamplers(0, 1, resources.sampler_state.GetAddressOf());
+
+    // ブレンドステートを明示的に設定（保存している古いステートは D3DStateSaver で復元される）
+    if (resources.blend_state) {
+        d3d_device_context->OMSetBlendState(resources.blend_state.Get(), nullptr, 0xFFFFFFFF);
+    }
 
     // 描画コマンド
     d3d_device_context->IASetInputLayout(resources.input_layout.Get());
