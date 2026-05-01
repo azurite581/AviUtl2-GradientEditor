@@ -86,15 +86,15 @@ local mid_table = {0.50}
 ---$value:マーカー数
 local marker_num = 2
 
---separator:透明度マーカー
+--separator:アルファマーカー
 
----$value:透明度
+---$value:アルファ値
 local transparency_table = {1.00,1.00}
 
----$value:透明度位置
+---$value:アルファ位置
 local transparency_pos_table = {0.00,1.00}
 
----$value:透明度マーカー数
+---$value:アルファマーカー数
 local trans_marker_num = 2
 
 --separator:その他

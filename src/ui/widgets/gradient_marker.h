@@ -150,6 +150,7 @@ public:
     [[nodiscard]] int32_t getIndexById(const int32_t id) const;
     [[nodiscard]] int32_t getAlphaIndexById(const int32_t id) const;
     [[nodiscard]] int32_t getIdByIndex(const uint32_t index) const;
+    [[nodiscard]] int32_t getAlphaIdByIndex(const uint32_t index) const;
     [[nodiscard]] float getMarkerPosFromMousePos(const ImVec2& mouse_pos) const;
 
     [[nodiscard]] const std::vector<GradientMarkerData>& getMarkers() const noexcept { return m_markers; }
@@ -193,6 +194,7 @@ public:
     void setMarkerPos(const int32_t id, const float pos);
     void setMarkerColor(const int32_t id, const ImVec4& color);
     void setMidpointRatio(const int32_t id, const float ratio);
+    void setAlphaMarkerPos(const int32_t id, const float pos);
     void setAlphaMarkerValue(const int32_t id, const float value);
 
     void setSelectedMarkerPos(const float pos);
@@ -212,6 +214,7 @@ public:
     // 操作
     //
     void changeMarkerCount(const uint32_t marker_count);
+    void changeAlphaMarkerCount(const uint32_t alpha_marker_count);
     void setDefaultMarkers(const std::vector<GradientMarkerData>& marker_data = {
                                {.id = 0, .pos = 0.0f, .color = ImVec4(0.0f, 0.0f, 0.0f, 1.0f), .midpoint = {.ratio = 0.5f, .pos = 0.5}},
                                {.id = 1, .pos = 1.0f, .color = ImVec4(1.0f, 1.0f, 1.0f, 1.0f), .midpoint = {.ratio = 0.5f, .pos = FLT_MIN}}});
@@ -230,6 +233,7 @@ public:
     void showColorPickerPopup();
     void showAlphaSliderPopup();
     void deleteMarker(const int32_t id);
+    void deleteAlphaMarker(const int32_t id);
     void deleteSelectedMarker();
     void distributeMarkersEvenly();
     void distributeMarkersAndMipointsEvenly();

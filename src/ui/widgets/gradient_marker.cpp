@@ -1,4 +1,5 @@
 #include "gradient_marker.h"
+#include <cstdint>
 #include <iostream>
 
 float GradientMarkerManager::getMarkerPos(const int32_t id) const
@@ -78,6 +79,14 @@ int32_t GradientMarkerManager::getIdByIndex(const uint32_t index) const
     return m_markers[index].id;
 }
 
+int32_t GradientMarkerManager::getAlphaIdByIndex(const uint32_t index) const
+{
+    if (index < 0 || index >= static_cast<uint32_t>(std::ssize(m_alpha_markers))) {
+        return -1;
+    }
+    return m_alpha_markers[index].id;
+}
+
 std::vector<float> GradientMarkerManager::getMarkerPos() const
 {
     std::vector<float> pos(static_cast<uint32_t>(std::ssize(m_markers)));
@@ -127,6 +136,13 @@ void GradientMarkerManager::setMarkerColor(const int32_t id, const ImVec4& color
 void GradientMarkerManager::setMidpointRatio(const int32_t id, const float ratio)
 {
     moveMidpointRatio(id, ratio);
+}
+
+void GradientMarkerManager::setAlphaMarkerPos(const int32_t id, const float pos)
+{
+    int32_t idx = getAlphaIndexById(id);
+    if (idx == -1) return;
+    m_alpha_markers[idx].pos = std::clamp(pos, 0.0f, 1.0f);
 }
 
 void GradientMarkerManager::setAlphaMarkerValue(const int32_t id, const float value)
@@ -199,6 +215,29 @@ void GradientMarkerManager::changeMarkerCount(const uint32_t marker_count)
 
     sortMarkers();
     updateMidpointsPos();
+}
+
+void GradientMarkerManager::changeAlphaMarkerCount(const uint32_t alpha_marker_count)
+{
+    if (alpha_marker_count < 2) return;
+
+    uint32_t cur_alpha_marker_count = static_cast<uint32_t>(std::ssize(m_alpha_markers));
+    if (alpha_marker_count == cur_alpha_marker_count) {
+        return;
+    } else if (alpha_marker_count > cur_alpha_marker_count) {
+        for (uint32_t i = 0; i < alpha_marker_count - cur_alpha_marker_count; ++i) {
+            addAlphaMarker(m_state.alpha_marker_id_counter, 0.0f, 1.0f);
+            ++m_state.alpha_marker_id_counter;
+        }
+    } else {
+        for (uint32_t i = 0; i < cur_alpha_marker_count - alpha_marker_count; ++i) {
+            if (!m_alpha_markers.empty()) {
+                deleteAlphaMarker(getAlphaIdByIndex(static_cast<uint32_t>(std::ssize(m_alpha_markers)) - 1));
+            }
+        }
+    }
+
+    sortAlphaMarkers();
 }
 
 void GradientMarkerManager::setDefaultMarkers(const std::vector<GradientMarkerData>& marker_data)
@@ -700,6 +739,31 @@ void GradientMarkerManager::deleteMarker(const int32_t id)
     // 選択中の中間点 ID が不正になった場合
     if (getIndexById(m_state.selected_midpoint_id) == -1 || getIndexById(m_state.selected_midpoint_id) >= std::ssize(m_markers) - 1) {
         m_state.selected_midpoint_id = m_markers[0].id;
+    }
+}
+
+void GradientMarkerManager::deleteAlphaMarker(const int32_t id)
+{
+    if (std::ssize(m_alpha_markers) <= 2) return;
+
+    int idx = getAlphaIndexById(id);
+    if (idx == -1) return;
+
+    // 削除
+    m_alpha_markers.erase(m_alpha_markers.begin() + idx);
+
+    updateMarkerId();
+
+    // 次に選択する ID を更新 (削除した位置にある要素、または末尾ならその前)
+    if (idx < std::ssize(m_alpha_markers)) {
+        m_state.selected_alpha_marker_id = m_alpha_markers[idx].id;
+    } else {
+        m_state.selected_alpha_marker_id = m_alpha_markers.back().id;
+    }
+
+    // 選択中の中間点 ID が不正になった場合
+    if (getAlphaIndexById(m_state.selected_alpha_marker_id) == -1 || getAlphaIndexById(m_state.selected_alpha_marker_id) >= std::ssize(m_alpha_markers) - 1) {
+        m_state.selected_alpha_marker_id = m_alpha_markers[0].id;
     }
 }
 

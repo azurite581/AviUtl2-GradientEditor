@@ -65,6 +65,29 @@ void ScriptBridge::loadGradientFromScript(EDIT_SECTION* edit,
         }
     }
 
+    uint32_t alpha_marker_count = plugin2_utils::getObjectItemValue(edit, object_handle, effect_name.c_str(), effect_index, L"アルファマーカー数", 2u, target_move_index);
+    data.getMarkerManager()->changeAlphaMarkerCount(alpha_marker_count);
+
+    std::string alpha_value_array_str = edit->get_object_item_value(object_handle, effect_name.c_str(), L"アルファ値");
+    auto alpha_value_result = alias_parser::splitStr<float>(alpha_value_array_str, ",");
+    if (!alpha_value_result) {
+        m_logger_wrapper->error("Failed to parse アルファ値: {}", alpha_value_result.error());
+    } else {
+        for (uint32_t i = 0; i < markers.size(); ++i) {
+            data.getMarkerManager()->setAlphaMarkerPos(markers[i].id, alpha_value_result.value()[i]);
+        }
+    }
+
+    std::string alpha_pos_array_str = edit->get_object_item_value(object_handle, effect_name.c_str(), L"アルファ位置");
+    auto alpha_pos_result = alias_parser::splitStr<float>(alpha_pos_array_str, ",");
+    if (!alpha_pos_result) {
+        m_logger_wrapper->error("Failed to parse アルファ位置: {}", alpha_pos_result.error());
+    } else {
+        for (uint32_t i = 0; i < markers.size(); ++i) {
+            data.getMarkerManager()->setAlphaMarkerPos(markers[i].id, alpha_pos_result.value()[i]);
+        }
+    }
+
     // ぼかし幅
     float blur_width = plugin2_utils::getObjectItemValue(edit, object_handle, effect_name.c_str(), effect_index, L"ぼかし幅", 100.0f);
     data.setBlurWidth(blur_width / 100.0f);
@@ -138,6 +161,22 @@ void ScriptBridge::applyGradientToScript(EDIT_SECTION* edit,
 
     // マーカー数
     plugin2_utils::setObjectItemValue(edit, object_handle, effect_name.c_str(), effect_index, L"マーカー数", marker_count, 2u, target_move_index);
+
+    auto alpha_markers = data.getMarkerManager()->getAlphaMarkers();
+    uint32_t alpha_marker_count = static_cast<uint32_t>(alpha_markers.size());
+    edit->set_object_item_value(object_handle, effect_name.c_str(), L"アルファマーカー数", std::to_string(alpha_marker_count).c_str());
+
+    std::string alpha_pos_array_str, alpha_value_array_str;
+    for (uint32_t i = 0; i < alpha_marker_count; ++i) {
+        alpha_value_array_str += std::format("{:.2f}", alpha_markers[i].value);
+        alpha_pos_array_str += std::format("{:.2f}", alpha_markers[i].pos);
+        if (i != alpha_marker_count - 1) {
+            alpha_value_array_str += ",";
+            alpha_pos_array_str += ",";
+        }
+    }
+    edit->set_object_item_value(object_handle, effect_name.c_str(), L"アルファ位置", alpha_pos_array_str.c_str());
+    edit->set_object_item_value(object_handle, effect_name.c_str(), L"アルファ値", alpha_value_array_str.c_str());
 
     // ぼかし幅
     plugin2_utils::setObjectItemValue(edit, object_handle, effect_name.c_str(), effect_index, L"ぼかし幅", data.getBlurWidth() * 100.0f, 100.0f);
