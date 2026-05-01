@@ -88,8 +88,7 @@ jobs:
     # CMakePresets.json の PLUGIN_VERSION 変数を置き換える
     - name: CMakePresets.json variable update
       run: |
-        $version = "v$env:VERSION"
-        yq -i '(.configurePresets[] | select(.name == \"windows-base\")).cacheVariables.PLUGIN_VERSION = `"$version`"" ./CMakePresets.json
+        yq -i '(.configurePresets[] | select(.name == "windows-base")).cacheVariables.PLUGIN_VERSION = env(VERSION)' ./CMakePresets.json
       env:
         VERSION: ${{ steps.extract-version.outputs.version }}
 
