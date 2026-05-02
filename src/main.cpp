@@ -105,7 +105,7 @@ EXTERN_C __declspec(dllexport) void InitializeConfig(CONFIG_HANDLE* handle)
     // 設定ファイルの作成
     std::filesystem::path settings_file_path{gradient_editor::g_app_state.config_handle->app_data_path};
     settings_file_path /= L"Plugin";
-    settings_file_path /= PLUGIN_FILE_NAME;
+    settings_file_path /= WIDEN(PLUGIN_FILE_NAME);
     settings_file_path.replace_extension("ini");
     gradient_editor::g_app_state.settings_file_path = settings_file_path;
 
