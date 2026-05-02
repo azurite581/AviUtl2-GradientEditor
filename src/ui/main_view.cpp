@@ -167,73 +167,6 @@ void MainView::renderGradientEditor()
     }
 
     //
-    // セクション選択
-    //
-    bool is_changed_section = false;
-    ImGui::AlignTextToFramePadding();
-    ImGui::Text(m_config_wrapper->tr(L"セクション").c_str());
-    ImGui::SameLine();
-
-    if (ImGui::ArrowButton("##left", ImGuiDir_Left)) {
-        is_changed_section = true;
-        plugin2_utils::call_edit_lambda(gradient_editor::g_app_state.edit_handle->call_edit_section_param, [&](EDIT_SECTION* edit) {
-            OBJECT_HANDLE obj = edit->get_focus_object();
-            if (obj) {
-                if (auto* alias = edit->get_object_alias(obj))
-                    m_frame_count = alias_parser::getFrameCount(alias);
-            }
-        });
-        m_target_move_index = std::clamp(m_target_move_index - 1, 0, m_frame_count - 1);
-    }
-    if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNormal)) ImGui::SetTooltip(m_config_wrapper->tr(L"前のセクションに移動").c_str());
-
-    ImGui::SameLine(0, ImGui::GetStyle().ItemInnerSpacing.x);
-    if (ImGui::ArrowButton("##right", ImGuiDir_Right)) {
-        is_changed_section = true;
-        plugin2_utils::call_edit_lambda(gradient_editor::g_app_state.edit_handle->call_edit_section_param, [&](EDIT_SECTION* edit) {
-            OBJECT_HANDLE obj = edit->get_focus_object();
-            if (obj) {
-                if (auto* alias = edit->get_object_alias(obj))
-                    m_frame_count = alias_parser::getFrameCount(alias);
-            }
-        });
-        m_target_move_index = std::clamp(m_target_move_index + 1, 0, m_frame_count - 1);
-    }
-    if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNormal)) ImGui::SetTooltip(m_config_wrapper->tr(L"次のセクションに移動").c_str());
-
-    static bool is_refresh = false;
-    if (is_refresh) {
-        plugin2_utils::call_edit_lambda(gradient_editor::g_app_state.edit_handle->call_edit_section_param, [&](EDIT_SECTION* edit) {
-            OBJECT_HANDLE obj = edit->get_focus_object();
-            if (obj) {
-                if (auto* alias = edit->get_object_alias(obj))
-                    m_frame_count = alias_parser::getFrameCount(alias);
-            }
-        });
-    }
-
-    ImGui::SameLine();
-    float avail_width = ImGui::GetContentRegionAvail().x;
-    if (avail_width > 0) {
-        ImVec2 p0      = ImGui::GetCursorScreenPos();
-        ImVec2 p1      = ImVec2(p0.x + avail_width, p0.y + frame_height);
-        ImDrawList* dl = ImGui::GetWindowDrawList();
-        dl->AddRectFilled(p0, p1, ImGui::GetColorU32(ImGui::GetStyle().Colors[ImGuiCol_TitleBg]));
-        float p0_y = p0.y + frame_height * 0.4f;
-        dl->AddRectFilledMultiColor(ImVec2(p0.x, p0_y), p1, m_object_video_color_start, m_object_video_color_stop, m_object_video_color_stop, m_object_video_color_start);
-
-        for (int32_t i = 0; i < m_frame_count; ++i) {
-            float y0    = (i == 0 || i == m_frame_count - 1) ? p0.y : p0_y;
-            float ratio = m_frame_count == 1 ? 0.0f : (i / static_cast<float>(m_frame_count - 1));
-            ImVec2 lp0(p0.x + ratio * avail_width, y0);
-            ImVec2 lp1(lp0.x, p1.y);
-            ImU32 col = (i == m_target_move_index) ? m_frame_cursor_color : ImGui::GetColorU32(ImGui::GetStyle().Colors[ImGuiCol_Border]);
-            dl->AddLine(lp0, lp1, col, 1.0f);
-        }
-    }
-    ImGui::Dummy(ImVec2(0.0f, 0.0f));
-
-    //
     // スクリプト選択
     //
     static std::vector<std::string> effect_names_vec = []() {
@@ -293,7 +226,7 @@ void MainView::renderGradientEditor()
 
     // 再読み込み
     ImGui::SameLine();
-    is_refresh = imgui_utils::squareIconButton(ICON_MS_REFRESH, "##refresh");
+    bool is_refresh = imgui_utils::squareIconButton(ICON_MS_REFRESH, "##refresh");
     if (is_refresh) {
         plugin2_utils::call_edit_lambda(gradient_editor::g_app_state.edit_handle->call_edit_section_param, [&](EDIT_SECTION* edit) {
             if (auto obj = edit->get_focus_object()) m_layer_frame = edit->get_object_layer_frame(obj);
@@ -406,7 +339,6 @@ void MainView::renderGradientEditor()
         (m_apply && (                                         // または「反映」ON の状態で、
                         m_preset_window.isPresetClicked() ||  // プリセットがクリックされた
                         is_refresh ||                         // 更新ボタンが押された
-                        is_changed_section ||                 // セクションが変更された
                         is_changed_section_effect ||          // 対象とするスクリプトが変更された
                         is_changed_effect_index ||            // 同じスクリプトが複数ある際、対象とするスクリプトのインデックスが変更された
                         is_reverse                            // マーカー反転のボタンが押された
