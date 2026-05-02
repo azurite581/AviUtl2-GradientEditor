@@ -1,6 +1,6 @@
 project:
   variables:
-    VERSION: v0.4.2
+    VERSION: v0.4.3
     AUTHOR: azurite
     LABEL: 色調整
 build:
