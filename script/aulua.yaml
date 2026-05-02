@@ -1,12 +1,10 @@
 project:
   variables:
-    VERSION: v1.0.0
+    VERSION: v0.4.2
     AUTHOR: azurite
     LABEL: 色調整
-
 build:
   out_dir: ../out_script
-
 scripts:
   - name: "@GradientEditor.anm2"
     sources:
