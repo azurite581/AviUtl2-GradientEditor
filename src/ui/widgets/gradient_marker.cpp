@@ -42,6 +42,18 @@ ImVec4 GradientMarkerManager::getSelectedMarkerColor() const
     return m_markers[idx].color;
 }
 
+float GradientMarkerManager::getSelectedAlphaMarkerPos() const
+{
+    int32_t idx = getAlphaIndexById(m_state.selected_alpha_marker_id);
+    return m_alpha_markers[idx].pos;
+}
+
+float GradientMarkerManager::getSelectedAlphaMarkerValue() const
+{
+    int32_t idx = getAlphaIndexById(m_state.selected_alpha_marker_id);
+    return m_alpha_markers[idx].value;
+}
+
 float GradientMarkerManager::getSelectedMidpointRatio() const
 {
     int32_t idx = getIndexById(m_state.selected_midpoint_id);
@@ -103,6 +115,24 @@ std::vector<ImVec4> GradientMarkerManager::getMarkerColors() const
         colors[static_cast<uint32_t>(i)] = marker.color;
     }
     return colors;
+}
+
+std::vector<float> GradientMarkerManager::getAlphaMarkerValues() const
+{
+    std::vector<float> values(static_cast<uint32_t>(std::ssize(m_alpha_markers)));
+    for (const auto& [i, marker] : m_alpha_markers | std::views::enumerate) {
+        values[static_cast<uint32_t>(i)] = marker.value;
+    }
+    return values;
+}
+
+std::vector<float> GradientMarkerManager::getAlphaMarkerPos() const
+{
+    std::vector<float> pos(static_cast<uint32_t>(std::ssize(m_alpha_markers)));
+    for (const auto& [i, marker] : m_alpha_markers | std::views::enumerate) {
+        pos[static_cast<uint32_t>(i)] = marker.pos;
+    }
+    return pos;
 }
 
 std::vector<float> GradientMarkerManager::getMidpointRatios() const
@@ -260,6 +290,23 @@ void GradientMarkerManager::setDefaultMarkers(const std::vector<GradientMarkerDa
 
     sortMarkers();
     updateMidpointsPos();
+}
+
+void GradientMarkerManager::setDefaultAlphaMarkers(const std::vector<AlphaMarkerData>& alpha_marker_data)
+{
+    m_alpha_markers.clear();
+    for (const auto& [i, marker] : alpha_marker_data | std::views::enumerate) {
+        AlphaMarkerData data = {
+            .id    = static_cast<int32_t>(ALPHA_MARKER_ID_OFFSET + i),
+            .pos   = std::clamp(marker.pos, 0.0f, 1.0f),
+            .value = std::clamp(marker.value, 0.0f, 1.0f)};
+        m_alpha_markers.push_back(data);
+    }
+
+    m_state.selected_alpha_marker_id = ALPHA_MARKER_ID_OFFSET;
+    m_state.alpha_marker_id_counter = static_cast<int32_t>(ALPHA_MARKER_ID_OFFSET + std::ssize(m_alpha_markers));
+
+    sortAlphaMarkers();
 }
 
 // マーカー位置昇順にソートするヘルパー

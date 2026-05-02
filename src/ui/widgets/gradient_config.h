@@ -11,6 +11,7 @@
 
 #include "color_conv.h"
 #include "gradient_data.h"
+#include "gradient_marker.h"
 #include "json.hpp"
 #include "str_conv.h"
 
@@ -33,6 +34,8 @@ struct GradientPreset {
     std::vector<std::string> colors{"0x000000ff", "0xffffffff"};
     std::vector<float> positions{0.0f, 1.0f};
     std::vector<float> midpoints{0.5f};
+    std::vector<float> alpha_values{1.0f, 1.0f};
+    std::vector<float> alpha_positions{0.0f, 1.0f};
     float blur_width{1.0f};
     int32_t color_space{0};
     int32_t interpolation_path{0};
@@ -46,6 +49,8 @@ inline void to_json(nlohmann::ordered_json& j, const GradientPreset& preset)
         {"colors", preset.colors},
         {"positions", preset.positions},
         {"midpoints", preset.midpoints},
+        {"alpha_values", preset.alpha_values},
+        {"alpha_positions", preset.alpha_positions},
         {"blur_width", preset.blur_width},
         {"color_space", preset.color_space},
         {"interpolation_path", preset.interpolation_path}};
@@ -58,6 +63,8 @@ inline void from_json(const nlohmann::ordered_json& j, GradientPreset& preset)
     preset.colors             = j.value("colors", preset.colors);
     preset.positions          = j.value("positions", preset.positions);
     preset.midpoints          = j.value("midpoints", preset.midpoints);
+    preset.alpha_values       = j.value("alpha_values", preset.alpha_values);
+    preset.alpha_positions    = j.value("alpha_positions", preset.alpha_positions);
     preset.blur_width         = j.value("blur_width", preset.blur_width);
     preset.color_space        = j.value("color_space", preset.color_space);
     preset.interpolation_path = j.value("interpolation_path", preset.interpolation_path);
@@ -255,7 +262,17 @@ public:
             }
             markers_data.push_back(marker_data);
         }
+
+        std::vector<AlphaMarkerData> alpha_markers_data;
+        for (uint32_t i = 0; i < static_cast<uint32_t>(std::ssize(preset.alpha_values)); ++i) {
+            AlphaMarkerData alpha_marker_data;
+            alpha_marker_data.value = preset.alpha_values[i];
+            alpha_marker_data.pos   = preset.alpha_positions[i];
+            alpha_markers_data.push_back(alpha_marker_data);
+        }
+
         gradient.m_marker_manager.setDefaultMarkers(markers_data);
+        gradient.m_marker_manager.setDefaultAlphaMarkers(alpha_markers_data);
         gradient.m_blur_width  = preset.blur_width;
         gradient.m_color_space = preset.color_space;
         gradient.m_interp_dir  = preset.interpolation_path;
@@ -273,6 +290,8 @@ public:
         preset.colors             = rgba_hex_strs;
         preset.positions          = gradient.m_marker_manager.getMarkerPos();
         preset.midpoints          = gradient.m_marker_manager.getMidpointRatios();
+        preset.alpha_values       = gradient.m_marker_manager.getAlphaMarkerValues();
+        preset.alpha_positions    = gradient.m_marker_manager.getAlphaMarkerPos();
         preset.blur_width         = gradient.getBlurWidth();
         preset.color_space        = gradient.getColorSpace();
         preset.interpolation_path = gradient.getInterpDir();

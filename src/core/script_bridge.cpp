@@ -110,7 +110,7 @@ void ScriptBridge::loadGradientFromScript(EDIT_SECTION* edit,
         }
     }
 
-    // 値をセット
+    // 比較用の変数に現在の値を保存
     m_curr_values.marker_count            = static_cast<uint32_t>(std::ssize(data.getMarkerManager()->getMarkers()));
     m_curr_values.selected_color          = data.getMarkerManager()->getSelectedMarkerColor();
     m_curr_values.selected_marker_pos     = data.getMarkerManager()->getSelectedMarkerPos();
@@ -118,6 +118,9 @@ void ScriptBridge::loadGradientFromScript(EDIT_SECTION* edit,
     m_curr_values.blur_width              = data.getBlurWidth();
     m_curr_values.color_space_index       = data.getColorSpace();
     m_curr_values.interp_dir_index        = data.getInterpDir();
+    m_curr_values.alpha_marker_count      = static_cast<uint32_t>(std::ssize(data.getMarkerManager()->getAlphaMarkers()));
+    m_curr_values.selected_alpha_marker_pos = data.getMarkerManager()->getSelectedAlphaMarkerPos();
+    m_curr_values.selected_alpha_marker_value = data.getMarkerManager()->getSelectedAlphaMarkerValue();
 }
 
 void ScriptBridge::applyGradientToScript(EDIT_SECTION* edit,
@@ -193,33 +196,3 @@ void ScriptBridge::applyGradientToScript(EDIT_SECTION* edit,
         plugin2_utils::setObjectItemValue(edit, object_handle, effect_name.c_str(), effect_index, L"補間経路", std::string(INTERP_DIR_NAMES[id_idx]), std::string(INTERP_DIR_NAMES[0]));
     }
 }
-
-void ScriptBridge::resetScriptData(EDIT_SECTION* edit,
-                                   uint32_t start_id, uint32_t end_id,
-                                   const std::wstring& effect_name,
-                                   int32_t effect_index,
-                                   int32_t target_move_index,
-                                   uint32_t max_marker_count)
-{
-    if (start_id >= end_id) return;
-
-    OBJECT_HANDLE object_handle = edit->get_focus_object();
-    if (!object_handle) return;
-
-    const uint32_t DEFAULT_COLOR = 0xffffff;
-    const float DEFAULT_ALPHA    = 0.0f;
-    const float DEFAULT_POS      = 0.0f;
-    const float DEFAULT_MIDPOINT = 50.0f;
-
-    // start_id ~ end_id までの範囲を初期値にリセットする
-    for (uint32_t i = start_id; i < end_id; ++i) {
-        std::wstring id_wstr = str_conv::intToWchars(i + 1, "1");
-        plugin2_utils::setObjectItemValue(edit, object_handle, effect_name.c_str(), effect_index, (L"位置" + id_wstr).c_str(), DEFAULT_POS, DEFAULT_POS, target_move_index);
-        plugin2_utils::setObjectItemValue(edit, object_handle, effect_name.c_str(), effect_index, (L"色" + id_wstr).c_str(), DEFAULT_COLOR, DEFAULT_COLOR, 0, 16);
-        plugin2_utils::setObjectItemValue(edit, object_handle, effect_name.c_str(), effect_index, (L"透明度" + id_wstr).c_str(), DEFAULT_ALPHA, DEFAULT_ALPHA, target_move_index);
-        if (i < max_marker_count) {
-            plugin2_utils::setObjectItemValue(edit, object_handle, effect_name.c_str(), effect_index, (L"中間点" + id_wstr).c_str(), DEFAULT_MIDPOINT, DEFAULT_MIDPOINT, target_move_index);
-        }
-    }
-}
-

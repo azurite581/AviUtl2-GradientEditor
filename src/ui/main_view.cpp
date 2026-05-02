@@ -329,7 +329,8 @@ void MainView::renderGradientEditor()
         "gradient",
         ImVec2(std::clamp(ImGui::GetContentRegionAvail().x, 1.0f, 4096.0f), frame_height * scale::relative::GRADIENT_HEIGHT),
         replace_data,
-        CustomUI::GradientEditorFlags_None | CustomUI::GradientEditorFlags_MidpointBelowGradient,
+        CustomUI::GradientEditorFlags_None |
+        CustomUI::GradientEditorFlags_AlphaMarker,
         should_replace,
         config);
 
@@ -370,11 +371,6 @@ void MainView::renderGradientEditor()
         m_data->setColorSpace(0);
         m_data->setInterpDir(0);
         m_data->setBlurWidth(1.0f);
-        if (m_apply) {
-            plugin2_utils::call_edit_lambda(gradient_editor::g_app_state.edit_handle->call_edit_section_param, [&](EDIT_SECTION* edit) {
-                m_script_bridge.resetScriptData(edit, static_cast<uint32_t>(m_data->getMarkerManager()->getMarkers().size()), MAX_MARKER_COUNT, effect_full_name, m_effect_index, m_target_move_index, MAX_MARKER_COUNT);
-            });
-        }
     }
     if (is_reset_midpoint) m_data->getMarkerManager()->resetMidpoints();
     if (is_reverse) m_data->getMarkerManager()->reverseMarkers();
@@ -420,13 +416,6 @@ void MainView::renderGradientEditor()
     if (is_changed_apply || (m_apply && m_script_bridge.getIsChangedValues())) {
         plugin2_utils::call_edit_lambda(gradient_editor::g_app_state.edit_handle->call_edit_section_param, [&](EDIT_SECTION* edit) {
             m_script_bridge.applyGradientToScript(edit, *m_data, effect_full_name, m_effect_index, m_target_move_index);
-        });
-    }
-
-    // プリセットが変更されたとき、プリセットの範囲外の値はデフォルト値にリセットする
-    if (m_apply && m_preset_window.isPresetClicked()) {
-        plugin2_utils::call_edit_lambda(gradient_editor::g_app_state.edit_handle->call_edit_section_param, [&](EDIT_SECTION* edit) {
-            m_script_bridge.resetScriptData(edit, static_cast<uint32_t>(m_data->getMarkerManager()->getMarkers().size()), MAX_MARKER_COUNT, effect_full_name, m_effect_index, m_target_move_index, MAX_MARKER_COUNT);
         });
     }
 

@@ -112,7 +112,7 @@ private:
 
     std::vector<AlphaMarkerData> m_alpha_markers = {
         {.id = ALPHA_MARKER_ID_OFFSET + 0, .pos = 0.0f, .value = 1.0f},
-        {.id = ALPHA_MARKER_ID_OFFSET + 1, .pos = 1.0f, .value = 0.0f}
+        {.id = ALPHA_MARKER_ID_OFFSET + 1, .pos = 1.0f, .value = 1.0f}
     };
 
     enum class Region : int32_t {
@@ -157,6 +157,8 @@ public:
     [[nodiscard]] const std::vector<AlphaMarkerData>& getAlphaMarkers() const noexcept { return m_alpha_markers;}
     [[nodiscard]] std::vector<float> getMarkerPos() const;
     [[nodiscard]] std::vector<ImVec4> getMarkerColors() const;
+    [[nodiscard]] std::vector<float> getAlphaMarkerValues() const;
+    [[nodiscard]] std::vector<float> getAlphaMarkerPos() const;
     [[nodiscard]] std::vector<float> getMidpointRatios() const;
 
     [[nodiscard]] float getMarkerPos(const int32_t id) const;
@@ -167,6 +169,8 @@ public:
     [[nodiscard]] float getSelectedMarkerPos() const;
     [[nodiscard]] ImVec4 getSelectedMarkerColor() const;
     [[nodiscard]] float getSelectedMidpointRatio() const;
+    [[nodiscard]] float getSelectedAlphaMarkerValue() const;
+    [[nodiscard]] float getSelectedAlphaMarkerPos() const;
     [[nodiscard]] int32_t getSelectedMarkerId() const noexcept { return m_state.selected_marker_id; }
     [[nodiscard]] int32_t getSelectedAlphaMarkerId() const noexcept { return m_state.selected_alpha_marker_id; }
     [[nodiscard]] int32_t getSelectedMidpointId() const noexcept { return m_state.selected_midpoint_id; }
@@ -218,6 +222,9 @@ public:
     void setDefaultMarkers(const std::vector<GradientMarkerData>& marker_data = {
                                {.id = 0, .pos = 0.0f, .color = ImVec4(0.0f, 0.0f, 0.0f, 1.0f), .midpoint = {.ratio = 0.5f, .pos = 0.5}},
                                {.id = 1, .pos = 1.0f, .color = ImVec4(1.0f, 1.0f, 1.0f, 1.0f), .midpoint = {.ratio = 0.5f, .pos = FLT_MIN}}});
+    void setDefaultAlphaMarkers(const std::vector<AlphaMarkerData>& alpha_marker_data = {
+                               {.id = ALPHA_MARKER_ID_OFFSET + 0, .pos = 0.0f, .value = 1.0f},
+                               {.id = ALPHA_MARKER_ID_OFFSET + 1, .pos = 1.0f, .value = 1.0f}});
     void moveMarker(const int32_t id, const float new_pos);
     void moveAlphaMarker(const int32_t id, const float new_pos);
     void moveMidpoint(const int32_t id, const float new_pos);

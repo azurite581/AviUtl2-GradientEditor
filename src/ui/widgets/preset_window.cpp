@@ -543,6 +543,7 @@ void PresetWindow::renderPresetList(GradientConfigManager& manager, PresetConfig
         if (preset.category == category) {
             // プリセットを描画
             ImGui::PushStyleVarY(ImGuiStyleVar_ItemSpacing, 0.0f);
+
             is_any_clicked = CustomUI::drawGradientButton(preset.name, gradient_size, gradient);
             if (is_any_clicked) {
                 m_is_clicked_preset     = true;

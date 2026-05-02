@@ -55,6 +55,7 @@ GradientData* drawGradientEditor(
         auto gradient_data = std::make_unique<GradientData>();
         gradient_data->init(g_d3d_device, static_cast<int32_t>(display_size.x), static_cast<int32_t>(display_size.y));
         gradient_data->getMarkerManager()->setDefaultMarkers(data.m_marker_manager.getMarkers());
+        gradient_data->getMarkerManager()->setDefaultAlphaMarkers(data.m_marker_manager.getAlphaMarkers());
         gradient_data->setBlurWidth(data.m_blur_width);
         gradient_data->setColorSpace(data.m_color_space);
         gradient_data->setInterpDir(data.m_interp_dir);
@@ -67,6 +68,7 @@ GradientData* drawGradientEditor(
     // データを置換する場合
     if (replace_data) {
         gradient_data->getMarkerManager()->setDefaultMarkers(data.m_marker_manager.getMarkers());
+        gradient_data->getMarkerManager()->setDefaultAlphaMarkers(data.m_marker_manager.getAlphaMarkers());
         gradient_data->setBlurWidth(data.m_blur_width);
         gradient_data->setColorSpace(data.m_color_space);
         gradient_data->setInterpDir(data.m_interp_dir);
@@ -102,7 +104,7 @@ GradientData* drawGradientEditor(
     gradient_marker->setMarkerWidth(static_cast<uint32_t>(config.marker_width));  // マーカーの幅をセット
 
     // 中間点をグラデーションの上に描画
-    if (!(flags & GradientEditorFlags_NoMidpoint) && !((flags & GradientEditorFlags_MidpointBelowGradient))) {
+    if (!(flags & GradientEditorFlags_NoMidpoint) && !((flags & GradientEditorFlags_MidpointBelowGradient)) && !(flags & GradientEditorFlags_AlphaMarker)) {
         ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(ImGui::GetStyle().ItemSpacing.x, 0.0f));
         ImVec2 midpoint_region_size = ImVec2(display_size.x, static_cast<float>(gradient_marker->getMidpointHeight()));
         if (!(flags & GradientEditorFlags_NotAlignSideToMarker)) {
@@ -119,7 +121,7 @@ GradientData* drawGradientEditor(
         ImGui::PopStyleVar();
     }
 
-    if (1) {
+    if (flags & GradientEditorFlags_AlphaMarker) {
         ImVec2 marker_region_size = ImVec2(display_size.x, static_cast<float>(gradient_marker->getMarkerRegionHeight()));
         if (!(flags & GradientEditorFlags_NotAlignSideToMarker)) {
             ImVec2 cursor = ImGui::GetCursorScreenPos();
@@ -172,7 +174,7 @@ GradientData* drawGradientEditor(
 
         // 中間点をグラデーションの下に描画する場合はここで描画
         // マーカーと中間点が重なっていた場合に中間点を優先するため、マーカーの更新は中間点の更新より後に行う
-        if (!(flags & GradientEditorFlags_NoMidpoint) && (flags & GradientEditorFlags_MidpointBelowGradient)) {
+        if ((flags & GradientEditorFlags_AlphaMarker) || (!(flags & GradientEditorFlags_NoMidpoint) && (flags & GradientEditorFlags_MidpointBelowGradient))) {
             gradient_marker->setMidpointRegion(p0, p1);
             gradient_marker->drawMidpoints();
         }
