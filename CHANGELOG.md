@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 
+## [0.4.3] - 2026-05-02
+
+### Fixed
+
+- ウィンドウを分離した際にAviUtl2が落ちることがある問題を修正（[#13](https://github.com/azurite581/AviUtl2-GradientEditor/issues/13)）
+
 ## [0.4.2] - 2026-05-02
 
 ### Fixed

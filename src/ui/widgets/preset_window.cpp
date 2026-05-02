@@ -530,6 +530,8 @@ void PresetWindow::renderPresetList(GradientConfigManager& manager, PresetConfig
     ImGui::PushStyleVarY(ImGuiStyleVar_ItemSpacing, ImGui::GetFrameHeight() * ITEM_SPACING_SCALE_Y);
     ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(ImGui::GetStyle().FrameBorderSize, ImGui::GetStyle().FrameBorderSize));
     ImVec2 gradient_size = ImVec2(ImGui::GetContentRegionAvail().x, ImGui::GetFrameHeight() * 1.5f);
+    gradient_size.x = ImMax(1.0f, gradient_size.x);
+    gradient_size.y = ImMax(1.0f, gradient_size.y);
 
     // プリセットのデータを1つずつ取り出して描画
     m_is_clicked_preset = false;

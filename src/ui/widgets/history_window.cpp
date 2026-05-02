@@ -67,6 +67,8 @@ void HistoryWindow::render(GradientConfigManager& manager, HistoryConfig& cfg)
             ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(ImGui::GetStyle().FrameBorderSize, ImGui::GetStyle().FrameBorderSize));
 
             ImVec2 button_size   = ImVec2(ImGui::GetContentRegionAvail().x, ImGui::GetFrameHeight() * 1.5f);
+            button_size.x = ImMax(1.0f, button_size.x);
+            button_size.y = ImMax(1.0f, button_size.y);
             bool is_clicked      = false;
             m_is_history_clicked = false;
             for (int32_t i = history_num - 1; i >= 0; --i) {

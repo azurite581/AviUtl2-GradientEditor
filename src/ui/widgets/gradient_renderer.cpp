@@ -321,6 +321,8 @@ void GradientRenderer::runOffscreenRendering(
     ID3D11RenderTargetView* rtv,
     ID3D11ShaderResourceView* srv)
 {
+    if (!rtv) return;
+
     // 現在のステートを保存
     D3DStateSaver saver(d3d_device_context);
 
@@ -334,8 +336,8 @@ void GradientRenderer::runOffscreenRendering(
 
     // ビューポート設定
     D3D11_VIEWPORT vp = {};
-    vp.Width          = (float)width;
-    vp.Height         = (float)height;
+    vp.Width          = static_cast<float>(width);
+    vp.Height         = static_cast<float>(height);
     vp.MinDepth       = 0.0f;
     vp.MaxDepth       = 1.0f;
     d3d_device_context->RSSetViewports(1, &vp);

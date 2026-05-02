@@ -235,8 +235,10 @@ void App::renderFrame()
     const float clear_color_with_alpha[4] = {clear_color.x * clear_color.w, clear_color.y * clear_color.w, clear_color.z * clear_color.w, clear_color.w};
 
     auto rtv = gradient_editor::g_app_state.d3d_manager.getRenderTargetView();
-    gradient_editor::g_app_state.d3d_manager.getDeviceContext()->OMSetRenderTargets(1, rtv.GetAddressOf(), nullptr);
-    gradient_editor::g_app_state.d3d_manager.getDeviceContext()->ClearRenderTargetView(rtv.Get(), clear_color_with_alpha);
+    if (rtv) {
+        gradient_editor::g_app_state.d3d_manager.getDeviceContext()->OMSetRenderTargets(1, rtv.GetAddressOf(), nullptr);
+        gradient_editor::g_app_state.d3d_manager.getDeviceContext()->ClearRenderTargetView(rtv.Get(), clear_color_with_alpha);
+    }
 
     ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
 

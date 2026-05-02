@@ -1,4 +1,5 @@
 #include "gradient_widget.h"
+#include "imgui_internal.h"
 
 namespace CustomUI {
 
@@ -74,8 +75,9 @@ GradientData* drawGradientEditor(
         gradient_data->setInterpDir(data.m_interp_dir);
     }
 
-    int32_t current_width  = static_cast<int32_t>(display_size.x);
-    int32_t current_height = static_cast<int32_t>(display_size.y);
+    ImVec2 dsize = ImVec2(ImMax(1.0f, display_size.x), ImMax(1.0f, display_size.y));
+    int32_t current_width  = static_cast<int32_t>(dsize.x);
+    int32_t current_height = static_cast<int32_t>(dsize.y);
 
     // テクスチャサイズが表示サイズと異なる場合、再初期化を行う
     if (gradient_data->getTextureWidth() != current_width ||
@@ -84,8 +86,8 @@ GradientData* drawGradientEditor(
     }
 
     // 表示サイズは動的に変わる可能性があるため、毎回セットする
-    gradient_data->setGradientDisplayWidth(display_size.x);
-    gradient_data->setGradientDisplayHeight(display_size.y);
+    gradient_data->setGradientDisplayWidth(dsize.x);
+    gradient_data->setGradientDisplayHeight(dsize.y);
 
     // ピクセルシェーダーに渡すコンスタントバッファーの値を設定
     GradientRenderer::PixelConstantBuffer buffer_values = gradient_data->gradientData2pixelConstantBuffer();
@@ -106,7 +108,7 @@ GradientData* drawGradientEditor(
     // 中間点をグラデーションの上に描画
     if (!(flags & GradientEditorFlags_NoMidpoint) && !((flags & GradientEditorFlags_MidpointBelowGradient)) && !(flags & GradientEditorFlags_AlphaMarker)) {
         ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(ImGui::GetStyle().ItemSpacing.x, 0.0f));
-        ImVec2 midpoint_region_size = ImVec2(display_size.x, static_cast<float>(gradient_marker->getMidpointHeight()));
+        ImVec2 midpoint_region_size = ImVec2(dsize.x, static_cast<float>(gradient_marker->getMidpointHeight()));
         if (!(flags & GradientEditorFlags_NotAlignSideToMarker)) {
             ImVec2 cursor = ImGui::GetCursorScreenPos();
             ImGui::SetCursorScreenPos(ImVec2(cursor.x + marker_half_width, cursor.y));
@@ -137,13 +139,16 @@ GradientData* drawGradientEditor(
     }
 
     if (!(flags & GradientEditorFlags_NoMarker)) ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(ImGui::GetStyle().ItemSpacing.x, 0.0f));
-    ImVec2 gradient_region_size = display_size;
-    // グラデーションを描画
+
+    ImVec2 gradient_region_size = dsize;
+
     if (!(flags & GradientEditorFlags_NotAlignSideToMarker)) {
         ImVec2 cursor = ImGui::GetCursorScreenPos();
         ImGui::SetCursorScreenPos(ImVec2(cursor.x + marker_half_width, cursor.y));
-        gradient_region_size.x -= gradient_marker->getMarkerWidth();
+        gradient_region_size.x = ImMax(1.0f, gradient_region_size.x - gradient_marker->getMarkerWidth());
     }
+
+    // グラデーション本体
     ImGui::Image((ImTextureID)(intptr_t)gradient_data->getOutputSrv(), gradient_region_size);
     ImVec2 p0             = ImGui::GetItemRectMin();
     ImVec2 p1             = ImGui::GetItemRectMax();
@@ -159,12 +164,13 @@ GradientData* drawGradientEditor(
 
     // マーカーの描画
     if (!(flags & GradientEditorFlags_NoMarker)) {
-        ImVec2 marker_region_size = ImVec2(display_size.x, static_cast<float>(gradient_marker->getMarkerRegionHeight()));
+        ImVec2 marker_region_size = ImVec2(dsize.x, static_cast<float>(gradient_marker->getMarkerRegionHeight()));
         if (!(flags & GradientEditorFlags_NotAlignSideToMarker)) {
             ImVec2 cursor = ImGui::GetCursorScreenPos();
             ImGui::SetCursorScreenPos(ImVec2(cursor.x + marker_half_width, cursor.y));
-            marker_region_size.x -= gradient_marker->getMarkerWidth();
+            marker_region_size.x = ImMax(1.0f, marker_region_size.x - gradient_marker->getMarkerWidth());
         }
+
         ImGui::InvisibleButton("markers", marker_region_size);
         p0 = ImGui::GetItemRectMin();
         p1 = ImGui::GetItemRectMax();
@@ -191,8 +197,8 @@ GradientData* drawGradientEditor(
     if (flags & GradientEditorFlags_newMarkerColorFromClick) {
         // 動的な表示サイズの変更に対応するため、表示サイズではなくテクスチャサイズ上での位置を取得する
         // テクスチャサイズは最初に与えられた表示サイズになる。以降はそのテクスチャを拡縮して表示する
-        ImVec2 mouse_pos_on_texture = [&mouse_pos, &gradient_data, &gradient_marker, &display_size]() {
-            float t = gradient_data->getTextureWidth() / display_size.x;
+        ImVec2 mouse_pos_on_texture = [&mouse_pos, &gradient_data, &gradient_marker, &dsize]() {
+            float t = gradient_data->getTextureWidth() / dsize.x;
             ImVec2 mouse_pos_on_texture;
             mouse_pos_on_texture.x = (mouse_pos.x - gradient_marker->getGradientRegionP0().x) * t;
             mouse_pos_on_texture.y = (mouse_pos.y - gradient_marker->getGradientRegionP0().y) * t;
@@ -250,8 +256,9 @@ ID3D11ShaderResourceView* getGradientSrv(
 
     auto* gradient_data = it->second.get();
 
-    int32_t current_width  = static_cast<int32_t>(display_size.x);
-    int32_t current_height = static_cast<int32_t>(display_size.y);
+    ImVec2 dsize = ImVec2(ImMax(1.0f, display_size.x), ImMax(1.0f, display_size.y));
+    int32_t current_width  = static_cast<int32_t>(dsize.x);
+    int32_t current_height = static_cast<int32_t>(dsize.y);
 
     // テクスチャサイズが表示サイズと異なる場合、再初期化を行う
     if (gradient_data->getTextureWidth() != current_width ||
@@ -260,8 +267,8 @@ ID3D11ShaderResourceView* getGradientSrv(
     }
 
     // 表示サイズは動的に変わる可能性があるため毎回セットし直す
-    gradient_data->setGradientDisplayWidth(display_size.x);
-    gradient_data->setGradientDisplayHeight(display_size.y);
+    gradient_data->setGradientDisplayWidth(dsize.x);
+    gradient_data->setGradientDisplayHeight(dsize.y);
 
     // ピクセルシェーダーに渡すコンスタントバッファーの値を設定
     GradientRenderer::PixelConstantBuffer buffer_values = gradient_data->gradientData2pixelConstantBuffer();
@@ -282,7 +289,10 @@ ID3D11ShaderResourceView* getGradientSrv(
 
 bool drawGradientButton(const std::string label, const ImVec2& display_size, const GradientData& data)
 {
-    ImVec2 gradient_size                   = ImVec2(display_size.x - ImGui::GetStyle().FramePadding.x * 2.0f, display_size.y - ImGui::GetStyle().FramePadding.y * 2.0f);
+    ImVec2 dsize = ImVec2(ImMax(1.0f, display_size.x), ImMax(1.0f, display_size.y));
+    ImVec2 gradient_size                   = ImVec2(dsize.x - ImGui::GetStyle().FramePadding.x * 2.0f, dsize.y - ImGui::GetStyle().FramePadding.y * 2.0f);
+    gradient_size = ImVec2(ImMax(1.0f, gradient_size.x), ImMax(1.0f, gradient_size.y));
+
     ID3D11ShaderResourceView* gradient_srv = getGradientSrv(g_button_gradients, label, gradient_size, data);
     return ImGui::ImageButton(label.c_str(), (ImTextureID)(intptr_t)gradient_srv, gradient_size);
 }
