@@ -107,7 +107,7 @@ jobs:
       run: |
         git config --local user.name "GitHub Actions"
         git config --local user.email "actions@github.com"
-        git add aulua.yaml CMakePresets.json
+        git add script/aulua.yaml CMakePresets.json
         git commit -m "feat: update config files version v$env:VERSION"
         git branch
         git push origin HEAD:main
