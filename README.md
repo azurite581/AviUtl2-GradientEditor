@@ -15,7 +15,7 @@
 
 [AviUtl ExEdit2](https://spring-fragrance.mints.ne.jp/aviutl/)
 
-- `beta36` 以降必須（`beta39` で動作確認済み）。
+- `beta36` 以降必須（`beta43b` で動作確認済み）。
 
 ## インストール
 
@@ -36,18 +36,35 @@
 | :--- | :--- | :--- |
 | `GradientEditor.aux2` | `Plugin` | グラデーションエディタ |
 | `@GradientEditor.anm2` | `Script` | 多色グラデーション、グラデーションマップを含むスクリプト |
-| `English.GradientEditor.aul2` | `Language` | 翻訳ファイル（英語） |
-| `简体中文.GradientEditor.aul2` | `Language` | 翻訳ファイル（簡体字中国語） |
 | `GradientEditor.ini` | `Plugin` | レイアウトを保存する設定ファイル。終了時に書き込まれます。 |
 | `gradient_editor_default_preset.json` | `Plugin/GradientEditor` | デフォルトプリセットファイル。プリセットファイル（`gradient_editor_preset.json`）が存在しない場合に使用されます。 |
 
-> [!IMPORTANT]
-> 0.3.0 以前では `aviutl2.exe` と同階層のフォルダに `imgui.ini` が生成されていました。そのままでも特に影響はありませんが、不要であれば手動で削除してください。
+> [!NOTE]
+> ### For non-Japanese speaking users
+> Please download the translation files from [here](https://github.com/azurite581/aviutl2_translations_azurite/releases/latest).
 
-> [!IMPORTANT]
-> 0.4.0 にてデフォルトプリセットを多数追加しました。ただし、導入時に `Plugin/GradientEditor` 下に `gradient_editor_preset.json` がすでに存在する場合は、既存のプリセットが優先されるためデフォルトプリセットは読み込まれません。  
+<details>
+<summary>v0.3.0 の変更点</summary>
+
+v0.2.0 以前では `aviutl2.exe` と同階層のフォルダに `imgui.ini` が生成されていましたが、v0.3.0 からは `GradientEditor.ini` として生成するように変更しました。`imgui.ini` が残っていても特に影響はありませんが、不要であれば手動で削除してください。
+
+</details>
+
+<details>
+<summary>v0.4.0 の変更点</summary>
+
+v0.4.0 にてデフォルトプリセットを多数追加しました。ただし、導入時に `Plugin/GradientEditor` 下に `gradient_editor_preset.json` がすでに存在する場合は、既存のプリセットが優先されるためデフォルトプリセットは読み込まれません。  
 デフォルトプリセットを読み込みたい場合は、既存のプリセットファイルを一度削除する必要があります。またデフォルトプリセットを読み込みつつ、既存のプリセットを引き継ぎたい場合は、`gradient_editor_preset.json` の内容を手動でコピーして一時的に保存しておき、デフォルトプリセットが読み込まれた後にプリセットファイルに貼り付ける必要があります。  
 プリセットファイルの詳細は[プリセットファイルの形式について](#プリセットファイルの形式について)をご確認ください。
+
+</details>
+
+<details>
+<summary>v0.4.2 の変更点</summary>
+
+v0.4.0 以前は翻訳ファイルをプラグインに同梱していましたが、v0.4.2 以降は管理の都合上[別リポジトリ](https://github.com/azurite581/aviutl2_translations_azurite/releases/latest)に分離しました。別リポジトリの翻訳ファイルを導入した場合、このプラグインに同梱していた翻訳ファイル（`English.GradientEditor.aul2`、`简体中文.GradientEditor.aul2`）は削除していただいて構いません。
+
+</details>
 
 ## 付属するスクリプト
 
@@ -445,6 +462,7 @@ Image by <a href="https://pixabay.com/users/pavanprasad_ind-22614562/?utm_source
 - **CMake** 3.31 以上
 - **MSVC 2022**
 - **Git**
+- **Ninja**
 - **[aulua](https://github.com/karoterra/aviutl2-aulua)**
 - **[aviutl2-cli](https://github.com/sevenc-nanashi/aviutl2-cli)**
 

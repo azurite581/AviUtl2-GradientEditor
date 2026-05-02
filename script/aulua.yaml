@@ -1,20 +1,18 @@
 project:
   variables:
-    VERSION: v1.0.0
+    VERSION: v0.4.2
     AUTHOR: azurite
     LABEL: 色調整
-
 build:
   out_dir: ../out_script
-
 scripts:
   - name: "@GradientEditor.anm2"
     sources:
       - label: MultiGradient
         path: "multi_gradient.in.anm2"
         variables:
-          INFO: Multi Gradient for AviUtl2
+          INFO: 多色グラデーションスクリプト
       - label: GradientMap
         path: "gradient_map.in.anm2"
         variables:
-          INFO: Gradient Map for AviUtl2
+          INFO: グラデーションマップスクリプト

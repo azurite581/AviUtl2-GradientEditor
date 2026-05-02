@@ -7,94 +7,69 @@ on:
     - "v[0-9]+.[0-9]+.[0-9]+"
 
 jobs:
-  release:
-    name: Release
+  release_project:
+    name: Release project
     runs-on: windows-latest
-    timeout-minutes: 10
-
     permissions:
       contents: write
-
     steps:
+
     - name: Checkout repository
       uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       with:
         submodules: true
         fetch-depth: 0
 
-    - name: Get aulua latest tag name
-      id: aulua_latest_tag
+    - name: Get latest tags for tools
+      id: tool_tags
       run: |
-        $tag = gh release view --repo karoterra/aviutl2-aulua --json tagName --jq .tagName
-        "name=$tag" >> $env:GITHUB_OUTPUT
+        $aulua_tag = gh release view --repo karoterra/aviutl2-aulua --json tagName --jq .tagName
+        "aulua=$aulua_tag" >> $env:GITHUB_OUTPUT
+
+        $au2cli_tag = gh release view --repo sevenc-nanashi/aviutl2-cli --json tagName --jq .tagName
+        "au2cli=$au2cli_tag" >> $env:GITHUB_OUTPUT
+
+        $yq_tag = gh release view --repo mikefarah/yq --json tagName --jq .tagName
+        "yq=$yq_tag" >> $env:GITHUB_OUTPUT
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+    # ----------------------------------------------------
+    # キャッシュの復元
+    # ----------------------------------------------------
     - name: Restore aulua
-      id: restore-aulua
       uses: actions/cache/restore@cdf6c1fa76f9f475f3d7449005a359c84ca0f306 # v5.0.3
       with:
         path: ./aulua
-        key: aulua-${{ steps.aulua_latest_tag.outputs.name }}
-
-    - name: Download aulua
-      if: steps.restore-aulua.outputs.cache-hit != 'true'
-      uses: robinraju/release-downloader@daf26c55d821e836577a15f77d86ddc078948b05 # v1.12
-      with:
-        repository: "karoterra/aviutl2-aulua"
-        latest: true
-        fileName: '*.zip'
-        out-file-path: "aulua"
-        extract: true
-
-    - name: Cache aulua
-      if: steps.restore-aulua.outputs.cache-hit != 'true'
-      uses: actions/cache/save@cdf6c1fa76f9f475f3d7449005a359c84ca0f306 # v5.0.3
-      with:
-        path: ./aulua
-        key: aulua-${{ steps.aulua_latest_tag.outputs.name }}
-
-    - name: add aulua to the PATH
-      run: |
-        cd .\aulua
-        echo "$PWD" >> $env:GITHUB_PATH
-
-    - name: Get aviutl2-cli latest tag name
-      id: aviutl2-cli_latest_tag
-      run: |
-        $tag = gh release view --repo sevenc-nanashi/aviutl2-cli --json tagName --jq .tagName
-        "name=$tag" >> $env:GITHUB_OUTPUT
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        key: aulua-${{ steps.tool_tags.outputs.aulua }}
 
     - name: Restore aviutl2-cli
-      id: restore-aviutl2-cli
       uses: actions/cache/restore@cdf6c1fa76f9f475f3d7449005a359c84ca0f306 # v5.0.3
       with:
         path: ./aviutl2-cli
-        key: aviutl2-cli-${{ steps.aviutl2-cli_latest_tag.outputs.name }}
+        key: aviutl2-cli-${{ steps.tool_tags.outputs.au2cli }}
 
-    - name: Download aviutl2-cli
-      if: steps.restore-aviutl2-cli.outputs.cache-hit != 'true'
-      uses: robinraju/release-downloader@daf26c55d821e836577a15f77d86ddc078948b05 # v1.12
+    - name: Restore yq
+      uses: actions/cache/restore@cdf6c1fa76f9f475f3d7449005a359c84ca0f306 # v5.0.3
       with:
-        repository: "sevenc-nanashi/aviutl2-cli"
-        latest: true
-        fileName: '*.exe'
-        out-file-path: "aviutl2-cli"
+        path: ./yq
+        key: yq-${{ steps.tool_tags.outputs.yq }}
 
-    - name: Cache aviutl2-cli
-      if: steps.restore-aviutl2-cli.outputs.cache-hit != 'true'
-      uses: actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
-      with:
-        path: ./aviutl2-cli
-        key: aviutl2-cli-${{ steps.aviutl2-cli_latest_tag.outputs.name }}
-
-    - name: add aviutl2-cli to the PATH
+    # ----------------------------------------------------
+    # 各ツールのパスを通す
+    # ----------------------------------------------------
+    - name: Setup tools
       run: |
-        cd .\aviutl2-cli
+        cd ./yq
+        Copy-Item *.exe yq.exe
+        echo "$(Get-Location)" >> $env:GITHUB_PATH
+
+        cd ../aulua
+        echo "$(Get-Location)" >> $env:GITHUB_PATH
+
+        cd ../aviutl2-cli
         Copy-Item *.exe au2.exe
-        echo "$PWD" >> $env:GITHUB_PATH
+        echo "$(Get-Location)" >> $env:GITHUB_PATH
 
     - name: Extract version
       id: extract-version
@@ -102,24 +77,48 @@ jobs:
         $version = "$env:GITHUB_REF_NAME".TrimStart('v')
         echo "version=$version" >> $env:GITHUB_OUTPUT
 
-    - name: Build
+    # aulua の VERSION 変数を置き換える
+    - name: aulua variable update
+      run: |
+        $version = "v$env:VERSION"
+        yq -i ".project.variables.VERSION = `"$version`"" ./script/aulua.yaml
+      env:
+        VERSION: ${{ steps.extract-version.outputs.version }}
+
+    # CMakePresets.json の PLUGIN_VERSION 変数を置き換える
+    - name: CMakePresets.json variable update
+      run: |
+        yq -i '(.configurePresets[] | select(.name == "windows-base")).cacheVariables.PLUGIN_VERSION = env(VERSION)' ./CMakePresets.json
+      env:
+        VERSION: ${{ steps.extract-version.outputs.version }}
+
+    # ----------------------------------------------------
+    # ビルド & リリース
+    # ----------------------------------------------------
+    - uses: ilammy/msvc-dev-cmd@0b201ec74fa43914dc39ae48a89fd1d8cb592756 # v1.13.0
+    - name: Build project
       run: |
         mkdir release
         au2 release --set-version "$env:VERSION"
       env:
         VERSION: ${{ steps.extract-version.outputs.version }}
 
-    - name: Extract a specific version from the Changelog
+    - name: Commit version change
       run: |
-        cd .\tool
-        dotnet ChangelogExtract.cs -- ..\CHANGELOG.md ..\EXTRACTED.md --semver "$env:VERSION"
+        git config --local user.name "GitHub Actions"
+        git config --local user.email "actions@github.com"
+        git add script/aulua.yaml CMakePresets.json
+        git commit -m "feat: update config files version v$env:VERSION"
+        git branch
+        git push origin HEAD:main
       env:
         VERSION: ${{ steps.extract-version.outputs.version }}
 
     - name: Create release notes
       run: |
-        Move-Item -Path release\*.au2pkg.zip -Destination .\
-        gh release create "$env:VERSION" --notes-file EXTRACTED.md "*.au2pkg.zip"
+        dotnet .\tools\ChangelogExtract.cs -- .\CHANGELOG.md .\EXTRACTED.md --semver "$env:VERSION"
+        Move-Item -Path "release\*.au2pkg.zip" -Destination .\
+        gh release create "v$env:VERSION" --notes-file EXTRACTED.md "*.au2pkg.zip"
       env:
-        VERSION: ${{ github.ref_name }}
+        VERSION: ${{ steps.extract-version.outputs.version }}
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

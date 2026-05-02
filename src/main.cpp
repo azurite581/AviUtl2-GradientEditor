@@ -17,19 +17,17 @@
 //---------------------------------------------------------------------
 //	プラグイン情報用マクロ
 //---------------------------------------------------------------------
-#define STRINGIFY2(x) #x
-#define STRINGIFY(x) STRINGIFY2(x)
 #define WIDEN2(x) L##x
 #define WIDEN(x) WIDEN2(x)
 
 #define PLUGIN_NAME "Gradient Editor"
 #define PLUGIN_FILE_NAME "GradientEditor"
 #define PLUGIN_AUTHOR "azurite"
-#ifndef PLUGIN_VERSION_CORE
-#define PLUGIN_VERSION_CORE 0.4.0
+#ifndef PLUGIN_VERSION
+#define PLUGIN_VERSION "0.4.1"
 #endif
 
-#define PLUGIN_VERSION_STR L"v" WIDEN(STRINGIFY(PLUGIN_VERSION_CORE))
+#define PLUGIN_VERSION_STR L"v" WIDEN(PLUGIN_VERSION)
 #define PLUGIN_INFO    \
     WIDEN(PLUGIN_NAME) \
     L" " PLUGIN_VERSION_STR L" " WIDEN(PLUGIN_AUTHOR)
@@ -106,7 +104,7 @@ EXTERN_C __declspec(dllexport) void InitializeConfig(CONFIG_HANDLE* handle)
 
     // 設定ファイルの作成
     std::filesystem::path settings_file_path{gradient_editor::g_app_state.config_handle->app_data_path};
-    settings_file_path /= "Plugin";
+    settings_file_path /= L"Plugin";
     settings_file_path /= PLUGIN_FILE_NAME;
     settings_file_path.replace_extension("ini");
     gradient_editor::g_app_state.settings_file_path = settings_file_path;
@@ -148,7 +146,7 @@ EXTERN_C __declspec(dllexport) void RegisterPlugin(HOST_APP_TABLE* host)
     gradient_editor::g_app_state.edit_handle = host->create_edit_handle();
 
     std::promise<HWND> p;
-    auto f                 = p.get_future();
+    auto f                = p.get_future();
     gradient_editor::g_app_state.gui_thread = std::thread(guiThreadMain, std::move(p));
 
     HWND hwnd = f.get();

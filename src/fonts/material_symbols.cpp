@@ -1,5 +1,3 @@
-// File: 'C:/Users/mblue/Documents/P_GitHub/AviUtl2-GradientEditor/src/fonts/MaterialSymbolsOutlined[FILL,GRAD,opsz,wght].ttf' (10461592 bytes)
-// Exported using binary_to_compressed_c.exe -u8 "C:/Users/mblue/Documents/P_GitHub/AviUtl2-GradientEditor/src/fonts/MaterialSymbolsOutlined[FILL,GRAD,opsz,wght].ttf" material_symbols
 static const unsigned int material_symbols_compressed_size = 6445751;
 static const unsigned char material_symbols_compressed_data[6445751] =
 {
