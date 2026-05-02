@@ -26,16 +26,19 @@ GradientRenderer::PixelConstantBuffer GradientData::gradientData2pixelConstantBu
 
 bool GradientData::init(Microsoft::WRL::ComPtr<ID3D11Device> d3d_device, const int32_t texture_width, const int32_t texture_height)
 {
+    int32_t new_width  = (texture_width > 0) ? texture_width : 1;
+    int32_t new_height = (texture_height > 0) ? texture_height : 1;
+
     // サイズが変わっているかチェック
-    if (m_texture_width != texture_width || m_texture_height != texture_height) {
+    if (m_texture_width != new_width || m_texture_height != new_height) {
         // サイズが違う場合は古いリソースを解放する
         m_srv.Reset();
         m_output_srv.Reset();
         m_rtv.Reset();
 
         // 新しいサイズを保存
-        m_texture_width  = texture_width;
-        m_texture_height = texture_height;
+        m_texture_width  = new_width;
+        m_texture_height = new_height;
     }
 
     // コンスタントバッファーを初期化
@@ -49,7 +52,7 @@ bool GradientData::init(Microsoft::WRL::ComPtr<ID3D11Device> d3d_device, const i
     // 入力用テクスチャを作成
     UINT white_color[4] = {255, 255, 255, 255};
     if (!m_srv) {
-        auto result = GradientRenderer::createSolidColorTexture(d3d_device, texture_width, texture_height, white_color, nullptr, m_srv.ReleaseAndGetAddressOf());
+        auto result = GradientRenderer::createSolidColorTexture(d3d_device, m_texture_width, m_texture_height, white_color, nullptr, m_srv.ReleaseAndGetAddressOf());
         if (!result) {
             OutputDebugStringA(result.error().c_str());
             return false;
@@ -58,7 +61,7 @@ bool GradientData::init(Microsoft::WRL::ComPtr<ID3D11Device> d3d_device, const i
 
     // 出力用テクスチャを作成
     if (!m_rtv) {
-        auto result = GradientRenderer::createSolidColorTexture(d3d_device, texture_width, texture_height, white_color, m_rtv.ReleaseAndGetAddressOf(), m_output_srv.ReleaseAndGetAddressOf());
+        auto result = GradientRenderer::createSolidColorTexture(d3d_device, m_texture_width, m_texture_height, white_color, m_rtv.ReleaseAndGetAddressOf(), m_output_srv.ReleaseAndGetAddressOf());
         if (!result) {
             OutputDebugStringA(result.error().c_str());
             return false;
