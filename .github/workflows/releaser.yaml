@@ -117,7 +117,7 @@ jobs:
     - name: Create release notes
       run: |
         dotnet .\tools\ChangelogExtract.cs -- .\CHANGELOG.md .\EXTRACTED.md --semver "$env:VERSION"
-        Move-Item -Path "release\*-${env:VERSION}.au2pkg.zip" -Destination .\
+        Move-Item -Path "release\*.au2pkg.zip" -Destination .\
         gh release create "v$env:VERSION" --notes-file EXTRACTED.md "*.au2pkg.zip"
       env:
         VERSION: ${{ steps.extract-version.outputs.version }}
