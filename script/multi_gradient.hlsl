@@ -13,9 +13,9 @@ cbuffer constant0 : register(b0) {
     float is_fit;
     float shift;
     float edge_mode;
-    float3 pad1;
+    float3 PAD1;
     float2x2 angle;
-    float2 pad2;
+    float2 PAD2;
     float color_space;
     float interp_dir;
     float gradient_w;
@@ -23,9 +23,9 @@ cbuffer constant0 : register(b0) {
     float4 start_col[MARKER_MAX_COUNT];
     float4 stop_col[MARKER_MAX_COUNT];
     float4 pos_and_mid[GRADIENT_MAX_COUNT];
-    float trans_marker_count;
-    float3 pad3;
-    float4 trans_pos_and_value[GRADIENT_MAX_COUNT];
+    float alpha_marker_count;
+    float3 PAD3;
+    float4 alpha_pos_and_value[GRADIENT_MAX_COUNT];
 }
 
 float4 blend_colors(float4 color1, float4 color2, float t, float color_space, int interp_dir)
@@ -354,28 +354,28 @@ float4 psmain(float4 pos : SV_Position, float2 uv : TEXCOORD) : SV_Target {
         }
     }
 
-    float trans = 1.0;
-    if (x < trans_pos_and_value[0].x) {
-        trans = trans_pos_and_value[0].z;
-        out_col.a *= trans;
+    float alpha = 1.0;
+    if (x < alpha_pos_and_value[0].x) {
+        alpha = alpha_pos_and_value[0].z;
+        out_col.a *= alpha;
         out_col.rgb *= out_col.a;
         return out_col;
-    } else if (x >= trans_pos_and_value[(int)trans_marker_count - 2].y) {
-        trans = trans_pos_and_value[(int)trans_marker_count - 2].w;
-        out_col.a *= trans;
+    } else if (x >= alpha_pos_and_value[(int)alpha_marker_count - 2].y) {
+        alpha = alpha_pos_and_value[(int)alpha_marker_count - 2].w;
+        out_col.a *= alpha;
         out_col.rgb *= out_col.a;
         return out_col;
     }
-    for (int j = 0; j < (int)trans_marker_count - 1; j++) {
-        float p_curr = trans_pos_and_value[j].x;  // 区間の開始位置
-        float p_next = trans_pos_and_value[j].y;  // 区間の終了位置
+    for (int j = 0; j < (int)alpha_marker_count - 1; j++) {
+        float p_curr = alpha_pos_and_value[j].x;  // 区間の開始位置
+        float p_next = alpha_pos_and_value[j].y;  // 区間の終了位置
 
         // x が現在の区間内にある場合
         if (p_curr <= x && x < p_next) {
             float dist = p_next - p_curr;
             float t = (x - p_curr) / dist;
-            trans = lerp(trans_pos_and_value[j].z, trans_pos_and_value[j].w, t);
-            out_col.a *= trans;
+            alpha = lerp(alpha_pos_and_value[j].z, alpha_pos_and_value[j].w, t);
+            out_col.a *= alpha;
             out_col.rgb *= out_col.a;
             break;
         }

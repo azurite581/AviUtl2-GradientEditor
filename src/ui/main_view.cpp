@@ -213,14 +213,7 @@ void MainView::renderGradientEditor()
     //
     bool create_new_object = false;
     if (ImGui::Button(m_config_wrapper->tr(L"新規").c_str())) {
-        const char* alias = reinterpret_cast<const char*>(NEW_OBJECT_ALIAS_TEMPLATE);
-        switch (m_effect_name_index) {
-        case 0:
-            alias = reinterpret_cast<const char*>(NEW_OBJECT_ALIAS_TEMPLATE);
-            break;
-        case 1:
-            break;
-        }
+        const char* alias = reinterpret_cast<const char*>(NEW_OBJECT_ALIAS_TAMPLATES[m_effect_name_index]);
         plugin2_utils::call_edit_lambda(gradient_editor::g_app_state.edit_handle->call_edit_section_param, [&](EDIT_SECTION* edit) {
             auto obj = edit->create_object_from_alias(alias, edit->info->layer, edit->info->frame, NEW_OBJECT_LENGTH);
             if (!obj) {
@@ -313,7 +306,7 @@ void MainView::renderGradientEditor()
                 uint32_t next_index = obj_idx.value() + 1;
                 std::string new_alias{};
                 try {
-                    new_alias = std::format(MUTLI_GRADIENT_ALIAS_TEMPLATE, next_index);
+                    new_alias = std::vformat(SCRIPT_TAMPLATES[m_effect_name_index], std::make_format_args(next_index));
                 } catch (const std::format_error e) {
                     m_logger_wrapper->error("{}", e.what());
                 }

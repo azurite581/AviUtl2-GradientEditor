@@ -1,19 +1,25 @@
 Texture2D<float4> src : register(t0);
 SamplerState samp : register(s0);
 
-static const int GRADIENT_MAX_COUNT = 30;
+#define EPS 1e-6
+static const int MARKER_MAX_COUNT = 30;
+static const int GRADIENT_MAX_COUNT = MARKER_MAX_COUNT - 1;
+
 cbuffer constant0 : register(b0) {
     float luma_mode;
     float shift;
     float edge_mode;
-    float pad;
+    float PAD1;
     float color_space;
     float interp_dir;
     float gradient_w;
-    float gradient_count;  // 実際のグラデーションの数
-    float4 start_col[GRADIENT_MAX_COUNT];
-    float4 stop_col[GRADIENT_MAX_COUNT];
+    float marker_count;
+    float4 start_col[MARKER_MAX_COUNT];
+    float4 stop_col[MARKER_MAX_COUNT];
     float4 pos_and_mid[GRADIENT_MAX_COUNT];
+    float alpha_marker_count;
+    float3 PAD2;
+    float4 alpha_pos_and_value[GRADIENT_MAX_COUNT];
 }
 
 float4 blend_colors(float4 color1, float4 color2, float t, float color_space, int interp_dir)
@@ -23,7 +29,7 @@ float4 blend_colors(float4 color1, float4 color2, float t, float color_space, in
     float alpha1 = color1.a;
     float alpha2 = color2.a;
     float3 result = float3(0.0, 0.0, 0.0);
-    float mixed_alpha = max(alpha_mix(alpha1, alpha2, t), 1e-6);
+    float mixed_alpha = max(alpha_mix(alpha1, alpha2, t), EPS);
     switch (color_space) {
         case 0:  // sRGB
         {
@@ -178,21 +184,21 @@ float4 psmain(float4 pos : SV_Position, float2 uv : TEXCOORD) : SV_Target {
     // アルファで除算して元の色の輝度を取得する
     float3 unpremul_col = unpremulti(tex_col).rgb;
 
-    float luma;
+    float x;
     switch ((int)luma_mode) {
         case 0:  // Rec. 601
         {
-            luma = dot(unpremul_col, float3(0.299, 0.587, 0.114));
+            x = dot(unpremul_col, float3(0.299, 0.587, 0.114));
             break;
         }
         case 1:  // Rec. 701
         {
-            luma = dot(unpremul_col, float3(0.2126, 0.7152, 0.0722));
+            x = dot(unpremul_col, float3(0.2126, 0.7152, 0.0722));
             break;
         }
         default:
         {
-            luma = dot(unpremul_col, float3(0.299, 0.587, 0.114));
+            x = dot(unpremul_col, float3(0.299, 0.587, 0.114));
             break;
         }
     }
@@ -200,40 +206,69 @@ float4 psmain(float4 pos : SV_Position, float2 uv : TEXCOORD) : SV_Target {
     switch ((int)edge_mode) {
         case 0:  // 境界色
         {
-            luma = clamp(luma + shift, 0.0, 1.0);
+            x = clamp(x + shift, 0.0, 1.0);
             break;
         }
         case 1:  // ループ
         {
-            luma = frac(luma + shift);
+            x = frac(x + shift);
             break;
         }
         case 2:  // ミラー
         {
-            luma = abs(frac((luma + shift) * 0.5 + 0.5) * 2.0 - 1.0);
+            x = abs(frac((x + shift) * 0.5 + 0.5) * 2.0 - 1.0);
             break;
         }
         default:
         {
-            luma = clamp(luma + shift, 0.0, 1.0);
+            x = clamp(x + shift, 0.0, 1.0);
             break;
         }
     }
 
-    int safe_count = min(gradient_count, GRADIENT_MAX_COUNT);
-    float4 out_col = (luma <= pos_and_mid[0].x) ? start_col[0] : start_col[safe_count - 1];
+    int safe_marker_count = min(marker_count, MARKER_MAX_COUNT);
+    int safe_gradient_count = clamp(safe_marker_count - 1, 1, MARKER_MAX_COUNT - 1);
+
+    float4 out_col = (x <= pos_and_mid[0].x) ? start_col[0] : start_col[safe_marker_count - 1];
     out_col.rgb *= out_col.a;
-    for (int i = 0; i < safe_count; i++) {
+    x = saturate(x);
+
+    for (int i = 0; i < safe_gradient_count; i++) {
         float p_curr = pos_and_mid[i].x;
         float p_next = pos_and_mid[i].y;
 
         // luma が現在の区間内にある場合
-        if (luma >= p_curr && luma < p_next) {
+        if (p_curr <= x && x < p_next) {
             float dist = p_next - p_curr;
-
-            float t = (luma - p_curr) / dist;
-
+            float t = (x - p_curr) / dist;
             out_col = makeGradient(start_col[i], stop_col[i], t, pos_and_mid[i].z, gradient_w, color_space, interp_dir);
+            break;
+        }
+    }
+
+    float alpha = 1.0;
+    if (x < alpha_pos_and_value[0].x) {
+        alpha = alpha_pos_and_value[0].z;
+        out_col.a *= alpha;
+        out_col.rgb *= out_col.a;
+        return out_col;
+    } else if (x >= alpha_pos_and_value[(int)alpha_marker_count - 2].y) {
+        alpha = alpha_pos_and_value[(int)alpha_marker_count - 2].w;
+        out_col.a *= alpha;
+        out_col.rgb *= out_col.a;
+        return out_col;
+    }
+    for (int j = 0; j < (int)alpha_marker_count - 1; j++) {
+        float p_curr = alpha_pos_and_value[j].x;  // 区間の開始位置
+        float p_next = alpha_pos_and_value[j].y;  // 区間の終了位置
+
+        // x が現在の区間内にある場合
+        if (p_curr <= x && x < p_next) {
+            float dist = p_next - p_curr;
+            float t = (x - p_curr) / dist;
+            alpha = lerp(alpha_pos_and_value[j].z, alpha_pos_and_value[j].w, t);
+            out_col.a *= alpha;
+            out_col.rgb *= out_col.a;
             break;
         }
     }
