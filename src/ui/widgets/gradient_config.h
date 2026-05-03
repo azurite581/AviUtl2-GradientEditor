@@ -106,6 +106,7 @@ inline void from_json(const nlohmann::ordered_json& j, GradientHistory& history)
 }
 
 struct PresetConfig {
+    int32_t selected_category = 0;
     std::vector<std::string> categories{"Uncategorized"};
     std::vector<GradientPreset> presets{GradientPreset{}};
 };
@@ -113,12 +114,14 @@ struct PresetConfig {
 inline void to_json(nlohmann::ordered_json& j, const PresetConfig& cfg)
 {
     j = nlohmann::ordered_json{
+        {"selected_category", cfg.selected_category},
         {"categories", cfg.categories.empty() ? std::vector<std::string>{"Uncategorized"} : cfg.categories},
         {"presets",    cfg.presets.empty()     ? std::vector<GradientPreset>{GradientPreset{}} : cfg.presets}};
 }
 
 inline void from_json(const nlohmann::ordered_json& j, PresetConfig& cfg)
 {
+    cfg.selected_category = j.value("selected_category", cfg.selected_category);
     cfg.categories = j.value("categories", cfg.categories);
     cfg.presets    = j.value("presets",    cfg.presets);
 }
@@ -336,6 +339,11 @@ public:
     }
 
     // プリセット操作
+    ConfigWriteResult writePreset(const PresetConfig& cfg)
+    {
+        return writeConfigFile(cfg, m_preset_path);
+    }
+
     static bool containsCategory(const std::vector<std::string>& categories, std::string_view target)
     {
         return std::ranges::contains(categories, target);

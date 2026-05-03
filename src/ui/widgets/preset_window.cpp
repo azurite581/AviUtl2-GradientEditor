@@ -14,7 +14,7 @@
 void PresetWindow::render(GradientConfigManager& manager, PresetConfig& cfg)
 {
     static std::vector<std::string> categories;
-    static int32_t category_selected_index    = 0;
+    static int32_t category_selected_index    = m_selected_category_index = cfg.selected_category;
     static std::string selected_category_name = GradientConfigManager::DEFAULT_CATEGORY;
 
     // 重複なしでカテゴリーを読み込む
@@ -35,7 +35,7 @@ void PresetWindow::render(GradientConfigManager& manager, PresetConfig& cfg)
     if (!m_is_initialized) {
         m_is_initialized = true;
         loadCategories();
-        m_old_category_name = m_categories[0];  // 起動時に読み込まれるカテゴリー
+        m_old_category_name = m_categories[category_selected_index];  // 起動時に読み込まれるカテゴリー
     }
 
     //
@@ -71,7 +71,7 @@ void PresetWindow::render(GradientConfigManager& manager, PresetConfig& cfg)
             for (int i = 0; i < std::ssize(m_categories); ++i) {
                 const bool is_selected = (category_selected_index == i);
                 if (ImGui::Selectable(m_categories[i].c_str(), is_selected))
-                    category_selected_index = i;
+                    category_selected_index = m_selected_category_index = i;
 
                 if (is_selected) ImGui::SetItemDefaultFocus();
             }
@@ -737,5 +737,16 @@ void PresetWindow::renderPresetList(GradientConfigManager& manager, PresetConfig
 
     if (is_delete) {
         ImGui::OpenPopup((m_config_wrapper->tr(L"削除") + "###delete_confirmation").c_str());
+    }
+}
+
+void PresetWindow::overwriteCatogories(GradientConfigManager& manager, PresetConfig& cfg)
+{
+    cfg.selected_category = m_selected_category_index;
+
+    // 書き込み
+    auto result = manager.writePreset(cfg);
+    if (result.is_success) {
+        m_logger_wrapper->error("{}", result.error);
     }
 }
