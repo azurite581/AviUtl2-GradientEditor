@@ -1,6 +1,7 @@
 #include "gradient_marker.h"
 #include <cstdint>
 #include <iostream>
+#include "imgui.h"
 
 float GradientMarkerManager::getMarkerPos(const int32_t id) const
 {
@@ -857,7 +858,7 @@ void GradientMarkerManager::distributeMarkersAndMipointsEvenly()
     }
 }
 
-void GradientMarkerManager::drawMarker(ImVec2 p0, ImVec2 p1, const ImVec4& color, const int32_t id, const bool is_upward) const
+void GradientMarkerManager::drawMarker(const char* label, ImVec2 p0, ImVec2 p1, const ImVec4& color, const int32_t id, const bool is_upward) const
 {
     ImDrawList* draw_list = ImGui::GetWindowDrawList();
 
@@ -895,7 +896,7 @@ void GradientMarkerManager::drawMarker(ImVec2 p0, ImVec2 p1, const ImVec4& color
     ImVec2 backup = ImGui::GetCursorScreenPos();
     ImGui::SetCursorScreenPos(p0);
     ImGuiColorEditFlags flags = ImGuiColorEditFlags_NoPicker | ImGuiColorEditFlags_NoOptions | ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_NoLabel | ImGuiColorEditFlags_NoTooltip | ImGuiColorEditFlags_NoLabel | ImGuiColorEditFlags_NoDragDrop;
-    ImGui::ColorButton("##marker_color", color, flags, ImVec2(static_cast<float>(m_config.marker_width), static_cast<float>(m_config.marker_width)));
+    ImGui::ColorButton((std::string{label} + "##marker_color").c_str(), color, flags, ImVec2(static_cast<float>(m_config.marker_width), static_cast<float>(m_config.marker_width)));
     ImGui::SetCursorScreenPos(backup);
     ImGui::PopID();
 
@@ -911,6 +912,7 @@ void GradientMarkerManager::drawMarkers() const
 {
     // アルファマーカーはグラデーションの下に描画するため、マーカーは上向き
     bool is_upward = true;
+    const char* label = "draw_marker";
 
     int32_t selected_marker_idx = -1;
     for (const auto& [i, marker] : m_markers | std::views::enumerate) {
@@ -922,14 +924,14 @@ void GradientMarkerManager::drawMarkers() const
         float pos = marker.pos;
         ImVec2 p0 = ImVec2(m_regions.marker_p0.x + (m_regions.marker_p1.x - m_regions.marker_p0.x) * pos - (m_config.marker_width * 0.5f), m_regions.marker_p0.y);
         ImVec2 p1 = ImVec2(m_regions.marker_p0.x + (m_regions.marker_p1.x - m_regions.marker_p0.x) * pos + (m_config.marker_width * 0.5f), m_regions.marker_p1.y);
-        drawMarker(p0, p1, marker.color, marker.id, is_upward);
+        drawMarker(label, p0, p1, marker.color, marker.id, is_upward);
     }
 
     if (selected_marker_idx >= 0) {
         float pos = m_markers.at(selected_marker_idx).pos;
         ImVec2 p0 = ImVec2(m_regions.marker_p0.x + (m_regions.marker_p1.x - m_regions.marker_p0.x) * pos - (m_config.marker_width * 0.5f), m_regions.marker_p0.y);
         ImVec2 p1 = ImVec2(m_regions.marker_p0.x + (m_regions.marker_p1.x - m_regions.marker_p0.x) * pos + (m_config.marker_width * 0.5f), m_regions.marker_p1.y);
-        drawMarker(p0, p1, m_markers.at(selected_marker_idx).color, m_markers.at(selected_marker_idx).id, is_upward);
+        drawMarker(label, p0, p1, m_markers.at(selected_marker_idx).color, m_markers.at(selected_marker_idx).id, is_upward);
         highlightMarker(p0, p1, ImVec4(1.0f, 1.0f, 1.0f, 1.0f), 2.0f, 2.0f, is_upward);
     }
 }
@@ -938,6 +940,7 @@ void GradientMarkerManager::drawAlphaMarkers() const
 {
     // アルファマーカーはグラデーションの上に描画するため、マーカーは下向き
     bool is_upward = false;
+    const char* label = "draw_alpha_marker";
 
     int32_t selected_marker_idx = -1;
     for (const auto& [i, marker] : m_alpha_markers | std::views::enumerate) {
@@ -949,14 +952,14 @@ void GradientMarkerManager::drawAlphaMarkers() const
         float pos = marker.pos;
         ImVec2 p0 = ImVec2(m_regions.alpha_marker_p0.x + (m_regions.alpha_marker_p1.x - m_regions.alpha_marker_p0.x) * pos - (m_config.marker_width * 0.5f), m_regions.alpha_marker_p0.y);
         ImVec2 p1 = ImVec2(m_regions.alpha_marker_p0.x + (m_regions.alpha_marker_p1.x - m_regions.alpha_marker_p0.x) * pos + (m_config.marker_width * 0.5f), m_regions.alpha_marker_p1.y);
-        drawMarker(p0, p1, ImVec4(0.0f, 0.0f, 0.0f, marker.value), marker.id, is_upward);
+        drawMarker(label, p0, p1, ImVec4(0.0f, 0.0f, 0.0f, marker.value), marker.id, is_upward);
     }
 
     if (selected_marker_idx >= 0) {
         float pos = m_alpha_markers.at(selected_marker_idx).pos;
         ImVec2 p0 = ImVec2(m_regions.alpha_marker_p0.x + (m_regions.alpha_marker_p1.x - m_regions.alpha_marker_p0.x) * pos - (m_config.marker_width * 0.5f), m_regions.alpha_marker_p0.y);
         ImVec2 p1 = ImVec2(m_regions.alpha_marker_p0.x + (m_regions.alpha_marker_p1.x - m_regions.alpha_marker_p0.x) * pos + (m_config.marker_width * 0.5f), m_regions.alpha_marker_p1.y);
-        drawMarker(p0, p1, ImVec4(0.0f, 0.0f, 0.0f, m_alpha_markers.at(selected_marker_idx).value), m_alpha_markers.at(selected_marker_idx).id, is_upward);
+        drawMarker(label, p0, p1, ImVec4(0.0f, 0.0f, 0.0f, m_alpha_markers.at(selected_marker_idx).value), m_alpha_markers.at(selected_marker_idx).id, is_upward);
         highlightMarker(p0, p1, ImVec4(1.0f, 1.0f, 1.0f, 1.0f), 2.0f, 2.0f, is_upward);
     }
 }

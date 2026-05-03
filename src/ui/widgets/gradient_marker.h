@@ -87,7 +87,7 @@ private:
         ImVec2 alpha_marker_p0{}, alpha_marker_p1{};
     } m_regions;
 
-    static constexpr uint32_t ALPHA_MARKER_ID_OFFSET = 10000; // カラーマーカーとIDが被らないようにするためのオフセット値
+    static constexpr uint32_t ALPHA_MARKER_ID_OFFSET = 0; // カラーマーカーとIDが被らないようにするためのオフセット値
     struct State {
         int32_t selected_marker_id{0};
         int32_t selected_alpha_marker_id{ALPHA_MARKER_ID_OFFSET};
@@ -269,7 +269,7 @@ public:
     //
     // 描画
     //
-    void drawMarker(ImVec2 p0, ImVec2 p1, const ImVec4& color, const int32_t id, const bool is_upward = true) const;
+    void drawMarker(const char* label, ImVec2 p0, ImVec2 p1, const ImVec4& color, const int32_t id, const bool is_upward = true) const;
     void drawMarkers() const;
     void drawAlphaMarkers() const;
     void drawMidpoint(const float pos, const ImVec4& color) const;
