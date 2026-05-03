@@ -17,7 +17,7 @@ bool WindowManager::createPluginWindow(const wchar_t* window_name, const float s
     m_hwnd = CreateWindowEx(
         0, window_name, window_name,
         WS_POPUP,  // 親設定前なのでPOPUPで作る
-        0, 0, (int)(1280 * scale), (int)(800 * scale),
+        0, 0, (int)(470 * scale), (int)(290 * scale),
         nullptr, nullptr, GetModuleHandle(nullptr), nullptr);
     return true;
 }

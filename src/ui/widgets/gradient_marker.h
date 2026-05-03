@@ -230,6 +230,7 @@ public:
     void moveMidpoint(const int32_t id, const float new_pos);
     void moveMidpointRatio(const int32_t id, const float new_ratio);
     void reverseMarkers();
+    void reverseAlphaMarkers();
     void resetMidpoints();
     void sortMarkers();
     void sortAlphaMarkers();
@@ -241,9 +242,13 @@ public:
     void showAlphaSliderPopup();
     void deleteMarker(const int32_t id);
     void deleteAlphaMarker(const int32_t id);
+
     void deleteSelectedMarker();
+    void deleteSelectedAlphaMarker();
     void distributeMarkersEvenly();
+    void distributeAlphaMarkersEvenly();
     void distributeMarkersAndMipointsEvenly();
+
 
     //
     // イベント

@@ -26,7 +26,7 @@ constexpr float SCROLLBAR_ROUNDING      = 0.0f;
 }  // namespace absolute
 }  // namespace scale
 
-constexpr float PRESET_WINDOW_RATIO     = 0.3f;
+constexpr float PRESET_WINDOW_RATIO     = 0.35f;
 constexpr float DEFAULT_FONT_SIZE       = 13.0f;
 constexpr float ICON_FONT_GLYPHOFFSET_Y = 1.5f;
 

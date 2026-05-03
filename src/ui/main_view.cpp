@@ -5,6 +5,7 @@
 #include <iostream>
 
 #include "IconsMaterialSymbols.h"
+#include "alias_parser.h"
 #include "color_conv.h"
 #include "constants.h"
 #include "gradient_widget.h"
@@ -208,7 +209,24 @@ void MainView::renderGradientEditor()
     //
     // 各種データ操作ボタン
     //
+    if (ImGui::Button(m_config_wrapper->tr(L"新規").c_str())) {
+        const char* alias = reinterpret_cast<const char*>(NEW_OBJECT_ALIAS_TEMPLATE);
+        switch (m_effect_name_index) {
+        case 0:
+            alias = reinterpret_cast<const char*>(NEW_OBJECT_ALIAS_TEMPLATE);
+            break;
+        case 1:
+            break;
+        }
+        plugin2_utils::call_edit_lambda(gradient_editor::g_app_state.edit_handle->call_edit_section_param, [&](EDIT_SECTION* edit) {
+            if (edit->create_object_from_alias(alias, edit->info->layer, edit->info->frame, NEW_OBJECT_LENGTH)) {
+
+            }
+        });
+    }
+
     // スクリプトへ反映
+    ImGui::SameLine();
     bool off_to_on = false;
     if (imgui_utils::pushToggleButton(m_config_wrapper->tr(L"反映").c_str(), &m_apply)) {
         plugin2_utils::call_edit_lambda(gradient_editor::g_app_state.edit_handle->call_edit_section_param, [&](EDIT_SECTION* edit) {
@@ -237,6 +255,21 @@ void MainView::renderGradientEditor()
     ImGui::SameLine();
     ImGui::AlignTextToFramePadding();
     ImGui::Text((m_config_wrapper->tr(L"レイヤー") + "=%d, " + m_config_wrapper->tr(L"フレーム") + "=[%d - %d]").c_str(), m_layer_frame.layer + 1, m_layer_frame.start + 1, m_layer_frame.end + 1);
+
+    bool is_reset_alpha_marker = imgui_utils::squareIconButton(ICON_MS_SYNC, "##alpha_marker_reset");
+    if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNormal)) ImGui::SetTooltip(m_config_wrapper->tr(L"アルファマーカーをリセット").c_str());
+    ImGui::SameLine();
+
+    float alpha_tool_buttons_width = frame_height * 3 + ImGui::GetStyle().ItemSpacing.x * 2;
+    imgui_utils::alignForWidth(alpha_tool_buttons_width, 1.0f);  // 右揃えにする
+    bool is_distribute_alpha_marker = imgui_utils::squareIconButton(ICON_MS_ARROW_RANGE, "##alpha_marker_distribute");
+    if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNormal)) ImGui::SetTooltip(m_config_wrapper->tr(L"アルファマーカーを等間隔に配置").c_str());
+    ImGui::SameLine();
+    bool is_reverse_alpha_marker = imgui_utils::squareIconButton(ICON_MS_SWITCH_LEFT, "##alpha_marker_reverse");
+    if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNormal)) ImGui::SetTooltip(m_config_wrapper->tr(L"アルファマーカーを反転").c_str());
+    ImGui::SameLine();
+    bool is_delete_alpha_marker = imgui_utils::squareIconButton(ICON_MS_DELETE, "##alpha_marker_delete");
+    if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNormal)) ImGui::SetTooltip(m_config_wrapper->tr(L"選択中のアルファマーカーを削除").c_str());
 
     //
     // グラデーションエディタの描画
@@ -282,6 +315,7 @@ void MainView::renderGradientEditor()
 
     float tb_width = frame_height * 5 + ImGui::GetStyle().ItemSpacing.x * 4;
     imgui_utils::alignForWidth(tb_width, 1.0f);  // 右揃えにする
+
     bool is_distribute_marker = imgui_utils::squareIconButton(ICON_MS_ARROW_RANGE, "##distribute");
     if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNormal)) ImGui::SetTooltip(m_config_wrapper->tr(L"マーカーを等間隔に配置").c_str());
     ImGui::SameLine();
@@ -308,6 +342,11 @@ void MainView::renderGradientEditor()
     if (is_reset_midpoint) m_data->getMarkerManager()->resetMidpoints();
     if (is_reverse) m_data->getMarkerManager()->reverseMarkers();
     if (is_del) m_data->getMarkerManager()->deleteSelectedMarker();
+
+    if (is_reset_alpha_marker) m_data->getMarkerManager()->setDefaultAlphaMarkers();
+    if (is_distribute_alpha_marker) m_data->getMarkerManager()->distributeAlphaMarkersEvenly();
+    if (is_reverse_alpha_marker) m_data->getMarkerManager()->reverseAlphaMarkers();
+    if (is_delete_alpha_marker) m_data->getMarkerManager()->deleteSelectedAlphaMarker();
 
     // プリセットがクリックされた場合、現在のグラデーションがプリセットのものに置き換わるため、
     // その時のグラデーションのデータを差分検知のために保存しておく
@@ -449,4 +488,5 @@ void MainView::writeHistories()
 {
     m_history_window.pushHistory(*m_data);  // この関数が呼ばれた時点のグラデーションを履歴に保存する
     m_history_window.writeHistoryToConfig(m_config_manager, m_history_config);
+    m_preset_window.writeSelectedCategoryToConfig(m_config_manager, m_preset_config);
 }

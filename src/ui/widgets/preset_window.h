@@ -21,7 +21,7 @@ public:
     [[nodiscard]] GradientData getSelectedGradientData() const noexcept { return m_selected_gradient; }
     [[nodiscard]] GradientData getTargetGradientData() const noexcept { return m_selected_gradient; }
     void setTargetGradientData(const GradientData& data) noexcept { m_target_gradient_data = data; }
-    void overwriteCatogories(GradientConfigManager& manager, PresetConfig& cfg);
+    void writeSelectedCategoryToConfig(GradientConfigManager& manager, PresetConfig& cfg);
 
 private:
     static constexpr float MODAL_WINDOW_WIDTH   = 120.0f;

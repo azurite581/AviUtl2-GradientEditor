@@ -6,6 +6,7 @@
 #include <cctype>
 #include <cstdint>
 #include <expected>
+#include <optional>
 #include <ranges>
 #include <regex>
 #include <sstream>
@@ -18,21 +19,21 @@ template <typename T>
 std::expected<T, std::string> parseValue(std::string_view sv);
 
 template <std::integral T>
-inline std::expected<T, std::string> parseValue(std::string_view s)
+inline std::expected<T, std::string> parseValue(std::string_view sv)
 {
     int32_t base = 10;
-    if (s.empty() || base < 2 || base > 36) return std::unexpected("Invalid input");
+    if (sv.empty() || base < 2 || base > 36) return std::unexpected("Invalid input");
 
-    if (s.starts_with("0x") || s.starts_with("0X")) {
+    if (sv.starts_with("0x") || sv.starts_with("0X")) {
         base = 16;
-        s.remove_prefix(2);
-    } else if (s.starts_with("0b") || s.starts_with("0B")) {
+        sv.remove_prefix(2);
+    } else if (sv.starts_with("0b") || sv.starts_with("0B")) {
         base = 2;
-        s.remove_prefix(2);
+        sv.remove_prefix(2);
     }
 
     T value{};
-    auto [ptr, ec] = std::from_chars(s.data(), s.data() + s.size(), value, base);
+    auto [ptr, ec] = std::from_chars(sv.data(), sv.data() + sv.size(), value, base);
     if (ec == std::errc()) return value;
     return std::unexpected("Failed to parse value");
 }
@@ -75,12 +76,13 @@ inline std::string_view trim(std::string_view sv) {
     return sv;
 }
 
+// カンマ区切りの文字列を指定した型のベクターにパースする
 template <typename T>
-inline std::expected<std::vector<T>, std::string> splitStr(std::string_view s, std::string_view delim) {
+inline std::expected<std::vector<T>, std::string> splitStr(std::string_view sv, std::string_view delim) {
     std::vector<T> result;
 
-    for (auto sv : s | std::views::split(delim)) {
-        auto part = trim(std::string_view{sv.begin(), sv.end()});
+    for (auto s : sv | std::views::split(delim)) {
+        auto part = trim(std::string_view{s.begin(), s.end()});
 
         auto v = parseValue<T>(part);
         if (!v) return std::unexpected(v.error());
@@ -117,7 +119,7 @@ inline std::string getNthToken(std::string_view src, const uint32_t index)
     return std::string(first == std::string_view::npos ? src : src.substr(0, first));
 }
 
-/// @brief 指定したセクションの値を置換する
+/// @brief 指定したセクションの値を別の文字列で置換する
 /// @param src エイリアス文字列 1 行分
 /// @param index 置換したい値のあるセクションのインデックス
 /// @param replacement 置換に使う値の文字列
@@ -179,6 +181,45 @@ inline int32_t getFrameCount(std::string_view alias)
     }
     return count;
 }
+
+inline std::optional<int32_t> getLastObjectIndex(std::string_view alias)
+{
+    std::regex re(R"(^\[Object\.(\d+)\])");
+
+    std::istringstream iss(alias.data());
+    std::string line{};
+    std::optional<int32_t> max_index{};
+
+    while (std::getline(iss, line)) {
+        std::smatch match;
+        if (std::regex_search(line, match, re)) {
+            int32_t value;
+            auto [ptr, ec] = std::from_chars(match[1].str().data(), match[1].str().data() + match[1].str().size(), value, 10);
+            if (ec != std::errc()) {
+                return std::nullopt;
+            }
+            if (!max_index || value > max_index.value()) {
+                max_index = value;
+            }
+        }
+    }
+
+    return max_index;
+}
+
+inline std::optional<std::string> getEffectName(std::string_view alias)
+{
+    std::string s{alias};
+    std::smatch match;
+    std::regex re(R"(\[Object\.0\][\s\S]*?\r?\n(effect.name=([^\r?\n]+)))");
+
+    if (std::regex_search(s, match, re)) {
+        if (match.size() != 3) return std::nullopt;
+        return match.str(2);
+    }
+    return std::nullopt;
+}
+
 }  // namespace alias_parser
 
 #endif  // !ALIAS_PARSER_H

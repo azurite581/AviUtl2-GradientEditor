@@ -740,7 +740,7 @@ void PresetWindow::renderPresetList(GradientConfigManager& manager, PresetConfig
     }
 }
 
-void PresetWindow::overwriteCatogories(GradientConfigManager& manager, PresetConfig& cfg)
+void PresetWindow::writeSelectedCategoryToConfig(GradientConfigManager& manager, PresetConfig& cfg)
 {
     cfg.selected_category = m_selected_category_index;
 

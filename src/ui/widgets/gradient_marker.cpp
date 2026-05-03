@@ -417,6 +417,15 @@ void GradientMarkerManager::reverseMarkers()
     updateMidpointsPos();
 }
 
+void GradientMarkerManager::reverseAlphaMarkers()
+{
+    for (const auto& [i, marker] : m_alpha_markers | std::views::enumerate) {
+        marker.pos = std::clamp(1.0f - marker.pos, 0.0f, 1.0f);
+    }
+
+    sortAlphaMarkers();
+}
+
 void GradientMarkerManager::resetMidpoints()
 {
     for (const auto& [i, marker] : m_markers | std::views::enumerate) {
@@ -819,10 +828,22 @@ void GradientMarkerManager::deleteSelectedMarker()
     deleteMarker(m_state.selected_marker_id);
 }
 
+void GradientMarkerManager::deleteSelectedAlphaMarker()
+{
+    deleteAlphaMarker(m_state.selected_alpha_marker_id);
+}
+
 void GradientMarkerManager::distributeMarkersEvenly()
 {
     for (const auto& [i, marker] : m_markers | std::views::enumerate) {
         moveMarker(marker.id, i / static_cast<float>(std::ssize(m_markers) - 1));
+    }
+}
+
+void GradientMarkerManager::distributeAlphaMarkersEvenly()
+{
+    for (const auto& [i, marker] : m_alpha_markers | std::views::enumerate) {
+        moveAlphaMarker(marker.id, i / static_cast<float>(std::ssize(m_alpha_markers) - 1));
     }
 }
 
