@@ -125,14 +125,14 @@ inline bool spinInt(const char* label, int* v, int step = 1, int step_fast = 100
 }
 
 // ボタントグル
-inline bool pushToggleButton(const char* label, bool* v, const ImVec2& size = ImVec2(0, 0))
+inline bool pushToggleButton(const char* label, bool* v, const ImVec2& size = ImVec2(0, 0), const bool is_pressed = false)
 {
     if (*v) {
         ImVec4 active_color = ImGui::GetStyle().Colors[ImGuiCol_ButtonActive];
         ImGui::PushStyleColor(ImGuiCol_Button, active_color);
     }
 
-    bool pressed = ImGui::Button(label, size);
+    bool pressed = ImGui::Button(label, size) || is_pressed;
     if (*v) ImGui::PopStyleColor();
     if (pressed) *v = !(*v);
 

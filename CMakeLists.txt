@@ -107,7 +107,7 @@ endif()
 # Compiler Options ------------------------------------------------------------------
 if("${CMAKE_CXX_COMPILER_ID}" MATCHES "MSVC")
     target_compile_options(${PROJECT_NAME} PRIVATE
-        /source-charset:utf-8
+        /utf-8
         /W4
         $<IF:$<CONFIG:Debug>,/Od,/O2>
         $<IF:$<CONFIG:Debug>,/GL-,/GL>

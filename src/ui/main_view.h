@@ -105,6 +105,35 @@ effect.name=MultiGradient@GradientEditor
 色空間=sRGB
 補間経路=短経路
 )";
+
+static constexpr const char* MUTLI_GRADIENT_ALIAS_TEMPLATE = R"(
+[Object.{}]
+effect.name=MultiGradient@GradientEditor
+強さ=100.00
+中心X=0.0
+中心Y=0.0
+角度=90.0
+幅=100
+背景透明度=0.00
+形状=線形
+シフト=0.00
+境界モード=境界色
+合成モード=通常
+幅をオブジェクトに合わせる=1
+グラデーションデータ.hide=1
+色=0x000000,0xffffff
+色の透明度=0.00,0.00
+位置=0.00,1.00
+中間点=0.50
+マーカー数=2
+アルファ値=1.00,1.00
+アルファ位置=0.00,1.00
+アルファマーカー数=2
+ぼかし幅=100
+色空間=sRGB
+補間経路=短経路
+)";
+
 };
 
 #endif  // MAIN_VIEW_H
