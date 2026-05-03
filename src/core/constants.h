@@ -3,6 +3,12 @@
 
 #include <cstdint>
 
+#define WIDEN2(x) L##x
+#define WIDEN(x) WIDEN2(x)
+#ifndef PLUGIN_VERSION
+#define PLUGIN_VERSION "0.4.3"
+#endif
+
 namespace scale {
 // ImGui::GetFrameHeight() を基準とした相対スケール
 namespace relative {
@@ -30,7 +36,10 @@ constexpr float PRESET_WINDOW_RATIO     = 0.35f;
 constexpr float DEFAULT_FONT_SIZE       = 13.0f;
 constexpr float ICON_FONT_GLYPHOFFSET_Y = 1.5f;
 
-constexpr const wchar_t* WINDOW_NAME_DEFAULT = L"GradientEditor";
+constexpr const wchar_t* PLUGIN_NAME = L"Gradient Editor";
+constexpr const wchar_t* PLUGIN_INFO = "Gradient Editor v" WIDEN(PLUGIN_VERSION) " azurite" ;
+constexpr const wchar_t* PLUGIN_FILE_NAME = L"GradientEditor";
+constexpr const wchar_t* WINDOW_NAME = PLUGIN_NAME;
 constexpr const wchar_t* CONFIG_FOLDER_NAME  = L"GradientEditorPreset";
 constexpr const wchar_t* PRESET_FILE_NAME    = L"gradient_editor_preset.json";
 constexpr const wchar_t* HISTORY_FILE_NAME   = L"gradient_editor_history.json";

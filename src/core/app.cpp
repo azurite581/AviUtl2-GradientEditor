@@ -32,7 +32,7 @@ void App::run(std::promise<HWND>&& hwnd_promise)
     float main_scale = ImGui_ImplWin32_GetDpiScaleForMonitor(::MonitorFromPoint(POINT{0, 0}, MONITOR_DEFAULTTOPRIMARY));
 
     // ウィンドウの作成
-    if (!gradient_editor::g_app_state.window_manager.createPluginWindow(WINDOW_NAME_DEFAULT, main_scale, wnd_proc)) {
+    if (!gradient_editor::g_app_state.window_manager.createPluginWindow(WINDOW_NAME, main_scale, wnd_proc)) {
         hwnd_promise.set_exception(std::make_exception_ptr(std::runtime_error("Failed to create window")));
         return;
     }

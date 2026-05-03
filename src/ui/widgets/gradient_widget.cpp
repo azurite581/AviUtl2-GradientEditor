@@ -242,13 +242,15 @@ ID3D11ShaderResourceView* getGradientSrv(
         auto gradient_data = std::make_unique<GradientData>();
         gradient_data->init(g_d3d_device, static_cast<int32_t>(display_size.x), static_cast<int32_t>(display_size.y));
         gradient_data->getMarkerManager()->setDefaultMarkers(data.m_marker_manager.getMarkers());
+        gradient_data->getMarkerManager()->setDefaultAlphaMarkers(data.m_marker_manager.getAlphaMarkers());
         gradient_data->setBlurWidth(data.m_blur_width);
         gradient_data->setColorSpace(data.m_color_space);
         gradient_data->setInterpDir(data.m_interp_dir);
         it = gradient_datas.emplace(label, std::move(gradient_data)).first;
     } else {
-        // 存在する場合はデータのみを上書き
+        // 存在する場合はデータを上書き
         gradient_datas[label].get()->getMarkerManager()->setDefaultMarkers(data.m_marker_manager.getMarkers());
+        gradient_datas[label].get()->getMarkerManager()->setDefaultAlphaMarkers(data.m_marker_manager.getAlphaMarkers());
         gradient_datas[label].get()->setBlurWidth(data.m_blur_width);
         gradient_datas[label].get()->setColorSpace(data.m_color_space);
         gradient_datas[label].get()->setInterpDir(data.m_interp_dir);
@@ -290,7 +292,7 @@ ID3D11ShaderResourceView* getGradientSrv(
 bool drawGradientButton(const std::string label, const ImVec2& display_size, const GradientData& data)
 {
     ImVec2 dsize = ImVec2(ImMax(1.0f, display_size.x), ImMax(1.0f, display_size.y));
-    ImVec2 gradient_size                   = ImVec2(dsize.x - ImGui::GetStyle().FramePadding.x * 2.0f, dsize.y - ImGui::GetStyle().FramePadding.y * 2.0f);
+    ImVec2 gradient_size = ImVec2(dsize.x - ImGui::GetStyle().FramePadding.x * 2.0f, dsize.y - ImGui::GetStyle().FramePadding.y * 2.0f);
     gradient_size = ImVec2(ImMax(1.0f, gradient_size.x), ImMax(1.0f, gradient_size.y));
 
     ID3D11ShaderResourceView* gradient_srv = getGradientSrv(g_button_gradients, label, gradient_size, data);

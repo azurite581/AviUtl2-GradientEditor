@@ -239,40 +239,7 @@ void MainView::renderGradientEditor()
         plugin2_utils::call_edit_lambda(gradient_editor::g_app_state.edit_handle->call_edit_section_param, [&](EDIT_SECTION* edit) {
             auto focus_obj = edit->get_focus_object();
             if (!focus_obj) return;
-
             m_layer_frame = edit->get_object_layer_frame(focus_obj);
-
-            // 反映が ON だが対象のエフェクトが付いていない場合
-            auto effect_count = edit->count_object_effect(focus_obj, effect_full_name.c_str());
-            if (effect_count == 0 && m_apply) {
-                auto alias = edit->get_object_alias(focus_obj);
-                auto obj_idx = alias_parser::getLastObjectIndex(alias);
-                if (!obj_idx) return;
-
-                auto object0_effect_name = alias_parser::getEffectName(alias);
-                if (!object0_effect_name) return;
-
-                uint32_t next_index = obj_idx.value() + 1;
-                std::string new_alias{};
-                try {
-                    new_alias = std::format(MUTLI_GRADIENT_ALIAS_TEMPLATE, next_index);
-                } catch (const std::format_error e) {
-                    m_logger_wrapper->error("{}", e.what());
-                }
-
-                new_alias = alias + new_alias;
-                m_logger_wrapper->log("{}", new_alias);
-
-                edit->delete_object(focus_obj);
-                auto new_obj = edit->create_object_from_alias(
-                    new_alias.c_str(),
-                    m_layer_frame.layer,
-                    m_layer_frame.start,
-                    m_layer_frame.end - m_layer_frame.start);
-                if (!new_obj) return;
-
-                edit->set_focus_object(new_obj);
-            }
         });
         if (m_apply) off_to_on = true;
     }
@@ -312,6 +279,59 @@ void MainView::renderGradientEditor()
     ImGui::SameLine();
     bool is_delete_alpha_marker = imgui_utils::squareIconButton(ICON_MS_DELETE, "##alpha_marker_delete");
     if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNormal)) ImGui::SetTooltip(m_config_wrapper->tr(L"選択中のアルファマーカーを削除").c_str());
+
+
+    if (off_to_on || (m_apply && is_refresh)) {
+        plugin2_utils::call_edit_lambda(gradient_editor::g_app_state.edit_handle->call_edit_section_param, [&](EDIT_SECTION* edit) {
+            auto focus_obj = edit->get_focus_object();
+            if (!focus_obj) return;
+
+            m_layer_frame = edit->get_object_layer_frame(focus_obj);
+
+            // 反映が ON だが対象のエフェクトが付いていない場合
+            auto effect_count = edit->count_object_effect(focus_obj, effect_full_name.c_str());
+            if (effect_count == 0 && m_apply) {
+                auto alias = edit->get_object_alias(focus_obj);
+                auto obj_idx = alias_parser::getLastObjectIndex(alias);
+                if (!obj_idx) return;
+
+                auto object0_effect_name = alias_parser::getEffectName(alias);
+                if (!object0_effect_name) return;
+
+                static constexpr const char* EXCLUDE_EFFECTS[6] = {
+                        "オーディオバッファ",
+                        "カメラ制御",
+                        "グループ制御(音声)",
+                        "フィルタ効果",
+                        "音声ファイル",
+                        "時間制御(オブジェクト)",
+                };
+                for (const auto e : EXCLUDE_EFFECTS) {
+                    if (object0_effect_name == e) return;
+                }
+
+                uint32_t next_index = obj_idx.value() + 1;
+                std::string new_alias{};
+                try {
+                    new_alias = std::format(MUTLI_GRADIENT_ALIAS_TEMPLATE, next_index);
+                } catch (const std::format_error e) {
+                    m_logger_wrapper->error("{}", e.what());
+                }
+
+                new_alias = alias + new_alias;
+
+                edit->delete_object(focus_obj);
+                auto new_obj = edit->create_object_from_alias(
+                    new_alias.c_str(),
+                    m_layer_frame.layer,
+                    m_layer_frame.start,
+                    m_layer_frame.end - m_layer_frame.start);
+                if (!new_obj) return;
+
+                edit->set_focus_object(new_obj);
+            }
+        });
+    }
 
     //
     // グラデーションエディタの描画

@@ -14,24 +14,6 @@
 #include <future>
 #include <thread>
 
-//---------------------------------------------------------------------
-//	プラグイン情報用マクロ
-//---------------------------------------------------------------------
-#define WIDEN2(x) L##x
-#define WIDEN(x) WIDEN2(x)
-
-#define PLUGIN_NAME "Gradient Editor"
-#define PLUGIN_FILE_NAME "GradientEditor"
-#define PLUGIN_AUTHOR "azurite"
-#ifndef PLUGIN_VERSION
-#define PLUGIN_VERSION "0.4.1"
-#endif
-
-#define PLUGIN_VERSION_STR L"v" WIDEN(PLUGIN_VERSION)
-#define PLUGIN_INFO    \
-    WIDEN(PLUGIN_NAME) \
-    L" " PLUGIN_VERSION_STR L" " WIDEN(PLUGIN_AUTHOR)
-
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam);
 
 //---------------------------------------------------------------------
@@ -84,8 +66,8 @@ void guiThreadMain(std::promise<HWND>&& hwnd_promise)
 //	AviUtl2 Plugin 関連
 //---------------------------------------------------------------------
 COMMON_PLUGIN_TABLE common_plugin_table = {
-    WIDEN(PLUGIN_NAME),
-    PLUGIN_INFO,
+    .name = PLUGIN_NAME,
+    .information = PLUGIN_INFO,
 };
 
 EXTERN_C __declspec(dllexport) DWORD RequiredVersion()
@@ -105,7 +87,7 @@ EXTERN_C __declspec(dllexport) void InitializeConfig(CONFIG_HANDLE* handle)
     // 設定ファイルの作成
     std::filesystem::path settings_file_path{gradient_editor::g_app_state.config_handle->app_data_path};
     settings_file_path /= L"Plugin";
-    settings_file_path /= WIDEN(PLUGIN_FILE_NAME);
+    settings_file_path /= PLUGIN_FILE_NAME;
     settings_file_path.replace_extension("ini");
     gradient_editor::g_app_state.settings_file_path = settings_file_path;
 
@@ -150,5 +132,5 @@ EXTERN_C __declspec(dllexport) void RegisterPlugin(HOST_APP_TABLE* host)
     gradient_editor::g_app_state.gui_thread = std::thread(guiThreadMain, std::move(p));
 
     HWND hwnd = f.get();
-    host->register_window_client(gradient_editor::g_app_state.config_handle->translate(gradient_editor::g_app_state.config_handle, WINDOW_NAME_DEFAULT), hwnd);
+    host->register_window_client(gradient_editor::g_app_state.config_handle->translate(gradient_editor::g_app_state.config_handle, WINDOW_NAME), hwnd);
 }

@@ -75,6 +75,8 @@ struct GradientHistory {
     std::vector<std::string> colors{"0x000000ff", "0xffffffff"};
     std::vector<float> positions{0.0f, 1.0f};
     std::vector<float> midpoints{0.5f};
+    std::vector<float> alpha_values{1.0f, 1.0f};
+    std::vector<float> alpha_positions{0.0f, 1.0f};
     float blur_width{1.0f};
     int32_t color_space{0};
     int32_t interpolation_path{0};
@@ -89,6 +91,8 @@ inline void to_json(nlohmann::ordered_json& j, const GradientHistory& history)
         {"colors", history.colors},
         {"positions", history.positions},
         {"midpoints", history.midpoints},
+        {"alpha_values", history.alpha_values},
+        {"alpha_positions", history.alpha_positions},
         {"blur_width", history.blur_width},
         {"color_space", history.color_space},
         {"interpolation_path", history.interpolation_path}};
@@ -100,6 +104,8 @@ inline void from_json(const nlohmann::ordered_json& j, GradientHistory& history)
     history.colors             = j.value("colors", history.colors);
     history.positions          = j.value("positions", history.positions);
     history.midpoints          = j.value("midpoints", history.midpoints);
+    history.alpha_values       = j.value("alpha_values", history.alpha_values);
+    history.alpha_positions    = j.value("alpha_positions", history.alpha_positions);
     history.blur_width         = j.value("blur_width", history.blur_width);
     history.color_space        = j.value("color_space", history.color_space);
     history.interpolation_path = j.value("interpolation_path", history.interpolation_path);
@@ -314,7 +320,17 @@ public:
             }
             markers_data.push_back(marker_data);
         }
+
+        std::vector<AlphaMarkerData> alpha_markers_data;
+        for (uint32_t i = 0; i < static_cast<uint32_t>(std::ssize(history.alpha_values)); ++i) {
+            AlphaMarkerData alpha_marker_data;
+            alpha_marker_data.value = history.alpha_values[i];
+            alpha_marker_data.pos   = history.alpha_positions[i];
+            alpha_markers_data.push_back(alpha_marker_data);
+        }
+
         gradient.m_marker_manager.setDefaultMarkers(markers_data);
+        gradient.m_marker_manager.setDefaultAlphaMarkers(alpha_markers_data);
         gradient.m_blur_width  = history.blur_width;
         gradient.m_color_space = history.color_space;
         gradient.m_interp_dir  = history.interpolation_path;
@@ -332,6 +348,8 @@ public:
         history.colors             = rgba_hex_strs;
         history.positions          = gradient.m_marker_manager.getMarkerPos();
         history.midpoints          = gradient.m_marker_manager.getMidpointRatios();
+        history.alpha_values       = gradient.m_marker_manager.getAlphaMarkerValues();
+        history.alpha_positions    = gradient.m_marker_manager.getAlphaMarkerPos();
         history.blur_width         = gradient.getBlurWidth();
         history.color_space        = gradient.getColorSpace();
         history.interpolation_path = gradient.getInterpDir();

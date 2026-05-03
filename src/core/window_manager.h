@@ -30,4 +30,4 @@ private:
     bool m_is_resizing = false;
 };
 
-#endif WINDOW_MANAGER_H
+#endif
