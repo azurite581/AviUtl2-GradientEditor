@@ -70,35 +70,32 @@ local is_fit = 0
 
 --group:グラデーションデータ,false
 --separator:カラーマーカー
-
 ---$value:色
-local col_table = {0x000000,0xffffff}
+local color_rgb_table = {0x000000,0xffffff}
 
 ---$value:色の透明度
-local alpha_table = {0.00,0.00}
+local color_a_table = {0.00,0.00}
 
 ---$value:位置
-local pos_table = {0.00,1.00}
+local color_pos_table = {0.00,1.00}
 
 ---$value:中間点
-local mid_table = {0.50}
+local color_mid_table = {0.50}
 
 ---$value:マーカー数
 local marker_num = 2
 
 --separator:アルファマーカー
-
 ---$value:アルファ値
-local transparency_table = {1.00,1.00}
+local alpha_val_table = {1.00,1.00}
 
 ---$value:アルファ位置
-local transparency_pos_table = {0.00,1.00}
+local alpha_pos_table = {0.00,1.00}
 
 ---$value:アルファマーカー数
-local trans_marker_num = 2
+local alpha_marker_num = 2
 
 --separator:その他
-
 ---$track:ぼかし幅
 ---min=0
 ---max=100
@@ -135,23 +132,6 @@ float4 mask(float4 pos : SV_Position) : SV_Target {
 }
 ]]
 
-local MARKER_MAX_COUNT = 30
-local GRADIENT_MAX_COUNT = MARKER_MAX_COUNT - 1
-
-local function expand(t, max, def)
-    for i = #t + 1, max do
-        t[i] = def
-    end
-    return t
-end
-
-local colors = expand(col_table, MARKER_MAX_COUNT, 0x000000)
-local alphas = expand(alpha_table, MARKER_MAX_COUNT, 0.0)
-local positions = expand(pos_table, MARKER_MAX_COUNT, 0.0)
-local midpoints = expand(mid_table, MARKER_MAX_COUNT, 0.5)
-local transparency = expand(transparency_table, MARKER_MAX_COUNT, 0.0)
-local transparency_pos = expand(transparency_pos_table, MARKER_MAX_COUNT, 0.0)
-
 local function norm_color(color)
     local r, g, b = RGB(color)
     return {r / 255, g / 255, b / 255}
@@ -185,16 +165,6 @@ local function extend_back(t, n, v)
 	return t
 end
 
--- テーブルから指定した範囲を切り出す
-local function slice(t, first, last)
-    local res = {}
-    for i = first, last do
-        res[#res + 1] = t[i]
-    end
-    return res
-end
-
--- 並び替え
 local function reorder(t, idx)
     local r = {}
     for i, j in ipairs(idx) do
@@ -203,151 +173,164 @@ local function reorder(t, idx)
     return r
 end
 
--- HLSL のコンスタントバッファーに渡すために変数を詰める
-local function pack(colors, alphas, positions, midpoints, color_space, interp_dir, blur_width)
-    assert(#colors == #alphas and #alphas == #positions and #positions == #midpoints, "Marker arrays must have the same length")
-
-    -- マーカー数分だけ切り出す
-    local marker_colors = slice(colors, 1, marker_num)
-    local marker_alphas = slice(alphas, 1, marker_num)
-    local marker_positions = slice(positions, 1, marker_num)
-    local marker_midpoints = slice(midpoints, 1, marker_num)
-    local marker_trans = slice(transparency, 1, trans_marker_num)
-    local marker_trans_pos = slice(transparency_pos, 1, trans_marker_num)
-
-    -- インデックス配列
-    local idx = {}
-    for i = 1, marker_num do
-        idx[i] = i
-    end
-
-    -- 位置を基準にインデックスをソート
-    table.sort(idx, function(a, b)
-        local pa, pb = marker_positions[a], marker_positions[b]
-        if pa ~= pb then
-            return pa < pb
-        end
-        return a < b
-    end)
-
-    -- 位置を基準に並び替え
-    marker_colors    = reorder(marker_colors, idx)
-    marker_alphas    = reorder(marker_alphas, idx)
-    marker_positions = reorder(marker_positions, idx)
-    marker_midpoints = reorder(marker_midpoints, idx)
-
-    local trans_idx = {}
-    for i = 1, trans_marker_num do
-        trans_idx[i] = i
-    end
-
-    table.sort(trans_idx, function(a, b)
-        local pa, pb = marker_trans_pos[a], marker_trans_pos[b]
-        if pa ~= pb then
-            return pa < pb
-        end
-        return a < b
-    end)
-
-    marker_trans = reorder(marker_trans, trans_idx)
-    marker_trans_pos = reorder(marker_trans_pos, trans_idx)
-
-    -- 元のサイズに戻す
-    marker_colors    = extend_back(marker_colors, MARKER_MAX_COUNT - #marker_colors, 0xffffff)
-    marker_alphas    = extend_back(marker_alphas, MARKER_MAX_COUNT - #marker_alphas, 0)
-    marker_positions = extend_back(marker_positions, MARKER_MAX_COUNT - #marker_positions, 0)
-    marker_midpoints = extend_back(marker_midpoints, MARKER_MAX_COUNT - #marker_midpoints, 0.5)
-    marker_trans     = extend_back(marker_trans, MARKER_MAX_COUNT - #marker_trans, 0)
-    marker_trans_pos = extend_back(marker_trans_pos, MARKER_MAX_COUNT - #marker_trans_pos, 0)
-
-    local start_col = {}; local start_pos = {};
-    local stop_col = {}; local stop_pos = {};
-    local mid = {};
-
-    for i = 1, MARKER_MAX_COUNT do
-        -- 区間の開始
-        local start_rgb = norm_color(marker_colors[i] or 0x000000)
-        start_col[#start_col + 1] = start_rgb[1]
-        start_col[#start_col + 1] = start_rgb[2]
-        start_col[#start_col + 1] = start_rgb[3]
-        start_col[#start_col + 1] = 1-marker_alphas[i] or 1
-        start_pos[#start_pos + 1] = marker_positions[i]
-        mid[#mid + 1] = marker_midpoints[i]  -- 中間点は区間の開始位置に対応させる
-
-        -- 区間の終了
-        local next_i = i + 1
-        if next_i > MARKER_MAX_COUNT then next_i = MARKER_MAX_COUNT end
-
-        local stop_rgb = norm_color(marker_colors[next_i] or 0x000000)
-        stop_col[#stop_col + 1] = stop_rgb[1]
-        stop_col[#stop_col + 1] = stop_rgb[2]
-        stop_col[#stop_col + 1] = stop_rgb[3]
-        stop_col[#stop_col + 1] = 1-marker_alphas[next_i] or 1
-        stop_pos[#stop_pos + 1] = marker_positions[next_i]
-    end
-
-    -- [0] = 区間の開始位置, [1] = 区間の終了位置, [2] = 中間点, [3] = パディング
-    local pos_and_mid = {}
-    for i = 1, GRADIENT_MAX_COUNT do
-        pos_and_mid[#pos_and_mid + 1] = start_pos[i]
-        pos_and_mid[#pos_and_mid + 1] = stop_pos[i]
-        pos_and_mid[#pos_and_mid + 1] = mid[i]
-        pos_and_mid[#pos_and_mid + 1] = 0.0  -- パディング
-    end
-
-    -- [i+0] = 透明度マーカーの位置, [i+1] = 透明度マーカーの位置, [i+2] = 透明度マーカーの値, [i+3] = 透明度マーカーの値,
-    local trans_pos_and_value = {}
-    for i = 1, GRADIENT_MAX_COUNT do
-        trans_pos_and_value[#trans_pos_and_value + 1] = marker_trans_pos[i]
-        trans_pos_and_value[#trans_pos_and_value + 1] = marker_trans_pos[i + 1]
-        trans_pos_and_value[#trans_pos_and_value + 1] = marker_trans[i]
-        trans_pos_and_value[#trans_pos_and_value + 1] = marker_trans[i + 1]
-    end
-
-    marker_num = math.min(math.max(marker_num, 2), MARKER_MAX_COUNT)
-    trans_marker_num = math.min(math.max(trans_marker_num, 2), MARKER_MAX_COUNT)
-
-    local packed = merge(
-        {color_space, interp_dir, blur_width / 100, marker_num},
-        start_col,
-        stop_col,
-        pos_and_mid,
-        {trans_marker_num, 0, 0, 0},
-        trans_pos_and_value
-    )
-
-    -- packed の構造は以下のようになる（float4 の配列として渡すため、4つずつまとめる）
-    -- [0] = 色空間, [1] = 補間経路, [2] = ぼかし幅, [3] = マーカー数,
-    -- [i+0] = 開始色.r, [i+1] = 開始色.g, [i+2] = 開始色.b, [i+3] = 開始色.a,
-    -- ...（最大マーカー数分）
-    -- [i+0] = 終了色.r, [i+1] = 終了色.g, [i+2] = 終了色.b, [i+3] = 終了色.a,
-    -- ...（最大マーカー数分）
-    -- [i+0] = 区間の開始位置, [i+1] = 区間の終了位置, [i+2] = 中間点, [i+3] = パディング
-    -- ...（最大区間数分）
-    -- [0] = 透明度マーカー数, [1] = パディング, [2] = パディング, [3] = パディング,
-    -- [i+0] = 透明度マーカーの位置, [i+1] = 透明度マーカーの位置, [i+2] = 透明度マーカーの値, [i+3] = 透明度マーカーの値,
-    -- ...（最大区間数分）
-
-
-    return packed
-end
-
 local function rotate(deg)
     local rad = math.rad(deg)
     return {math.cos(rad), -math.sin(rad),
             math.sin(rad),  math.cos(rad)}
 end
 
-local constants = pack(colors, alphas, positions, midpoints, color_space, interp_dir, blur_width)
-local PAD = 0.0
+local function clamp(x, min, max)
+    if x < min then return min end
+    if x > max then return max end
+    return x
+end
 
-local n = obj.setanchor("track", 0, "line")
+local function is_number_table(t)
+    if type(t) ~= "table" then return nil end
+    for _, v in pairs(t) do
+        if (tonumber(v) == nil) then
+            print("@warn", v.." is not number")
+            return nil
+        end
+    end
+    return t
+end
+
+local PAD = 0.0
+local MARKER_MIN_COUNT = 2
+local MARKER_MAX_COUNT = 30
+local GRADIENT_MAX_COUNT = MARKER_MAX_COUNT - 1
+
+local COLOR_RGB = 0xffffff
+local COLOR_A = 0
+local COLOR_POS = 0
+local COLOR_MID = 0.5
+local ALPHA_VAL = 1
+local ALPHA_POS = 0
+
+local COLOR_RGB_TABLE = {0x000000,0xffffff}
+local COLOR_A_TABLE = {0.00,0.00}
+local COLOR_POS_TABLE = {0.00,1.00}
+local COLOR_MID_TABLE = {0.50}
+local ALPHA_VAL_TABLE = {1.00,1.00}
+local ALPHA_POS_TABLE = {0.00,1.00}
+
+color_rgb_table = is_number_table(color_rgb_table) or COLOR_RGB_TABLE
+color_a_table = is_number_table(color_a_table) or COLOR_A_TABLE
+color_pos_table = is_number_table(color_pos_table) or COLOR_POS_TABLE
+color_mid_table = is_number_table(color_mid_table) or COLOR_MID_TABLE
+alpha_val_table = is_number_table(alpha_val_table) or ALPHA_VAL_TABLE
+alpha_pos_table = is_number_table(alpha_pos_table) or ALPHA_POS_TABLE
+marker_num  = tonumber(marker_num) or MARKER_MIN_COUNT
+alpha_marker_num = tonumber(alpha_marker_num) or MARKER_MIN_COUNT
+
+marker_num = clamp(marker_num, MARKER_MIN_COUNT, MARKER_MAX_COUNT)
+alpha_marker_num = clamp(alpha_marker_num, MARKER_MIN_COUNT, MARKER_MAX_COUNT)
+
+local idx = {}
+for i = 1, marker_num do idx[i] = i end
+
+-- 位置を基準にインデックスをソート
+table.sort(idx, function(a, b)
+    local pa, pb = color_pos_table[a], color_pos_table[b]
+    if pa ~= pb then return pa < pb end
+    return a < b
+end)
+
+-- 位置を基準に並び替え
+color_rgb_table = reorder(color_rgb_table, idx)
+color_a_table = reorder(color_a_table, idx)
+color_pos_table = reorder(color_pos_table, idx)
+color_mid_table = reorder(color_mid_table, idx)
+
+local alpha_idx = {}
+for i = 1, alpha_marker_num do alpha_idx[i] = i end
+
+table.sort(alpha_idx, function(a, b)
+    local pa, pb = alpha_pos_table[a], alpha_pos_table[b]
+    if pa ~= pb then
+        return pa < pb
+    end
+    return a < b
+end)
+
+alpha_val_table = reorder(alpha_val_table, alpha_idx)
+alpha_pos_table = reorder(alpha_pos_table, alpha_idx)
+
+color_rgb_table = extend_back(color_rgb_table, MARKER_MAX_COUNT - #color_rgb_table, COLOR_RGB)
+color_a_table = extend_back(color_a_table, MARKER_MAX_COUNT - #color_a_table, COLOR_A)
+color_pos_table = extend_back(color_pos_table, MARKER_MAX_COUNT - #color_pos_table, COLOR_POS)
+color_mid_table = extend_back(color_mid_table, MARKER_MAX_COUNT - #color_mid_table, COLOR_MID)
+alpha_val_table = extend_back(alpha_val_table, MARKER_MAX_COUNT - #alpha_val_table, ALPHA_VAL)
+alpha_pos_table = extend_back(alpha_pos_table, MARKER_MAX_COUNT - #alpha_pos_table, ALPHA_POS)
+
+local start_col = {}; local start_pos = {};
+local stop_col = {}; local stop_pos = {};
+local mid = {};
+
+for i = 1, MARKER_MAX_COUNT do
+    -- 区間の開始
+    local start_rgb = norm_color(color_rgb_table[i])
+    start_col[#start_col + 1] = start_rgb[1]
+    start_col[#start_col + 1] = start_rgb[2]
+    start_col[#start_col + 1] = start_rgb[3]
+    start_col[#start_col + 1] = 1 - color_a_table[i]
+    start_pos[#start_pos + 1] = color_pos_table[i]
+    mid[#mid + 1] = color_mid_table[i]  -- 中間点は区間の開始位置に対応させる
+
+    -- 区間の終了
+    local next_i = i + 1
+    if next_i > MARKER_MAX_COUNT then next_i = MARKER_MAX_COUNT end
+
+    local stop_rgb = norm_color(color_rgb_table[next_i])
+    stop_col[#stop_col + 1] = stop_rgb[1]
+    stop_col[#stop_col + 1] = stop_rgb[2]
+    stop_col[#stop_col + 1] = stop_rgb[3]
+    stop_col[#stop_col + 1] = 1 - color_a_table[next_i]
+    stop_pos[#stop_pos + 1] = color_pos_table[next_i]
+end
+
+local pos_and_mid = {}
+for i = 1, GRADIENT_MAX_COUNT do
+    pos_and_mid[#pos_and_mid + 1] = start_pos[i]
+    pos_and_mid[#pos_and_mid + 1] = stop_pos[i]
+    pos_and_mid[#pos_and_mid + 1] = mid[i]
+    pos_and_mid[#pos_and_mid + 1] = PAD
+end
+
+local alpha_pos_and_value = {}
+for i = 1, GRADIENT_MAX_COUNT do
+    alpha_pos_and_value[#alpha_pos_and_value + 1] = alpha_pos_table[i]
+    alpha_pos_and_value[#alpha_pos_and_value + 1] = alpha_pos_table[i + 1]
+    alpha_pos_and_value[#alpha_pos_and_value + 1] = alpha_val_table[i]
+    alpha_pos_and_value[#alpha_pos_and_value + 1] = alpha_val_table[i + 1]
+end
+
+local constants = merge(
+    {color_space, interp_dir, blur_width / 100, marker_num},
+    start_col,
+    stop_col,
+    pos_and_mid,
+    {alpha_marker_num, PAD, PAD, PAD},
+    alpha_pos_and_value
+)
+
+-- packed は float4 単位で並ぶテーブル
+
+-- [0]=色空間 [1]=補間経路 [2]=ぼかし幅 [3]=マーカー数  : グラデーション情報（x1）
+-- [0]=r [1]=g [2]=b [3]=a                           : 開始色（xマーカー数）
+-- [0]=r [1]=g [2]=b [3]=a                           : 終了色（xマーカー数）
+-- [0]=開始位置 [1]=終了位置 [2]=中間点 [3]=パディング  : 区間情報（x区間数）
+-- [0]=アルファマーカー数 [1-3]=パディング              : アルファマーカー情報（x1）
+-- [0]=開始位置 [1]=終了位置 [2]=開始値 [3]=終了値      : アルファマーカー（x区間数）
+
+local _ = obj.setanchor("track", 0, "line")
 local center_x = obj.track0
 local center_y = obj.track1
 local m00, m01, m10, m11 = unpack(rotate(angle))
 local cache_name = "orig_img_"..tostring(obj.id)
 
-obj.copybuffer("cache:"..cache_name, "object")
+_ = obj.copybuffer("cache:"..cache_name, "object")
 obj.setoption("drawtarget", "tempbuffer", obj.w, obj.h)
 obj.draw(0.0, 0.0, 0.0, 1.0, (100 - bg_alpha) / 100)
 
@@ -365,7 +348,7 @@ obj.pixelshader("psmain", "object", {"object"},
 
 obj.setoption("blend", blend_mode)
 obj.draw(0.0, 0.0, 0.0, 1.0, intensity / 100.0)
-obj.copybuffer("obj", "tmp")
+_ = obj.copybuffer("obj", "tmp")
 obj.setoption("blend", 0)
 
 obj.pixelshader("mask", "object", {"cache:"..cache_name}, {}, "mask")
