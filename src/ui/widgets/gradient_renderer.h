@@ -88,7 +88,8 @@ public:
             const float pad[3] = {0, 0, 0};
         } alpha_stops[MAX_MARKER_COUNT];
         int32_t alpha_sec_num;
-        float pad[3];
+        float alpha_blur_width;
+        float pad[2];
     };
 
     // すべてのリソースを保持する構造体

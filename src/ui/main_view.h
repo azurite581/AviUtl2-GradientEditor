@@ -22,7 +22,8 @@ private:
     };
 
     void renderGradientEditor();
-    void renderPropertyEditor(GradientData* data);
+    void renderColorPropertyEditor(GradientData* data);
+    void renderAlphaPropertyEditor(GradientData* data);
 
     LoggerWrapperInterface* m_logger_wrapper;
     ConfigWrapperInterface* m_config_wrapper;

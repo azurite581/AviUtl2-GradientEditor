@@ -61,6 +61,12 @@ float GradientMarkerManager::getSelectedMidpointRatio() const
     return m_markers[idx].midpoint.ratio;
 }
 
+float GradientMarkerManager::getSelectedAlphaMidpointRatio() const
+{
+    int32_t idx = getAlphaIndexById(m_state.selected_alpha_midpoint_id);
+    return m_alpha_markers[idx].midpoint.ratio;
+}
+
 // IDからインデックスを取得する
 int32_t GradientMarkerManager::getIndexById(const int32_t id) const
 {
@@ -193,6 +199,11 @@ void GradientMarkerManager::setSelectedMarkerPos(const float pos)
     moveMarker(m_state.selected_marker_id, pos);
 }
 
+void GradientMarkerManager::setSelectedAlphaMarkerPos(const float pos)
+{
+    moveAlphaMarker(m_state.selected_alpha_marker_id, pos);
+}
+
 void GradientMarkerManager::setSelectedMarkerColor(const ImVec4& color)
 {
     int32_t idx = getIndexById(m_state.selected_marker_id);
@@ -200,9 +211,21 @@ void GradientMarkerManager::setSelectedMarkerColor(const ImVec4& color)
     m_markers[idx].color = color;
 }
 
+void GradientMarkerManager::setSelectedAlphaMarkerValue(const float value)
+{
+    int32_t idx = getAlphaIndexById(m_state.selected_alpha_marker_id);
+    if (idx == -1) return;
+    m_alpha_markers[idx].value = value;
+}
+
 void GradientMarkerManager::setSelectedMidpointRatio(const float ratio)
 {
     moveMidpointRatio(m_state.selected_midpoint_id, ratio);
+}
+
+void GradientMarkerManager::setSelectedAlphaMidpointRatio(const float ratio)
+{
+    moveAlphaMidpointRatio(m_state.selected_alpha_midpoint_id, ratio);
 }
 
 void GradientMarkerManager::setMidpointRegion(const ImVec2& p0, const ImVec2& p1) noexcept

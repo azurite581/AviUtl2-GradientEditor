@@ -185,6 +185,7 @@ public:
     [[nodiscard]] float getSelectedMarkerPos() const;
     [[nodiscard]] ImVec4 getSelectedMarkerColor() const;
     [[nodiscard]] float getSelectedMidpointRatio() const;
+    [[nodiscard]] float getSelectedAlphaMidpointRatio() const;
     [[nodiscard]] float getSelectedAlphaMarkerValue() const;
     [[nodiscard]] float getSelectedAlphaMarkerPos() const;
     [[nodiscard]] int32_t getSelectedMarkerId() const noexcept { return m_state.selected_marker_id; }
@@ -220,8 +221,11 @@ public:
     void setAlphaMidpointRatio(const int32_t id, const float ratio);
 
     void setSelectedMarkerPos(const float pos);
+    void setSelectedAlphaMarkerPos(const float pos);
     void setSelectedMarkerColor(const ImVec4& color);
+    void setSelectedAlphaMarkerValue(const float value);
     void setSelectedMidpointRatio(const float ratio);
+    void setSelectedAlphaMidpointRatio(const float ratio);
 
     void setMidpointRegion(const ImVec2& p0, const ImVec2& p1) noexcept;
     void setAlphaMidpointRegion(const ImVec2& p0, const ImVec2& p1) noexcept;

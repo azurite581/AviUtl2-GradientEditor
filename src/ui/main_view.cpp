@@ -392,7 +392,7 @@ void MainView::renderGradientEditor()
         m_data->getMarkerManager()->setDefaultMarkers();
         m_data->setColorSpace(0);
         m_data->setInterpDir(0);
-        m_data->setBlurWidth(1.0f);
+        m_data->setColorBlurWidth(1.0f);
     }
     if (is_reset_midpoint) m_data->getMarkerManager()->resetMidpoints();
     if (is_reverse) m_data->getMarkerManager()->reverseMarkers();
@@ -447,12 +447,23 @@ void MainView::renderGradientEditor()
     }
 
     // AviUtl2 ライクなプロパティエディタ（トラックバー、コンボボックスなど）を描画する
-    renderPropertyEditor(m_data);
+    ImGuiTabBarFlags tab_bar_flags = ImGuiTabBarFlags_None;
+    if (ImGui::BeginTabBar("##PropertyEditorTabBar", tab_bar_flags)) {
+        if (ImGui::BeginTabItem(m_config_wrapper->tr(L"色設定").c_str())) {
+            renderColorPropertyEditor(m_data);
+            ImGui::EndTabItem();
+        }
+        if (ImGui::BeginTabItem(m_config_wrapper->tr(L"アルファ設定").c_str())) {
+            renderAlphaPropertyEditor(m_data);
+            ImGui::EndTabItem();
+        }
+        ImGui::EndTabBar();
+    }
 
     ImGui::End();
 }
 
-void MainView::renderPropertyEditor(GradientData* data)
+void MainView::renderColorPropertyEditor(GradientData* data)
 {
     ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 0.0f);
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
@@ -462,7 +473,7 @@ void MainView::renderPropertyEditor(GradientData* data)
     float height      = ImGui::GetFrameHeight() * 6 + ImGui::GetStyle().ItemSpacing.y * 5;
     float label_width = ImGui::GetFrameHeight() * scale::relative::ITEM_NAME_BUTTON_WIDTH;
 
-    ImGui::BeginChild("##item_labels", ImVec2(label_width, height), ImGuiChildFlags_ResizeX, ImGuiWindowFlags_NoScrollbar);
+    ImGui::BeginChild("##color_item_labels", ImVec2(label_width, height), ImGuiChildFlags_ResizeX, ImGuiWindowFlags_NoScrollbar);
     {
         ImVec2 size(ImGui::GetWindowSize().x, ImGui::GetFrameHeight());
         auto& colors = ImGui::GetStyle().Colors;
@@ -518,7 +529,7 @@ void MainView::renderPropertyEditor(GradientData* data)
 
         ImGui::SetNextItemWidth(width);
         float blur = curr.blur_width * 100.0f;
-        if (ImGui::DragFloat("##blur_width", &blur, 0.1f, 0.0f, 100.0f, "%.0f")) data->setBlurWidth(blur / 100.0f);
+        if (ImGui::DragFloat("##blur_width", &blur, 0.1f, 0.0f, 100.0f, "%.0f")) data->setColorBlurWidth(blur / 100.0f);
 
         ImGui::SetNextItemWidth(width);
         if (ImGui::BeginCombo("##color_space", COLOR_SPACE_NAMES[curr.color_space_index])) {
@@ -535,6 +546,67 @@ void MainView::renderPropertyEditor(GradientData* data)
                     data->setInterpDir(i);
             }
             ImGui::EndCombo();
+        }
+    }
+    ImGui::EndGroup();
+}
+
+void MainView::renderAlphaPropertyEditor(GradientData* data)
+{
+    ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 0.0f);
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
+    ImGui::PushStyleColor(ImGuiCol_SeparatorHovered, ImVec4(0, 0, 0, 0));
+    ImGui::PushStyleColor(ImGuiCol_SeparatorActive, ImVec4(0, 0, 0, 0));
+
+    float height      = ImGui::GetFrameHeight() * 4 + ImGui::GetStyle().ItemSpacing.y * 3;
+    float label_width = ImGui::GetFrameHeight() * scale::relative::ITEM_NAME_BUTTON_WIDTH;
+
+    ImGui::BeginChild("##alpha_item_labels", ImVec2(label_width, height), ImGuiChildFlags_ResizeX, ImGuiWindowFlags_NoScrollbar);
+    {
+        ImVec2 size(ImGui::GetWindowSize().x, ImGui::GetFrameHeight());
+        auto& colors = ImGui::GetStyle().Colors;
+        ImGui::PushStyleColor(ImGuiCol_Button, colors[ImGuiCol_Button]);
+        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, colors[ImGuiCol_Button]);
+        ImGui::PushStyleColor(ImGuiCol_ButtonActive, colors[ImGuiCol_Button]);
+        ImGui::Button(m_config_wrapper->tr(L"アルファ値").c_str(), size);
+        ImGui::Button(m_config_wrapper->tr(L"位置").c_str(), size);
+        ImGui::Button(m_config_wrapper->tr(L"中間点").c_str(), size);
+        ImGui::Button(m_config_wrapper->tr(L"ぼかし幅").c_str(), size);
+        ImGui::PopStyleColor(3);
+    }
+
+    ImGui::EndChild();
+    ImGui::PopStyleVar(2);
+    ImGui::PopStyleColor(2);
+
+    ImGui::SameLine();
+    ImGui::BeginGroup();
+    {
+        auto curr    = m_script_bridge.getValues();
+        float width  = ImGui::GetContentRegionAvail().x;
+
+        ImGui::SetNextItemWidth(width);
+        float value = curr.selected_alpha_marker_value * 100.0f;
+        if (ImGui::DragFloat("##alpha_marker_value", &value, 0.01f, 0.0f, 100.0f, "%.2f")) {
+            data->getMarkerManager()->setSelectedAlphaMarkerValue(value / 100.0f);
+        }
+
+        ImGui::SetNextItemWidth(width);
+        float pos = curr.selected_alpha_marker_pos * 100.0f;
+        if (ImGui::DragFloat("##alpha_marker_pos", &pos, 0.01f, 0.0f, 100.0f, "%.2f")) {
+            data->getMarkerManager()->setSelectedAlphaMarkerPos(pos / 100.0f);
+        }
+
+        ImGui::SetNextItemWidth(width);
+        float midpoint = curr.selected_alpha_midpoint_ratio * 100.0f;
+        if (ImGui::DragFloat("##alpha_marker_midpoint", &midpoint, 0.01f, 0.0f, 100.0f, "%.2f")) {
+            data->getMarkerManager()->setSelectedAlphaMidpointRatio(midpoint / 100.0f);
+        }
+
+        ImGui::SetNextItemWidth(width);
+        float blur = curr.alpha_blur_width * 100.0f;
+        if (ImGui::DragFloat("##alpha_blur_width", &blur, 0.1f, 0.0f, 100.0f, "%.0f")) {
+            data->setAlphaBlurWidth(blur / 100.0f);
         }
     }
     ImGui::EndGroup();

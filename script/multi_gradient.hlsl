@@ -24,7 +24,8 @@ cbuffer constant0 : register(b0) {
     float4 stop_col[MARKER_MAX_COUNT];
     float4 pos_and_mid[GRADIENT_MAX_COUNT];
     float alpha_marker_count;
-    float3 PAD3;
+    float alpha_blur_width;
+    float2 PAD3;
     float4 alpha_pos_and_mid[GRADIENT_MAX_COUNT];
     float4 alpha_value[GRADIENT_MAX_COUNT];
 }
@@ -377,7 +378,7 @@ float4 psmain(float4 pos : SV_Position, float2 uv : TEXCOORD) : SV_Target {
         if (p_curr <= x && x < p_next) {
             float dist = p_next - p_curr;
             float t = (x - p_curr) / dist;
-            alpha = lerp(alpha_value[j].x, alpha_value[j].y, smoothPulse(t, alpha_pos_and_mid[j].z, 1.0));
+            alpha = lerp(alpha_value[j].x, alpha_value[j].y, smoothPulse(t, alpha_pos_and_mid[j].z, alpha_blur_width));
             out_col.a *= alpha;
             out_col.rgb *= out_col.a;
             break;

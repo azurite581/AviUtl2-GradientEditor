@@ -8,8 +8,8 @@ struct VS_OUTPUT
 
 struct Gradient
 {
-    float4 startColor;
-    float4 stopColor;
+    float4 start_color;
+    float4 stop_color;
     float start_x;
     float stop_x;
     float ratio;
@@ -43,7 +43,8 @@ cbuffer pixelBuffer : register(b0)
     float2 display_resolution;
     AlphaMarker alpha_stops[MAX_MARKER_COUNT];
     int alpha_sec_num;
-    float3 pad;
+    float alpha_blur_width;
+    float2 pad;
 };
 
 Texture2D src : register(t0);
@@ -225,9 +226,9 @@ float4 psmain(VS_OUTPUT input) : SV_Target
 
     float4 gradient_col = float4(0, 0, 0, 0);
     if (x <= gradient[0].start_x) {
-        gradient_col = gradient[0].startColor;
+        gradient_col = gradient[0].start_color;
     } else if (x >= gradient[gradient_count - 1].stop_x) {
-        gradient_col = gradient[gradient_count - 1].stopColor;
+        gradient_col = gradient[gradient_count - 1].stop_color;
     } else {
         for (int i = 0; i < gradient_count; i++) {
             float p_curr = gradient[i].start_x;
@@ -238,7 +239,7 @@ float4 psmain(VS_OUTPUT input) : SV_Target
                 float dist = p_next - p_curr;
                 float t = (x - p_curr) / dist;
 
-                gradient_col = makeGradient(gradient[i].startColor, gradient[i].stopColor, t, gradient[i].ratio, gradient_w, gradient_type, interp_dir);
+                gradient_col = makeGradient(gradient[i].start_color, gradient[i].stop_color, t, gradient[i].ratio, gradient_w, gradient_type, interp_dir);
                 break;
             }
         }
@@ -256,7 +257,7 @@ float4 psmain(VS_OUTPUT input) : SV_Target
             if (x >= p_curr && x < p_next) {
                 float dist = p_next - p_curr;
                 float t = (x - p_curr) / dist;
-                float alpha_value = lerp(alpha_stops[j].start_value, alpha_stops[j].stop_value, smoothPulse(t, alpha_stops[j].mid_ratio, 1.0));
+                float alpha_value = lerp(alpha_stops[j].start_value, alpha_stops[j].stop_value, smoothPulse(t, alpha_stops[j].mid_ratio, alpha_blur_width));
                 gradient_col.a *= alpha_value;
                 break;
             }

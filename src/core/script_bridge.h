@@ -62,14 +62,16 @@ public:
     struct Values {
         uint32_t marker_count           = 2;
         ImVec4 selected_color           = {0.0f, 0.0f, 0.0f, 0.0f};
+        float selected_alpha_marker_value = 1.0f;
         float selected_marker_pos       = 0.0f;
+        float selected_alpha_marker_pos = 0.0f;
         float selected_midpoint_ratio   = 0.5f;
+        float selected_alpha_midpoint_ratio = 0.5f;
         float blur_width                = 1.0f;
+        float alpha_blur_width          = 1.0f;
         uint32_t color_space_index      = 0;
         uint32_t interp_dir_index       = 0;
         uint32_t alpha_marker_count     = 2;
-        float selected_alpha_marker_value = 1.0f;
-        float selected_alpha_marker_pos = 0.0f;
 
         static bool equal(const ImVec4& a, const ImVec4& b)
         {
@@ -83,11 +85,13 @@ public:
             && selected_marker_pos == rhs.selected_marker_pos
             && selected_midpoint_ratio == rhs.selected_midpoint_ratio
             && blur_width == rhs.blur_width
+            && alpha_blur_width == rhs.alpha_blur_width
             && color_space_index == rhs.color_space_index
             && interp_dir_index == rhs.interp_dir_index
             && alpha_marker_count == rhs.alpha_marker_count
             && selected_alpha_marker_value == rhs.selected_alpha_marker_value
-            && selected_alpha_marker_pos == rhs.selected_alpha_marker_pos;
+            && selected_alpha_marker_pos == rhs.selected_alpha_marker_pos
+            && selected_alpha_midpoint_ratio == rhs.selected_alpha_midpoint_ratio;
         }
 
         bool operator!=(const Values& rhs) const
@@ -102,7 +106,9 @@ public:
         m_curr_values.selected_color          = data.getMarkerManager()->getSelectedMarkerColor();
         m_curr_values.selected_marker_pos     = data.getMarkerManager()->getSelectedMarkerPos();
         m_curr_values.selected_midpoint_ratio = data.getMarkerManager()->getSelectedMidpointRatio();
+        m_curr_values.selected_alpha_midpoint_ratio = data.getMarkerManager()->getSelectedAlphaMidpointRatio();
         m_curr_values.blur_width              = data.getBlurWidth();
+        m_curr_values.alpha_blur_width        = data.getAlphaBlurWidth();
         m_curr_values.color_space_index       = data.getColorSpace();
         m_curr_values.interp_dir_index        = data.getInterpDir();
         m_curr_values.alpha_marker_count      = static_cast<uint32_t>(std::ssize(data.getMarkerManager()->getAlphaMarkers()));

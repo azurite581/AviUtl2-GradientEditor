@@ -65,6 +65,10 @@ void ScriptBridge::loadGradientFromScript(EDIT_SECTION* edit,
         }
     }
 
+    // ぼかし幅
+    float blur_width = plugin2_utils::getObjectItemValue(edit, object_handle, effect_name.c_str(), effect_index, L"ぼかし幅", 100.0f);
+    data.setColorBlurWidth(blur_width / 100.0f);
+
     uint32_t alpha_marker_count = plugin2_utils::getObjectItemValue(edit, object_handle, effect_name.c_str(), effect_index, L"アルファマーカー数", 2u, target_move_index);
     data.getMarkerManager()->changeAlphaMarkerCount(alpha_marker_count);
 
@@ -88,9 +92,19 @@ void ScriptBridge::loadGradientFromScript(EDIT_SECTION* edit,
         }
     }
 
+    std::string alpha_mid_array_str = edit->get_object_item_value(object_handle, effect_name.c_str(), L"アルファ中間点");
+    auto alpha_mid_result = alias_parser::splitStr<float>(alpha_mid_array_str, ",");
+    if (!alpha_mid_result) {
+        m_logger_wrapper->error("Failed to parse アルファ中間点: {}", alpha_mid_result.error());
+    } else {
+        for (uint32_t i = 0; i < markers.size(); ++i) {
+            data.getMarkerManager()->setAlphaMidpointRatio(markers[i].id, alpha_mid_result.value()[i]);
+        }
+    }
+
     // ぼかし幅
-    float blur_width = plugin2_utils::getObjectItemValue(edit, object_handle, effect_name.c_str(), effect_index, L"ぼかし幅", 100.0f);
-    data.setBlurWidth(blur_width / 100.0f);
+    float alpha_blur_width = plugin2_utils::getObjectItemValue(edit, object_handle, effect_name.c_str(), effect_index, L"アルファぼかし幅", 100.0f);
+    data.setAlphaBlurWidth(alpha_blur_width / 100.0f);
 
     // 色空間
     std::string color_space_str = plugin2_utils::getObjectItemValue(edit, object_handle, effect_name.c_str(), effect_index, L"色空間", std::string{COLOR_SPACE_NAMES[0]});
@@ -115,6 +129,7 @@ void ScriptBridge::loadGradientFromScript(EDIT_SECTION* edit,
     m_curr_values.selected_color          = data.getMarkerManager()->getSelectedMarkerColor();
     m_curr_values.selected_marker_pos     = data.getMarkerManager()->getSelectedMarkerPos();
     m_curr_values.selected_midpoint_ratio = data.getMarkerManager()->getSelectedMidpointRatio();
+    m_curr_values.selected_alpha_midpoint_ratio = data.getMarkerManager()->getSelectedAlphaMidpointRatio();
     m_curr_values.blur_width              = data.getBlurWidth();
     m_curr_values.color_space_index       = data.getColorSpace();
     m_curr_values.interp_dir_index        = data.getInterpDir();
@@ -162,6 +177,9 @@ void ScriptBridge::applyGradientToScript(EDIT_SECTION* edit,
     edit->set_object_item_value(object_handle, effect_name.c_str(), L"位置", pos_array_str.c_str());
     edit->set_object_item_value(object_handle, effect_name.c_str(), L"中間点", mid_array_str.c_str());
 
+    // ぼかし幅
+    plugin2_utils::setObjectItemValue(edit, object_handle, effect_name.c_str(), effect_index, L"ぼかし幅", data.getBlurWidth() * 100.0f, 100.0f);
+
     // マーカー数
     plugin2_utils::setObjectItemValue(edit, object_handle, effect_name.c_str(), effect_index, L"マーカー数", marker_count, 2u, target_move_index);
 
@@ -169,20 +187,26 @@ void ScriptBridge::applyGradientToScript(EDIT_SECTION* edit,
     uint32_t alpha_marker_count = static_cast<uint32_t>(alpha_markers.size());
     edit->set_object_item_value(object_handle, effect_name.c_str(), L"アルファマーカー数", std::to_string(alpha_marker_count).c_str());
 
-    std::string alpha_pos_array_str, alpha_value_array_str;
+    std::string alpha_pos_array_str, alpha_value_array_str, alpha_mid_array_str;
     for (uint32_t i = 0; i < alpha_marker_count; ++i) {
         alpha_value_array_str += std::format("{:.2f}", alpha_markers[i].value);
         alpha_pos_array_str += std::format("{:.2f}", alpha_markers[i].pos);
         if (i != alpha_marker_count - 1) {
+            alpha_mid_array_str += std::format("{:.2f}", alpha_markers[i].midpoint.ratio);
+
             alpha_value_array_str += ",";
             alpha_pos_array_str += ",";
+            if (i != alpha_marker_count - 2) {
+                alpha_mid_array_str += ",";
+            }
         }
     }
     edit->set_object_item_value(object_handle, effect_name.c_str(), L"アルファ位置", alpha_pos_array_str.c_str());
     edit->set_object_item_value(object_handle, effect_name.c_str(), L"アルファ値", alpha_value_array_str.c_str());
+    edit->set_object_item_value(object_handle, effect_name.c_str(), L"アルファ中間点", alpha_mid_array_str.c_str());
 
     // ぼかし幅
-    plugin2_utils::setObjectItemValue(edit, object_handle, effect_name.c_str(), effect_index, L"ぼかし幅", data.getBlurWidth() * 100.0f, 100.0f);
+    plugin2_utils::setObjectItemValue(edit, object_handle, effect_name.c_str(), effect_index, L"アルファぼかし幅", data.getAlphaBlurWidth() * 100.0f, 100.0f);
 
     // 色空間
     int32_t cs_idx = data.getColorSpace();

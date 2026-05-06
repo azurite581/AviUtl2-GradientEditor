@@ -192,9 +192,9 @@ std::expected<std::monostate, std::string> GradientRenderer::updatePixelConstant
     std::memcpy(data_ptr->gradient_display_size, buffer_values->gradient_display_size, sizeof(data_ptr->gradient_display_size));
     std::memcpy(data_ptr->alpha_stops, buffer_values->alpha_stops, sizeof(data_ptr->alpha_stops));
     data_ptr->alpha_sec_num = buffer_values->alpha_sec_num;
+    data_ptr->alpha_blur_width = buffer_values->alpha_blur_width;
     data_ptr->pad[0]        = buffer_values->pad[0];
     data_ptr->pad[1]        = buffer_values->pad[1];
-    data_ptr->pad[2]        = buffer_values->pad[2];
 
     d3d_device_context->Unmap(pixel_constant_buffer, 0);
     d3d_device_context->PSSetConstantBuffers(0, 1, &pixel_constant_buffer);

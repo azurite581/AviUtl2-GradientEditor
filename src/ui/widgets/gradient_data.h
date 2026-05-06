@@ -35,13 +35,15 @@ public:
     int32_t m_color_space{0};
     int32_t m_interp_dir{0};
     float m_blur_width{1.0f};
+    float m_alpha_blur_width{1.0f};
 
     std::partial_ordering operator<=>(const GradientData& other) const
     {
         if (auto cmp = m_marker_manager <=> other.m_marker_manager; cmp != 0) return cmp;
         if (auto cmp = m_color_space <=> other.m_color_space; cmp != 0) return cmp;
         if (auto cmp = m_interp_dir <=> other.m_interp_dir; cmp != 0) return cmp;
-        return m_blur_width <=> other.m_blur_width;
+        if (auto cmp = m_blur_width <=> other.m_blur_width; cmp != 0) return cmp;
+        return m_alpha_blur_width <=> other.m_alpha_blur_width;
     }
 
     bool operator==(const GradientData& other) const
@@ -49,13 +51,15 @@ public:
         return m_marker_manager == other.m_marker_manager &&
                m_color_space == other.m_color_space &&
                m_interp_dir == other.m_interp_dir &&
-               m_blur_width == other.m_blur_width;
+               m_blur_width == other.m_blur_width &&
+               m_alpha_blur_width == other.m_alpha_blur_width;
     }
 
     [[nodiscard]] GradientMarkerManager* getMarkerManager() noexcept { return &m_marker_manager; }
     [[nodiscard]] int32_t getColorSpace() const noexcept { return m_color_space; }
     [[nodiscard]] int32_t getInterpDir() const noexcept { return m_interp_dir; }
     [[nodiscard]] float getBlurWidth() const noexcept { return m_blur_width; }
+    [[nodiscard]] float getAlphaBlurWidth() const noexcept { return m_alpha_blur_width; }
 
     [[nodiscard]] int32_t getTextureWidth() const noexcept { return m_texture_width; }
     [[nodiscard]] int32_t getTextureHeight() const noexcept { return m_texture_height; }
@@ -66,7 +70,8 @@ public:
 
     void setColorSpace(const int32_t color_space) noexcept { m_color_space = color_space; }
     void setInterpDir(const int32_t interp_dir) noexcept { m_interp_dir = interp_dir; }
-    void setBlurWidth(const float blur_width) noexcept { m_blur_width = blur_width; }
+    void setColorBlurWidth(const float blur_width) noexcept { m_blur_width = blur_width; }
+    void setAlphaBlurWidth(const float blur_width) noexcept { m_alpha_blur_width = blur_width; }
     void setGradientDisplayWidth(const float gradient_display_width) noexcept { m_gradient_display_width = gradient_display_width; }
     void setGradientDisplayHeight(const float gradient_display_height) noexcept { m_gradient_display_height = gradient_display_height; }
 

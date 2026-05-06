@@ -57,7 +57,7 @@ GradientData* drawGradientEditor(
         gradient_data->init(g_d3d_device, static_cast<int32_t>(display_size.x), static_cast<int32_t>(display_size.y));
         gradient_data->getMarkerManager()->setDefaultMarkers(data.m_marker_manager.getMarkers());
         gradient_data->getMarkerManager()->setDefaultAlphaMarkers(data.m_marker_manager.getAlphaMarkers());
-        gradient_data->setBlurWidth(data.m_blur_width);
+        gradient_data->setColorBlurWidth(data.m_blur_width);
         gradient_data->setColorSpace(data.m_color_space);
         gradient_data->setInterpDir(data.m_interp_dir);
         it = g_editor_gradients.emplace(label, std::move(gradient_data)).first;
@@ -70,7 +70,7 @@ GradientData* drawGradientEditor(
     if (replace_data) {
         gradient_data->getMarkerManager()->setDefaultMarkers(data.m_marker_manager.getMarkers());
         gradient_data->getMarkerManager()->setDefaultAlphaMarkers(data.m_marker_manager.getAlphaMarkers());
-        gradient_data->setBlurWidth(data.m_blur_width);
+        gradient_data->setColorBlurWidth(data.m_blur_width);
         gradient_data->setColorSpace(data.m_color_space);
         gradient_data->setInterpDir(data.m_interp_dir);
     }
@@ -123,6 +123,8 @@ GradientData* drawGradientEditor(
         ImGui::PopStyleVar();
     }
 
+    if (!(flags & GradientEditorFlags_NoMarker)) ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(ImGui::GetStyle().ItemSpacing.x, 0.0f));
+
     if (flags & GradientEditorFlags_AlphaMarker) {
         ImVec2 marker_region_size = ImVec2(display_size.x, static_cast<float>(gradient_marker->getMarkerRegionHeight()));
         if (!(flags & GradientEditorFlags_NotAlignSideToMarker)) {
@@ -140,8 +142,6 @@ GradientData* drawGradientEditor(
         gradient_marker->setAlphaMidpointRegion(p0, p1);
         gradient_marker->drawAlphaMidpoints();
     }
-
-    if (!(flags & GradientEditorFlags_NoMarker)) ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(ImGui::GetStyle().ItemSpacing.x, 0.0f));
 
     ImVec2 gradient_region_size = dsize;
 
@@ -247,7 +247,7 @@ ID3D11ShaderResourceView* getGradientSrv(
         gradient_data->init(g_d3d_device, static_cast<int32_t>(display_size.x), static_cast<int32_t>(display_size.y));
         gradient_data->getMarkerManager()->setDefaultMarkers(data.m_marker_manager.getMarkers());
         gradient_data->getMarkerManager()->setDefaultAlphaMarkers(data.m_marker_manager.getAlphaMarkers());
-        gradient_data->setBlurWidth(data.m_blur_width);
+        gradient_data->setColorBlurWidth(data.m_blur_width);
         gradient_data->setColorSpace(data.m_color_space);
         gradient_data->setInterpDir(data.m_interp_dir);
         it = gradient_datas.emplace(label, std::move(gradient_data)).first;
@@ -255,7 +255,7 @@ ID3D11ShaderResourceView* getGradientSrv(
         // 存在する場合はデータを上書き
         gradient_datas[label].get()->getMarkerManager()->setDefaultMarkers(data.m_marker_manager.getMarkers());
         gradient_datas[label].get()->getMarkerManager()->setDefaultAlphaMarkers(data.m_marker_manager.getAlphaMarkers());
-        gradient_datas[label].get()->setBlurWidth(data.m_blur_width);
+        gradient_datas[label].get()->setColorBlurWidth(data.m_blur_width);
         gradient_datas[label].get()->setColorSpace(data.m_color_space);
         gradient_datas[label].get()->setInterpDir(data.m_interp_dir);
     }
