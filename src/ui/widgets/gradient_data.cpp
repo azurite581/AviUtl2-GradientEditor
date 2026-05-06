@@ -28,6 +28,7 @@ GradientRenderer::PixelConstantBuffer GradientData::gradientData2pixelConstantBu
         buffer_values.alpha_stops[i].stop_pos    = alpha_markers[i + 1].pos;
         buffer_values.alpha_stops[i].start_value = alpha_markers[i].value;
         buffer_values.alpha_stops[i].stop_value  = alpha_markers[i + 1].value;
+        buffer_values.alpha_stops[i].mid_ratio   = alpha_markers[i].midpoint.ratio;
     }
     buffer_values.alpha_sec_num = alpha_sec_num;
 

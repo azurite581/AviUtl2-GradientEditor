@@ -8,29 +8,31 @@
 #include <iterator>
 #include <ranges>
 #include <vector>
+#include <variant>
 
 #include "imgui.h"
+
+struct Midpoint {
+    float ratio{0.5f};
+    float pos{0.0f};
+
+    std::partial_ordering operator<=>(const Midpoint& other) const
+    {
+        if (auto cmp = ratio <=> other.ratio; cmp != 0) return cmp;
+        return pos <=> other.pos;
+    }
+
+    bool operator==(const Midpoint& other) const
+    {
+        return ratio == other.ratio && pos == other.pos;
+    }
+};
 
 struct GradientMarkerData {
     int32_t id{0};
     float pos{0.0f};
     ImVec4 color{1.0f, 1.0f, 1.0f, 1.0f};
-
-    struct Midpoint {
-        float ratio{0.5f};
-        float pos{0.0f};
-
-        std::partial_ordering operator<=>(const Midpoint& other) const
-        {
-            if (auto cmp = ratio <=> other.ratio; cmp != 0) return cmp;
-            return pos <=> other.pos;
-        }
-
-        bool operator==(const Midpoint& other) const
-        {
-            return ratio == other.ratio && pos == other.pos;
-        }
-    } midpoint{};
+    Midpoint midpoint{};
 
     std::partial_ordering operator<=>(const GradientMarkerData& other) const
     {
@@ -56,20 +58,24 @@ struct GradientMarkerData {
 struct AlphaMarkerData {
     int32_t id{0};
     float pos{0.0f};
+    Midpoint midpoint{};
     float value{1.0f};
 
     std::partial_ordering operator<=>(const AlphaMarkerData& other) const
     {
         if (auto cmp = id <=> other.id; cmp != 0) return cmp;
         if (auto cmp = pos <=> other.pos; cmp != 0) return cmp;
-        return value <=> other.value;
+        if (auto cmp = value <=> other.value; cmp != 0) return cmp;
+        return midpoint <=> other.midpoint;
     }
 
     bool operator==(const AlphaMarkerData& other) const
     {
-        return pos == other.pos && value == other.value && id == other.id;
+        return pos == other.pos && value == other.value && id == other.id && midpoint == other.midpoint;
     }
 };
+
+using MarkerData = std::variant<GradientMarkerData, AlphaMarkerData>;
 
 class GradientMarkerManager {
 private:
@@ -82,6 +88,7 @@ private:
 
     struct Regions {
         ImVec2 midpoint_p0{}, midpoint_p1{};
+        ImVec2 alpha_midpoint_p0{}, alpha_midpoint_p1{};
         ImVec2 gradient_p0{}, gradient_p1{};
         ImVec2 marker_p0{}, marker_p1{};
         ImVec2 alpha_marker_p0{}, alpha_marker_p1{};
@@ -91,10 +98,16 @@ private:
     struct State {
         int32_t selected_marker_id{0};
         int32_t selected_alpha_marker_id{ALPHA_MARKER_ID_OFFSET};
+
         int32_t selected_midpoint_id{0};
+        int32_t selected_alpha_midpoint_id{0};
+
         int32_t clicked_marker_id{-4};    // Region::OutSide
-        int32_t clicked_midpoint_id{-4};  // Region::OutSide
         int32_t clicked_alpha_marker_id{-4}; // Region::OutSide
+
+        int32_t clicked_midpoint_id{-4};  // Region::OutSide
+        int32_t clicked_alpha_midpoint_id{-4};
+
         int32_t marker_id_counter{2};
         int32_t alpha_marker_id_counter{ALPHA_MARKER_ID_OFFSET + 2};
         bool is_marker_added{false};
@@ -111,8 +124,8 @@ private:
 
 
     std::vector<AlphaMarkerData> m_alpha_markers = {
-        {.id = ALPHA_MARKER_ID_OFFSET + 0, .pos = 0.0f, .value = 1.0f},
-        {.id = ALPHA_MARKER_ID_OFFSET + 1, .pos = 1.0f, .value = 1.0f}
+        {.id = ALPHA_MARKER_ID_OFFSET + 0, .pos = 0.0f, .midpoint = {.ratio = 0.5f, .pos = 0.5}, .value = 1.0f},
+        {.id = ALPHA_MARKER_ID_OFFSET + 1, .pos = 1.0f, .midpoint = {.ratio = 0.5f, .pos = 0.5}, .value = 1.0f}
     };
 
     enum class Region : int32_t {
@@ -121,6 +134,7 @@ private:
         Gradient = -3,
         OutSide  = -4,
         AlphaMarker = -5,
+        AlphaMidpoint = -6,
     };
 
     bool m_io_enable = true;
@@ -160,11 +174,13 @@ public:
     [[nodiscard]] std::vector<float> getAlphaMarkerValues() const;
     [[nodiscard]] std::vector<float> getAlphaMarkerPos() const;
     [[nodiscard]] std::vector<float> getMidpointRatios() const;
+    [[nodiscard]] std::vector<float> getAlphaMidpointRatios() const;
 
     [[nodiscard]] float getMarkerPos(const int32_t id) const;
     [[nodiscard]] ImVec4 getMarkerColor(const int32_t id) const;
     [[nodiscard]] float getMidpointRatio(const int32_t id) const;
     [[nodiscard]] float getAlphaMarkerValue(const int32_t id) const;
+    [[nodiscard]] float getAlphaMidpointRatio(const int32_t id) const;
 
     [[nodiscard]] float getSelectedMarkerPos() const;
     [[nodiscard]] ImVec4 getSelectedMarkerColor() const;
@@ -178,6 +194,7 @@ public:
     [[nodiscard]] int32_t getMarkerIdUnderMouse(const ImVec2& mouse_pos) const;
     [[nodiscard]] int32_t getAlphaMarkerIdUnderMouse(const ImVec2& mouse_pos) const;
     [[nodiscard]] int32_t getMidpointIdUnderMouse(const ImVec2& mouse_pos) const;
+    [[nodiscard]] int32_t getAlphaMidpointIdUnderMouse(const ImVec2& mouse_pos) const;
     [[nodiscard]] ImVec2 getMousePosOnGradient(const ImVec2& mouse_pos) const;
 
     [[nodiscard]] ImVec4 getColorPickerColor() const noexcept { return m_state.picker_cur_color; }
@@ -196,16 +213,18 @@ public:
     }
 
     void setMarkerPos(const int32_t id, const float pos);
-    void setMarkerColor(const int32_t id, const ImVec4& color);
-    void setMidpointRatio(const int32_t id, const float ratio);
     void setAlphaMarkerPos(const int32_t id, const float pos);
+    void setMarkerColor(const int32_t id, const ImVec4& color);
     void setAlphaMarkerValue(const int32_t id, const float value);
+    void setMidpointRatio(const int32_t id, const float ratio);
+    void setAlphaMidpointRatio(const int32_t id, const float ratio);
 
     void setSelectedMarkerPos(const float pos);
     void setSelectedMarkerColor(const ImVec4& color);
     void setSelectedMidpointRatio(const float ratio);
 
     void setMidpointRegion(const ImVec2& p0, const ImVec2& p1) noexcept;
+    void setAlphaMidpointRegion(const ImVec2& p0, const ImVec2& p1) noexcept;
     void setGradientRegion(const ImVec2& p0, const ImVec2& p1) noexcept;
     void setMarkerRegion(const ImVec2& p0, const ImVec2& p1) noexcept;
     void setAlphaMarkerRegion(const ImVec2& p0, const ImVec2& p1) noexcept;
@@ -223,12 +242,17 @@ public:
                                {.id = 0, .pos = 0.0f, .color = ImVec4(0.0f, 0.0f, 0.0f, 1.0f), .midpoint = {.ratio = 0.5f, .pos = 0.5}},
                                {.id = 1, .pos = 1.0f, .color = ImVec4(1.0f, 1.0f, 1.0f, 1.0f), .midpoint = {.ratio = 0.5f, .pos = FLT_MIN}}});
     void setDefaultAlphaMarkers(const std::vector<AlphaMarkerData>& alpha_marker_data = {
-                               {.id = ALPHA_MARKER_ID_OFFSET + 0, .pos = 0.0f, .value = 1.0f},
-                               {.id = ALPHA_MARKER_ID_OFFSET + 1, .pos = 1.0f, .value = 1.0f}});
+                               {.id = ALPHA_MARKER_ID_OFFSET + 0, .pos = 0.0f, .midpoint = {.ratio = 0.5f, .pos = 0.5}, .value = 1.0f},
+                               {.id = ALPHA_MARKER_ID_OFFSET + 1, .pos = 1.0f, .midpoint = {.ratio = 0.5f, .pos = FLT_MIN}, .value = 1.0f}});
+
     void moveMarker(const int32_t id, const float new_pos);
     void moveAlphaMarker(const int32_t id, const float new_pos);
+
     void moveMidpoint(const int32_t id, const float new_pos);
     void moveMidpointRatio(const int32_t id, const float new_ratio);
+    void moveAlphaMidpoint(const int32_t id, const float new_pos);
+    void moveAlphaMidpointRatio(const int32_t id, const float new_ratio);
+
     void reverseMarkers();
     void reverseAlphaMarkers();
     void resetMidpoints();
@@ -236,7 +260,7 @@ public:
     void sortAlphaMarkers();
     void sortMarkersById();
     void addMarker(const int32_t id, const float marker_pos, const ImVec4& color, const float midpoint_ratio = 0.5f);
-    void addAlphaMarker(const int32_t id, const float marker_pos, const float value);
+    void addAlphaMarker(const int32_t id, const float marker_pos, const float value, const float midpoint_ratio = 0.5f);
     void changeColor(const int32_t id, const ImVec4& new_color);
     void showColorPickerPopup();
     void showAlphaSliderPopup();
@@ -261,10 +285,12 @@ public:
     // 更新
     //
     void updateMidpointsPos();
+    void updateAlphaMidpointsPos();
     void updateMarkerId();
     void updateMarker(const ImVec2& mouse_pos, const ImVec4& new_marker_color = ImVec4(1.0f, 1.0f, 1.0f, 1.0f), const uint32_t max_marker_count = 10);
     void updateAlphaMarker(const ImVec2& mouse_pos, const float new_value = 1.0f, const uint32_t max_alpha_marker_count = 10);
     void updateMidpoint(const ImVec2& mouse_pos);
+    void updateAlphaMidpoint(const ImVec2& mouse_pos);
 
     //
     // 描画
@@ -272,10 +298,11 @@ public:
     void drawMarker(const char* label, ImVec2 p0, ImVec2 p1, const ImVec4& color, const int32_t id, const bool is_upward = true) const;
     void drawMarkers() const;
     void drawAlphaMarkers() const;
-    void drawMidpoint(const float pos, const ImVec4& color) const;
+    void drawMidpoint(ImVec2 p0, ImVec2 p1, const ImVec4& color) const;
     void drawMidpoints() const;
+    void drawAlphaMidpoints() const;
     void highlightMarker(ImVec2 p0, ImVec2 p1, const ImVec4& highlight_color, const float thickness = 2.0f, const float offset = 2.0f, const bool is_upward = true) const;
-    void highlightMidpoint(const float pos, const ImVec4& highlight_color) const;
+    void highlightMidpoint(ImVec2 p0, ImVec2 p1, const ImVec4& highlight_color) const;
 };
 
 #endif  // GRADIENT_MARKER_H

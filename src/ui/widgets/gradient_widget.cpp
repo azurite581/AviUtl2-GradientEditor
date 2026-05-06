@@ -136,6 +136,9 @@ GradientData* drawGradientEditor(
 
         gradient_marker->setAlphaMarkerRegion(p0, p1);
         gradient_marker->drawAlphaMarkers();
+
+        gradient_marker->setAlphaMidpointRegion(p0, p1);
+        gradient_marker->drawAlphaMidpoints();
     }
 
     if (!(flags & GradientEditorFlags_NoMarker)) ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(ImGui::GetStyle().ItemSpacing.x, 0.0f));
@@ -178,7 +181,7 @@ GradientData* drawGradientEditor(
         gradient_marker->setMarkerRegion(p0, p1);
         gradient_marker->drawMarkers();
 
-        // 中間点をグラデーションの下に描画する場合はここで描画
+        // 中間点をグラデーションの下部に描画する場合はここで描画
         // マーカーと中間点が重なっていた場合に中間点を優先するため、マーカーの更新は中間点の更新より後に行う
         if ((flags & GradientEditorFlags_AlphaMarker) || (!(flags & GradientEditorFlags_NoMidpoint) && (flags & GradientEditorFlags_MidpointBelowGradient))) {
             gradient_marker->setMidpointRegion(p0, p1);
@@ -213,6 +216,7 @@ GradientData* drawGradientEditor(
 
     // 中間点をクリックしているかに基づいてマーカーの更新を行うかどうかを判断するため、マーカーの更新は中間点の更新より後に行う必要がある
     gradient_marker->updateMidpoint(mouse_pos);
+    gradient_marker->updateAlphaMidpoint(mouse_pos);
     gradient_marker->updateMarker(mouse_pos, new_marker_color, config.max_marker_count);
     gradient_marker->updateAlphaMarker(mouse_pos, 1.0f, config.max_marker_count);
 

@@ -169,6 +169,11 @@ void GradientMarkerManager::setMidpointRatio(const int32_t id, const float ratio
     moveMidpointRatio(id, ratio);
 }
 
+void GradientMarkerManager::setAlphaMidpointRatio(const int32_t id, const float ratio)
+{
+    moveAlphaMidpointRatio(id, ratio);
+}
+
 void GradientMarkerManager::setAlphaMarkerPos(const int32_t id, const float pos)
 {
     int32_t idx = getAlphaIndexById(id);
@@ -204,6 +209,12 @@ void GradientMarkerManager::setMidpointRegion(const ImVec2& p0, const ImVec2& p1
 {
     m_regions.midpoint_p0 = p0;
     m_regions.midpoint_p1 = p1;
+}
+
+void GradientMarkerManager::setAlphaMidpointRegion(const ImVec2& p0, const ImVec2& p1) noexcept
+{
+    m_regions.alpha_midpoint_p0 = p0;
+    m_regions.alpha_midpoint_p1 = p1;
 }
 
 void GradientMarkerManager::setGradientRegion(const ImVec2& p0, const ImVec2& p1) noexcept
@@ -269,6 +280,7 @@ void GradientMarkerManager::changeAlphaMarkerCount(const uint32_t alpha_marker_c
     }
 
     sortAlphaMarkers();
+    updateAlphaMidpointsPos();
 }
 
 void GradientMarkerManager::setDefaultMarkers(const std::vector<GradientMarkerData>& marker_data)
@@ -308,6 +320,7 @@ void GradientMarkerManager::setDefaultAlphaMarkers(const std::vector<AlphaMarker
     m_state.alpha_marker_id_counter = static_cast<int32_t>(ALPHA_MARKER_ID_OFFSET + std::ssize(m_alpha_markers));
 
     sortAlphaMarkers();
+    updateAlphaMidpointsPos();
 }
 
 // マーカー位置昇順にソートするヘルパー
@@ -357,6 +370,7 @@ void GradientMarkerManager::moveAlphaMarker(const int32_t id, const float new_po
     m_alpha_markers[idx].pos = std::clamp(new_pos, 0.0f, 1.0f);
 
     sortAlphaMarkers();
+    updateAlphaMidpointsPos();
 }
 
 void GradientMarkerManager::moveMidpoint(const int32_t id, const float new_pos)
@@ -378,6 +392,25 @@ void GradientMarkerManager::moveMidpoint(const int32_t id, const float new_pos)
     updateMidpointsPos();
 }
 
+void GradientMarkerManager::moveAlphaMidpoint(const int32_t id, const float new_pos)
+{
+    int idx = getAlphaIndexById(id);
+    if (std::ssize(m_alpha_markers) - 1 <= idx) return;
+
+    float left_pos  = m_alpha_markers[idx].pos;
+    float right_pos = m_alpha_markers[idx + 1].pos;
+    float range     = right_pos - left_pos;
+
+    if (range <= 0.0001f) return;
+
+    // 比率を計算して保存
+    float ratio                   = (new_pos - left_pos) / range;
+    m_alpha_markers[idx].midpoint.ratio = std::clamp(ratio, 0.0f, 1.0f);
+
+    // 表示用の座標更新
+    updateAlphaMidpointsPos();
+}
+
 void GradientMarkerManager::moveMidpointRatio(const int32_t id, const float new_ratio)
 {
     int idx = getIndexById(id);
@@ -385,6 +418,15 @@ void GradientMarkerManager::moveMidpointRatio(const int32_t id, const float new_
     m_markers[idx].midpoint.ratio = std::clamp(new_ratio, 0.0f, 1.0f);
     // 表示用の座標更新
     updateMidpointsPos();
+}
+
+void GradientMarkerManager::moveAlphaMidpointRatio(const int32_t id, const float new_ratio)
+{
+    int idx = getAlphaIndexById(id);
+    if (std::ssize(m_alpha_markers) - 1 <= idx) return;
+    m_alpha_markers[idx].midpoint.ratio = std::clamp(new_ratio, 0.0f, 1.0f);
+    // 表示用の座標更新
+    updateAlphaMidpointsPos();
 }
 
 void GradientMarkerManager::reverseMarkers()
@@ -450,16 +492,18 @@ void GradientMarkerManager::addMarker(const int32_t id, const float marker_pos, 
     updateMidpointsPos();  // 中間点の位置は追加後に前後のマーカー位置から計算する
 }
 
-void GradientMarkerManager::addAlphaMarker(const int32_t id, const float marker_pos, const float value)
+void GradientMarkerManager::addAlphaMarker(const int32_t id, const float marker_pos, const float value, const float midpoint_ratio)
 {
     AlphaMarkerData new_marker;
     new_marker.id    = id;
     new_marker.pos   = marker_pos;
     new_marker.value = value;
+    new_marker.midpoint.ratio = midpoint_ratio;
 
     m_alpha_markers.push_back(new_marker);
 
     sortAlphaMarkers();
+    updateAlphaMidpointsPos();
 }
 
 void GradientMarkerManager::onClickedMarker(const ImVec2& mouse_pos, bool use_default_action, std::move_only_function<void(void*)> func, void* param)
@@ -590,6 +634,18 @@ void GradientMarkerManager::updateMidpointsPos()
     }
 }
 
+void GradientMarkerManager::updateAlphaMidpointsPos()
+{
+    for (size_t i = 0; i < m_alpha_markers.size() - 1; ++i) {
+        float left_pos  = m_alpha_markers[i].pos;
+        float right_pos = m_alpha_markers[i + 1].pos;
+        float ratio     = m_alpha_markers[i].midpoint.ratio;
+
+        // 左隣のマーカーとの距離に基づいて位置を更新
+        m_alpha_markers[i].midpoint.pos = left_pos + (right_pos - left_pos) * ratio;
+    }
+}
+
 void GradientMarkerManager::updateMarkerId()
 {
     sortMarkersById();  // IDが小さい順に昇順ソート
@@ -640,6 +696,7 @@ void GradientMarkerManager::updateMarker(const ImVec2& mouse_pos, const ImVec4& 
 void GradientMarkerManager::updateAlphaMarker(const ImVec2& mouse_pos, const float new_value, const uint32_t max_alpha_marker_count)
 {
     if (!m_io_enable) return;
+    if (m_state.clicked_alpha_midpoint_id >= 0) return;
 
     // クリックされた位置にあるアルファマーカーIDを取得
     if (ImGui::IsMouseClicked(ImGuiMouseButton_Left) && !m_state.is_open_popup) {
@@ -650,7 +707,7 @@ void GradientMarkerManager::updateAlphaMarker(const ImVec2& mouse_pos, const flo
     }
 
     // アルファマーカーをクリックかつドラッグ状態ならアルファマーカーを動かす
-    if (m_state.clicked_alpha_marker_id >= 0 && ImGui::IsMouseDragging(ImGuiMouseButton_Left) && !m_state.is_open_popup) {
+    if (m_state.clicked_alpha_marker_id >= 0 && m_state.clicked_alpha_marker_id >= 0 && ImGui::IsMouseDragging(ImGuiMouseButton_Left) && !m_state.is_open_popup) {
         m_state.is_alpha_marker_added = false;
         float marker_pos              = getMarkerPosFromMousePos(mouse_pos);
         moveAlphaMarker(m_state.selected_alpha_marker_id, marker_pos);
@@ -689,6 +746,28 @@ void GradientMarkerManager::updateMidpoint(const ImVec2& mouse_pos)
         m_state.selected_midpoint_id = m_state.clicked_midpoint_id;
         float marker_pos = getMarkerPosFromMousePos(mouse_pos);
         moveMidpoint(m_state.selected_midpoint_id, marker_pos);
+    }
+
+    return;
+}
+
+void GradientMarkerManager::updateAlphaMidpoint(const ImVec2& mouse_pos)
+{
+    if (!m_io_enable) return;
+
+    // クリックされた中間点に紐づくマーカーIDを取得
+    if (ImGui::IsMouseClicked(ImGuiMouseButton_Left) && !m_state.is_open_popup) {
+        m_state.clicked_alpha_midpoint_id = getAlphaMidpointIdUnderMouse(mouse_pos);
+        if (m_state.clicked_alpha_midpoint_id >= 0) {
+            m_state.selected_alpha_midpoint_id = m_state.clicked_alpha_midpoint_id;
+        }
+    }
+
+    //　中間点をクリックかつドラッグ状態なら中間点を動かす
+    if (m_state.clicked_alpha_midpoint_id >= 0 && ImGui ::IsMouseDragging(ImGuiMouseButton_Left) && !m_state.is_open_popup) {
+        m_state.selected_alpha_midpoint_id = m_state.clicked_alpha_midpoint_id;
+        float marker_pos = getMarkerPosFromMousePos(mouse_pos);
+        moveAlphaMidpoint(m_state.selected_alpha_midpoint_id, marker_pos);
     }
 
     return;
@@ -764,6 +843,29 @@ int32_t GradientMarkerManager::getMidpointIdUnderMouse(const ImVec2& mouse_pos) 
     return std::to_underlying(Region::OutSide);
 }
 
+int32_t GradientMarkerManager::getAlphaMidpointIdUnderMouse(const ImVec2& mouse_pos) const
+{
+    bool is_in_midpoint_region =
+        (mouse_pos.x >= m_regions.alpha_midpoint_p0.x) &&
+        (mouse_pos.x < m_regions.alpha_midpoint_p1.x) &&
+        (mouse_pos.y >= m_regions.alpha_midpoint_p0.y) &&
+        (mouse_pos.y < m_regions.alpha_midpoint_p1.y);
+
+    if (is_in_midpoint_region) {
+        for (const auto& marker : m_alpha_markers | std::views::take(std::ssize(m_alpha_markers) - 1)) {
+            float midpoint_center_pos_x = m_regions.alpha_midpoint_p0.x + (m_regions.alpha_midpoint_p1.x - m_regions.alpha_midpoint_p0.x) * marker.midpoint.pos;
+            ImVec2 p0                   = ImVec2(midpoint_center_pos_x - m_config.midpoint_width * 0.5f, m_regions.alpha_midpoint_p0.y);
+            ImVec2 p1                   = ImVec2(midpoint_center_pos_x + m_config.midpoint_width * 0.5f, m_regions.alpha_midpoint_p1.y);
+            if (mouse_pos.x >= p0.x && mouse_pos.x <= p1.x &&
+                mouse_pos.y >= p0.y && mouse_pos.y <= p1.y) {
+                return marker.id;
+            }
+        }
+        return std::to_underlying(Region::AlphaMidpoint);
+    }
+    return std::to_underlying(Region::OutSide);
+}
+
 ImVec2 GradientMarkerManager::getMousePosOnGradient(const ImVec2& mouse_pos) const
 {
     ImVec2 mouse_pos_on_gradient;
@@ -809,6 +911,7 @@ void GradientMarkerManager::deleteAlphaMarker(const int32_t id)
     // 削除
     m_alpha_markers.erase(m_alpha_markers.begin() + idx);
 
+    updateAlphaMidpointsPos();
     updateMarkerId();
 
     // 次に選択する ID を更新 (削除した位置にある要素、または末尾ならその前)
@@ -964,10 +1067,8 @@ void GradientMarkerManager::drawAlphaMarkers() const
     }
 }
 
-void GradientMarkerManager::drawMidpoint(const float pos, const ImVec4& color) const
+void GradientMarkerManager::drawMidpoint(ImVec2 p0, ImVec2 p1, const ImVec4& color) const
 {
-    ImVec2 p0     = ImVec2(m_regions.midpoint_p0.x + (m_regions.midpoint_p1.x - m_regions.midpoint_p0.x) * pos - (m_config.midpoint_width * 0.5f), m_regions.midpoint_p0.y);
-    ImVec2 p1     = ImVec2(m_regions.midpoint_p0.x + (m_regions.midpoint_p1.x - m_regions.midpoint_p0.x) * pos + (m_config.midpoint_width * 0.5f), m_regions.midpoint_p1.y);
     ImVec2 center = ImVec2(p0.x + (p1.x - p0.x) * 0.5f, p0.y + (p1.y - p0.y) * 0.5f);
 
     ImU32 u32color        = ImGui::ColorConvertFloat4ToU32(color);
@@ -979,16 +1080,47 @@ void GradientMarkerManager::drawMidpoints() const
 {
     int32_t selected_midpoint_idx = -1;
     for (const auto& [i, marker] : m_markers | std::views::take(std::ssize(m_markers) - 1) | std::views::enumerate) {
-        // 選択中の中間点は最前面に描画する
+        // 選択中の中間点は最前面に描画するため、最後に描画する
         if (marker.id == m_state.selected_midpoint_id) {
             selected_midpoint_idx = static_cast<int32_t>(i);
             continue;
         }
-        drawMidpoint(marker.midpoint.pos, ImVec4(1.0f, 1.0f, 1.0f, 1.0f));
+        auto pos = marker.midpoint.pos;
+        ImVec2 p0 = ImVec2(m_regions.midpoint_p0.x + (m_regions.midpoint_p1.x - m_regions.midpoint_p0.x) * pos - (m_config.midpoint_width * 0.5f), m_regions.midpoint_p0.y);
+        ImVec2 p1 = ImVec2(m_regions.midpoint_p0.x + (m_regions.midpoint_p1.x - m_regions.midpoint_p0.x) * pos + (m_config.midpoint_width * 0.5f), m_regions.midpoint_p1.y);
+        drawMidpoint(p0, p1, ImVec4(1.0f, 1.0f, 1.0f, 1.0f));
     }
+
     if (selected_midpoint_idx >= 0) {
-        drawMidpoint(m_markers.at(selected_midpoint_idx).midpoint.pos, ImVec4(1.0f, 1.0f, 1.0f, 1.0f));
-        highlightMidpoint(m_markers.at(selected_midpoint_idx).midpoint.pos, ImVec4(1.0f, 1.0f, 1.0f, 1.0f));
+        auto pos = m_markers.at(selected_midpoint_idx).midpoint.pos;
+        ImVec2 p0 = ImVec2(m_regions.midpoint_p0.x + (m_regions.midpoint_p1.x - m_regions.midpoint_p0.x) * pos - (m_config.midpoint_width * 0.5f), m_regions.midpoint_p0.y);
+        ImVec2 p1 = ImVec2(m_regions.midpoint_p0.x + (m_regions.midpoint_p1.x - m_regions.midpoint_p0.x) * pos + (m_config.midpoint_width * 0.5f), m_regions.midpoint_p1.y);
+        drawMidpoint(p0, p1, ImVec4(1.0f, 1.0f, 1.0f, 1.0f));
+        highlightMidpoint(p0, p1, ImVec4(1.0f, 1.0f, 1.0f, 1.0f));
+    }
+}
+
+void GradientMarkerManager::drawAlphaMidpoints() const
+{
+    int32_t selected_midpoint_idx = -1;
+    for (const auto& [i, marker] : m_alpha_markers | std::views::take(std::ssize(m_alpha_markers) - 1) | std::views::enumerate) {
+        if (marker.id == m_state.selected_alpha_midpoint_id) {
+            selected_midpoint_idx = static_cast<int32_t>(i);
+            continue;
+        }
+
+        auto pos = marker.midpoint.pos;
+        ImVec2 p0 = ImVec2(m_regions.alpha_midpoint_p0.x + (m_regions.alpha_midpoint_p1.x - m_regions.alpha_midpoint_p0.x) * pos - (m_config.midpoint_width * 0.5f), m_regions.alpha_midpoint_p0.y);
+        ImVec2 p1 = ImVec2(m_regions.alpha_midpoint_p0.x + (m_regions.alpha_midpoint_p1.x - m_regions.alpha_midpoint_p0.x) * pos + (m_config.midpoint_width * 0.5f), m_regions.alpha_midpoint_p1.y);
+        drawMidpoint(p0, p1, ImVec4(1.0f, 1.0f, 1.0f, 1.0f));
+    }
+
+    if (selected_midpoint_idx >= 0) {
+        auto pos = m_alpha_markers.at(selected_midpoint_idx).midpoint.pos;
+        ImVec2 p0 = ImVec2(m_regions.alpha_midpoint_p0.x + (m_regions.alpha_midpoint_p1.x - m_regions.alpha_midpoint_p0.x) * pos - (m_config.midpoint_width * 0.5f), m_regions.alpha_midpoint_p0.y);
+        ImVec2 p1 = ImVec2(m_regions.alpha_midpoint_p0.x + (m_regions.alpha_midpoint_p1.x - m_regions.alpha_midpoint_p0.x) * pos + (m_config.midpoint_width * 0.5f), m_regions.alpha_midpoint_p1.y);
+        drawMidpoint(p0, p1, ImVec4(1.0f, 1.0f, 1.0f, 1.0f));
+        highlightMidpoint(p0, p1, ImVec4(1.0f, 1.0f, 1.0f, 1.0f));
     }
 }
 
@@ -1010,10 +1142,8 @@ void GradientMarkerManager::highlightMarker(ImVec2 p0, ImVec2 p1, const ImVec4& 
     draw_list->AddRect(p0, p1, u32_highlight_color, 0.0f, 0, thickness);
 }
 
-void GradientMarkerManager::highlightMidpoint(const float pos, const ImVec4& highlight_color) const
+void GradientMarkerManager::highlightMidpoint(ImVec2 p0, ImVec2 p1, const ImVec4& highlight_color) const
 {
-    ImVec2 p0     = ImVec2(m_regions.midpoint_p0.x + (m_regions.midpoint_p1.x - m_regions.midpoint_p0.x) * pos - (m_config.midpoint_width * 0.5f), m_regions.midpoint_p0.y);
-    ImVec2 p1     = ImVec2(m_regions.midpoint_p0.x + (m_regions.midpoint_p1.x - m_regions.midpoint_p0.x) * pos + (m_config.midpoint_width * 0.5f), m_regions.midpoint_p1.y);
     ImVec2 center = ImVec2(p0.x + (p1.x - p0.x) * 0.5f, p0.y + (p1.y - p0.y) * 0.5f);
 
     ImU32 u32color        = ImGui::ColorConvertFloat4ToU32(highlight_color);

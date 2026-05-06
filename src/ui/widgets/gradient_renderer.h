@@ -84,6 +84,8 @@ public:
             float stop_pos{};
             float start_value{};
             float stop_value{};
+            float mid_ratio{};
+            const float pad[3] = {0, 0, 0};
         } alpha_stops[MAX_MARKER_COUNT];
         int32_t alpha_sec_num;
         float pad[3];

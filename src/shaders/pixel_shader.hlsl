@@ -22,6 +22,8 @@ struct AlphaMarker
     float stop_pos;
     float start_value;
     float stop_value;
+    float mid_ratio;
+    float3 pad3;
 };
 
 #ifdef MARKER_COUNT
@@ -47,14 +49,19 @@ cbuffer pixelBuffer : register(b0)
 Texture2D src : register(t0);
 SamplerState samp : register(s0);
 
-float4 makeGradient(float4 color1, float4 color2, float t, float mid, float width, int color_space, int interp_dir)
+float smoothPulse(float t, float mid, float width)
 {
     float half_width = width * 0.5;
 
     float lower = mid - half_width;
     float upper = mid + half_width;
 
-    t = smoothstep(lower, upper, t);
+    return smoothstep(lower, upper, t);
+}
+
+float4 makeGradient(float4 color1, float4 color2, float t, float mid, float width, int color_space, int interp_dir)
+{
+    t = smoothPulse(t, mid, width);
 
     float3 col1 = color1.rgb;
     float3 col2 = color2.rgb;
@@ -249,7 +256,7 @@ float4 psmain(VS_OUTPUT input) : SV_Target
             if (x >= p_curr && x < p_next) {
                 float dist = p_next - p_curr;
                 float t = (x - p_curr) / dist;
-                float alpha_value = lerp(alpha_stops[j].start_value, alpha_stops[j].stop_value, t);
+                float alpha_value = lerp(alpha_stops[j].start_value, alpha_stops[j].stop_value, smoothPulse(t, alpha_stops[j].mid_ratio, 1.0));
                 gradient_col.a *= alpha_value;
                 break;
             }
