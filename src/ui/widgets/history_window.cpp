@@ -96,7 +96,7 @@ void HistoryWindow::writeHistoryToConfig(GradientConfigManager& manager, History
     cfg.histories.clear();
 
     for (auto history : m_history_data) {
-        GradientHistory gradient_history = manager.gradient2history(history.data);
+        OldGradientHistory gradient_history = manager.gradient2history(history.data);
         gradient_history.name = history.name;
         cfg.histories.push_back(gradient_history);
     }

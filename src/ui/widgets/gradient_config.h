@@ -28,7 +28,8 @@ struct ConfigWriteResult {
     std::string error; // 空なら成功
 };
 
-struct GradientPreset {
+// 旧形式（v0.4.2 まで）
+struct OldGradientPreset {
     std::string category{"Uncategorized"};
     std::string name{"default"};
     std::vector<std::string> colors{"0x000000ff", "0xffffffff"};
@@ -41,7 +42,7 @@ struct GradientPreset {
     int32_t interpolation_path{0};
 };
 
-inline void to_json(nlohmann::ordered_json& j, const GradientPreset& preset)
+inline void to_json(nlohmann::ordered_json& j, const OldGradientPreset& preset)
 {
     j = nlohmann::ordered_json{
         {"category", preset.category},
@@ -56,7 +57,7 @@ inline void to_json(nlohmann::ordered_json& j, const GradientPreset& preset)
         {"interpolation_path", preset.interpolation_path}};
 }
 
-inline void from_json(const nlohmann::ordered_json& j, GradientPreset& preset)
+inline void from_json(const nlohmann::ordered_json& j, OldGradientPreset& preset)
 {
     preset.category           = j.value("category", preset.category);
     preset.name               = j.value("name", preset.name);
@@ -70,7 +71,87 @@ inline void from_json(const nlohmann::ordered_json& j, GradientPreset& preset)
     preset.interpolation_path = j.value("interpolation_path", preset.interpolation_path);
 }
 
-struct GradientHistory {
+// 新形式（v0.5.0 以降）
+struct ColorMarker {
+    std::string color{"0x000000ff"};
+    float position{0};
+    float midpoint{0.5f};
+};
+
+inline void to_json(nlohmann::ordered_json& j, const ColorMarker& c)
+{
+    j = nlohmann::ordered_json{
+        {"color", c.color},
+        {"position", c.position},
+        {"midpoint", c.midpoint},
+    };
+}
+
+inline void from_json(const nlohmann::ordered_json& j, ColorMarker& c)
+{
+    c.color = j.value("category", c.color);
+    c.position = j.value("name", c.position);
+    c.midpoint = j.value("colors", c.midpoint);
+}
+
+struct TransparencyMarker {
+    float transparency{0};
+    float position{0};
+    float midpoint{0.5f};
+};
+
+inline void to_json(nlohmann::ordered_json& j, const TransparencyMarker& c)
+{
+    j = nlohmann::ordered_json{
+        {"color", c.transparency},
+        {"position", c.position},
+        {"midpoint", c.midpoint},
+    };
+}
+
+inline void from_json(const nlohmann::ordered_json& j, TransparencyMarker& c)
+{
+    c.transparency = j.value("category", c.transparency);
+    c.position = j.value("name", c.position);
+    c.midpoint = j.value("colors", c.midpoint);
+}
+
+struct GradientPreset {
+    std::string category{"Uncategorized"};
+    std::string name{"default"};
+    std::vector<ColorMarker> color_markers;
+    std::vector<TransparencyMarker> transparency_markers;
+    float blur_width{1.0f};
+    int32_t color_space{0};
+    int32_t interpolation_path{0};
+};
+
+inline void to_json(nlohmann::ordered_json& j, const GradientPreset& c)
+{
+    j = nlohmann::ordered_json{
+        {"category", c.category},
+        {"name", c.name},
+        {"color_markers", c.color_markers},
+        {"transparency_markers", c.transparency_markers},
+        {"blur_width", c.blur_width},
+        {"color_space", c.color_space},
+        {"interpolation_path", c.interpolation_path},
+    };
+}
+
+inline void from_json(const nlohmann::ordered_json& j, GradientPreset& c)
+{
+    c.category = j.value("category", c.category);
+    c.name = j.value("name", c.name);
+    c.color_markers = j.value("colors", c.color_markers);
+    c.transparency_markers = j.value("colors", c.transparency_markers);
+    c.blur_width = j.value("colors", c.blur_width);
+    c.color_space = j.value("colors", c.color_space);
+    c.interpolation_path = j.value("colors", c.interpolation_path);
+}
+
+// 旧形式（v0.4.2 まで）
+struct OldGradientHistory {
     std::string name{"default"};
     std::vector<std::string> colors{"0x000000ff", "0xffffffff"};
     std::vector<float> positions{0.0f, 1.0f};
@@ -81,10 +162,10 @@ struct GradientHistory {
     int32_t color_space{0};
     int32_t interpolation_path{0};
 
-    auto operator<=>(const GradientHistory&) const = default;
+    auto operator<=>(const OldGradientHistory&) const = default;
 };
 
-inline void to_json(nlohmann::ordered_json& j, const GradientHistory& history)
+inline void to_json(nlohmann::ordered_json& j, const OldGradientHistory& history)
 {
     j = nlohmann::ordered_json{
         {"name", history.name},
@@ -98,7 +179,7 @@ inline void to_json(nlohmann::ordered_json& j, const GradientHistory& history)
         {"interpolation_path", history.interpolation_path}};
 }
 
-inline void from_json(const nlohmann::ordered_json& j, GradientHistory& history)
+inline void from_json(const nlohmann::ordered_json& j, OldGradientHistory& history)
 {
     history.name               = j.value("name", history.name);
     history.colors             = j.value("colors", history.colors);
@@ -111,10 +192,43 @@ inline void from_json(const nlohmann::ordered_json& j, GradientHistory& history)
     history.interpolation_path = j.value("interpolation_path", history.interpolation_path);
 }
 
+// 新形式（v0.5.0 以降）
+struct GradientHistory {
+    std::string name{"default"};
+    std::vector<ColorMarker> color_markers;
+    std::vector<TransparencyMarker> transparency_markers;
+    float blur_width{1.0f};
+    int32_t color_space{0};
+    int32_t interpolation_path{0};
+};
+
+inline void to_json(nlohmann::ordered_json& j, const GradientHistory& c)
+{
+    j = nlohmann::ordered_json{
+        {"name", c.name},
+        {"color_markers", c.color_markers},
+        {"transparency_markers", c.transparency_markers},
+        {"blur_width", c.blur_width},
+        {"color_space", c.color_space},
+        {"interpolation_path", c.interpolation_path},
+    };
+}
+
+inline void from_json(const nlohmann::ordered_json& j, GradientHistory& c)
+{
+    c.name = j.value("name", c.name);
+    c.color_markers = j.value("colors", c.color_markers);
+    c.transparency_markers = j.value("colors", c.transparency_markers);
+    c.blur_width = j.value("colors", c.blur_width);
+    c.color_space = j.value("colors", c.color_space);
+    c.interpolation_path = j.value("colors", c.interpolation_path);
+}
+
+// 旧形式（v0.4.2 まで）
 struct PresetConfig {
     int32_t selected_category = 0;
     std::vector<std::string> categories{"Uncategorized"};
-    std::vector<GradientPreset> presets{GradientPreset{}};
+    std::vector<OldGradientPreset> presets{OldGradientPreset{}};
 };
 
 inline void to_json(nlohmann::ordered_json& j, const PresetConfig& cfg)
@@ -122,7 +236,7 @@ inline void to_json(nlohmann::ordered_json& j, const PresetConfig& cfg)
     j = nlohmann::ordered_json{
         {"selected_category", cfg.selected_category},
         {"categories", cfg.categories.empty() ? std::vector<std::string>{"Uncategorized"} : cfg.categories},
-        {"presets",    cfg.presets.empty()     ? std::vector<GradientPreset>{GradientPreset{}} : cfg.presets}};
+        {"presets",    cfg.presets.empty()     ? std::vector<OldGradientPreset>{OldGradientPreset{}} : cfg.presets}};
 }
 
 inline void from_json(const nlohmann::ordered_json& j, PresetConfig& cfg)
@@ -132,8 +246,73 @@ inline void from_json(const nlohmann::ordered_json& j, PresetConfig& cfg)
     cfg.presets    = j.value("presets",    cfg.presets);
 }
 
+// 新形式（v0.5.0 以降）
+struct Preset {
+    std::string version{"0.5.0"};
+    int32_t selected_category = 0;
+    std::vector<std::string> categories{"Uncategorized"};
+    std::vector<GradientPreset> presets{};
+};
+
+inline void to_json(nlohmann::ordered_json& j, const Preset& c)
+{
+    j = nlohmann::ordered_json{
+        {"version", c.version},
+        {"selected_category", c.selected_category},
+        {"categories", c.categories},
+        {"presets", c.presets},
+    };
+}
+
+inline void from_json(const nlohmann::ordered_json& j, Preset& c)
+{
+    std::string version = j.value("version", "0.0.0");
+
+    c.version = version;
+    c.selected_category = j.value("colors", c.selected_category);
+    c.categories = j.value("colors", c.categories);
+
+    if (version == "0.0.0") {
+        std::vector<OldGradientPreset> old_presets{OldGradientPreset{}};
+        auto presets = j.value("presets", old_presets);
+        std::vector<GradientPreset> new_preset;
+        for (const auto& op : presets) {
+            GradientPreset np;
+            np.category = op.category;
+            np.name = op.name;
+            np.color_space = op.color_space;
+            np.blur_width = op.blur_width;
+            np.interpolation_path = op.interpolation_path;
+
+            if (std::ssize(op.colors) != std::ssize(op.positions) || std::ssize(op.colors) - 1 != std::ssize(op.midpoints)) {
+                throw std::runtime_error("Array sizes do not match in Version 0.0.0 format");
+            }
+            std::vector<ColorMarker> color_markers;
+            for (int32_t i = 0; i < static_cast<int32_t>(std::ssize(op.colors)); ++i) {
+                ColorMarker color_marker;
+                color_marker.color = op.colors[i];
+                color_marker.position = op.positions[i];
+                if (i < static_cast<int32_t>(std::ssize(op.colors)) - 1) {
+                    color_marker.midpoint = op.midpoints[i];
+                } else {
+                    color_marker.midpoint = 0.5f;
+                }
+            }
+            np.color_markers = color_markers;
+
+            // if (std::ssize(op.alpha_values) != std::ssize(op.alpha_positions) || std::ssize(op.alpha_positions) - 1 != std::ssize(op.)) {
+            //     throw std::runtime_error("Array sizes do not match in Version 0.0.0 format");
+            // }
+
+        }
+    } else if (version == "0.5.0") {
+        c.presets = j.value("colors", c.presets);
+    }
+}
+
+// 旧形式（v0.4.2 まで）
 struct HistoryConfig {
-    std::vector<GradientHistory> histories{};
+    std::vector<OldGradientHistory> histories{};
 };
 
 inline void to_json(nlohmann::ordered_json& j, const HistoryConfig& cfg)
@@ -144,6 +323,26 @@ inline void to_json(nlohmann::ordered_json& j, const HistoryConfig& cfg)
 inline void from_json(const nlohmann::ordered_json& j, HistoryConfig& cfg)
 {
     cfg.histories = j.value("histories", cfg.histories);
+}
+
+// 新形式（v0.5.0 以降）
+struct History {
+    std::string version;
+    std::vector<GradientHistory> histories{};
+};
+
+inline void to_json(nlohmann::ordered_json& j, const History& c)
+{
+    j = nlohmann::ordered_json{
+        {"version", c.version},
+        {"histories", c.histories}
+    };
+}
+
+inline void from_json(const nlohmann::ordered_json& j, History& c)
+{
+    c.version = j.value("name", c.version);
+    c.histories = j.value("histories", c.histories);
 }
 
 class GradientConfigManager {
@@ -258,7 +457,7 @@ public:
     }
 
     // データ変換
-    static GradientData preset2gradient(const GradientPreset& preset)
+    static GradientData preset2gradient(const OldGradientPreset& preset)
     {
         GradientData gradient{};
         std::vector<GradientMarkerData> markers_data;
@@ -288,9 +487,9 @@ public:
         return gradient;
     }
 
-    static GradientPreset gradient2preset(GradientData& gradient)
+    static OldGradientPreset gradient2preset(GradientData& gradient)
     {
-        GradientPreset preset;
+        OldGradientPreset preset;
         std::vector<std::string> rgba_hex_strs(static_cast<uint32_t>(std::ssize(gradient.m_marker_manager.getMarkerColors())));
         for (const auto& [i, marker_color] : gradient.m_marker_manager.getMarkerColors() | std::views::enumerate) {
             uint32_t rgba    = color_conv::vec4Rgba2u32Rgba<ImVec4>(marker_color);
@@ -307,7 +506,7 @@ public:
         return preset;
     }
 
-    static GradientData history2gradient(const GradientHistory& history)
+    static GradientData history2gradient(const OldGradientHistory& history)
     {
         GradientData gradient{};
         std::vector<GradientMarkerData> markers_data;
@@ -337,9 +536,9 @@ public:
         return gradient;
     }
 
-    static GradientHistory gradient2history(GradientData& gradient)
+    static OldGradientHistory gradient2history(GradientData& gradient)
     {
-        GradientHistory history;
+        OldGradientHistory history;
         std::vector<std::string> rgba_hex_strs(static_cast<uint32_t>(std::ssize(gradient.m_marker_manager.getMarkerColors())));
         for (const auto& [i, marker_color] : gradient.m_marker_manager.getMarkerColors() | std::views::enumerate) {
             uint32_t rgba    = color_conv::vec4Rgba2u32Rgba<ImVec4>(marker_color);
@@ -367,7 +566,7 @@ public:
         return std::ranges::contains(categories, target);
     }
 
-    ConfigWriteResult addPreset(PresetConfig& cfg, GradientPreset preset,
+    ConfigWriteResult addPreset(PresetConfig& cfg, OldGradientPreset preset,
                                 std::string_view name, std::string_view category)
     {
         // 名前の重複を "_copy" サフィックスで回避
@@ -390,7 +589,7 @@ public:
         return writeConfigFile(cfg, m_preset_path);
     }
 
-    ConfigWriteResult overwritePreset(PresetConfig& cfg, GradientPreset preset,
+    ConfigWriteResult overwritePreset(PresetConfig& cfg, OldGradientPreset preset,
                                       uint32_t index, std::string_view name, std::string_view category)
     {
         if (index >= static_cast<uint32_t>(std::ssize(cfg.presets))) {
@@ -468,7 +667,7 @@ public:
         return writeConfigFile(cfg, m_history_path);
     }
 
-    ConfigWriteResult addHistory(HistoryConfig& cfg, GradientHistory history)
+    ConfigWriteResult addHistory(HistoryConfig& cfg, OldGradientHistory history)
     {
         cfg.histories.push_back(std::move(history));
         return writeConfigFile(cfg, m_history_path);
