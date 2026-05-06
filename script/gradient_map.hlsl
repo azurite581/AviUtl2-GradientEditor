@@ -159,17 +159,19 @@ float4 blend_colors(float4 color1, float4 color2, float t, float color_space, in
     return float4(result * mixed_alpha, mixed_alpha);
 }
 
-float4 makeGradient(float4 col1, float4 col2, float t, float mid, float width, float color_space, int interp_dir)
+float smoothPulse(float t, float mid, float width)
 {
     float half_width = width * 0.5;
 
     float lower = mid - half_width;
     float upper = mid + half_width;
 
-    t = smoothstep(lower, upper, t);
+    return smoothstep(lower, upper, t);
+}
 
-    float4 result = blend_colors(col1, col2, t, color_space, interp_dir);
-    return result;
+float4 makeGradient(float4 col1, float4 col2, float t, float mid, float width, float color_space, int interp_dir)
+{
+    return blend_colors(col1, col2, smoothPulse(t, mid, width), color_space, interp_dir);
 }
 
 float4 unpremulti(float4 col)

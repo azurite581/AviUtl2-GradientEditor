@@ -25,7 +25,8 @@ cbuffer constant0 : register(b0) {
     float4 pos_and_mid[GRADIENT_MAX_COUNT];
     float alpha_marker_count;
     float3 PAD3;
-    float4 alpha_pos_and_value[GRADIENT_MAX_COUNT];
+    float4 alpha_pos_and_mid[GRADIENT_MAX_COUNT];
+    float4 alpha_value[GRADIENT_MAX_COUNT];
 }
 
 float4 blend_colors(float4 color1, float4 color2, float t, float color_space, int interp_dir)
@@ -165,17 +166,19 @@ float4 blend_colors(float4 color1, float4 color2, float t, float color_space, in
     return float4(result * mixed_alpha, mixed_alpha);
 }
 
-float4 makeGradient(float4 col1, float4 col2, float t, float mid, float width, float color_space, int interp_dir)
+float smoothPulse(float t, float mid, float width)
 {
     float half_width = width * 0.5;
 
     float lower = mid - half_width;
     float upper = mid + half_width;
 
-    t = smoothstep(lower, upper, t);
+    return smoothstep(lower, upper, t);
+}
 
-    float4 result = blend_colors(col1, col2, t, color_space, interp_dir);
-    return result;
+float4 makeGradient(float4 col1, float4 col2, float t, float mid, float width, float color_space, int interp_dir)
+{
+    return blend_colors(col1, col2, smoothPulse(t, mid, width), color_space, interp_dir);
 }
 
 float4 psmain(float4 pos : SV_Position, float2 uv : TEXCOORD) : SV_Target {
@@ -355,26 +358,26 @@ float4 psmain(float4 pos : SV_Position, float2 uv : TEXCOORD) : SV_Target {
     }
 
     float alpha = 1.0;
-    if (x < alpha_pos_and_value[0].x) {
-        alpha = alpha_pos_and_value[0].z;
+    if (x < alpha_pos_and_mid[0].x) {
+        alpha = alpha_pos_and_mid[0].z;
         out_col.a *= alpha;
         out_col.rgb *= out_col.a;
         return out_col;
-    } else if (x >= alpha_pos_and_value[(int)alpha_marker_count - 2].y) {
-        alpha = alpha_pos_and_value[(int)alpha_marker_count - 2].w;
+    } else if (x >= alpha_pos_and_mid[(int)alpha_marker_count - 2].y) {
+        alpha = alpha_pos_and_mid[(int)alpha_marker_count - 2].w;
         out_col.a *= alpha;
         out_col.rgb *= out_col.a;
         return out_col;
     }
     for (int j = 0; j < (int)alpha_marker_count - 1; j++) {
-        float p_curr = alpha_pos_and_value[j].x;  // 区間の開始位置
-        float p_next = alpha_pos_and_value[j].y;  // 区間の終了位置
+        float p_curr = alpha_pos_and_mid[j].x;  // 区間の開始位置
+        float p_next = alpha_pos_and_mid[j].y;  // 区間の終了位置
 
         // x が現在の区間内にある場合
         if (p_curr <= x && x < p_next) {
             float dist = p_next - p_curr;
             float t = (x - p_curr) / dist;
-            alpha = lerp(alpha_pos_and_value[j].z, alpha_pos_and_value[j].w, t);
+            alpha = lerp(alpha_value[j].x, alpha_value[j].y, smoothPulse(t, alpha_pos_and_mid[j].z, 1.0));
             out_col.a *= alpha;
             out_col.rgb *= out_col.a;
             break;
