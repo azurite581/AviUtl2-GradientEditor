@@ -265,7 +265,6 @@ inline void from_json(const nlohmann::ordered_json& j, Preset& c)
     c.selected_category = j.value("selected_category", c.selected_category);
     c.categories = j.value("categories", c.categories);
 
-    // プリセット形式は異なる
     if (c.version == "0.0.0") {
         // 旧形式で読み込んでから新形式の構造に変換する
         std::vector<OldGradientPreset> old_presets_{OldGradientPreset{}};
@@ -280,10 +279,6 @@ inline void from_json(const nlohmann::ordered_json& j, Preset& c)
             np.color_blur_width   = op.blur_width;
             np.alpha_blur_width   = 1.0;
             np.interpolation_path = op.interpolation_path;
-
-            if (std::ssize(op.colors) != std::ssize(op.positions) || std::ssize(op.colors) - 1 != std::ssize(op.midpoints)) {
-                throw std::runtime_error("Color array sizes do not match in Version 0.0.0 format");
-            }
 
             // カラーマーカー
             int32_t color_marker_num = static_cast<int32_t>(std::ssize(op.colors));
@@ -310,6 +305,7 @@ inline void from_json(const nlohmann::ordered_json& j, Preset& c)
             new_preset.push_back(np);
         }
         c.presets = new_preset;
+        c.version = "0.5.0";  // 書き込み時は v0.5.0 の形式にする
     } else if (c.version == "0.5.0") {
         c.presets = j.value("presets", c.presets);
     }
@@ -501,26 +497,34 @@ public:
         // カラーマーカー
         int32_t color_marker_num = static_cast<int32_t>(std::ssize(gradient.m_marker_manager.getMarkerPos()));
         std::vector<ColorMarker> color_markers(color_marker_num);
-        auto color_marker_colors    = gradient.m_marker_manager.getMarkerColors();
+        std::vector<ImVec4> color_marker_colors   = gradient.m_marker_manager.getMarkerColors();
         auto color_marker_positions = gradient.m_marker_manager.getMarkerPos();
         auto color_marker_midpoints = gradient.m_marker_manager.getMidpointRatios();
         for (int32_t i = 0; i < color_marker_num; ++i) {
-            int32_t rgba              = color_conv::vec4Rgba2u32Rgba<ImVec4>(color_marker_colors[i]);
+            uint32_t rgba              = color_conv::vec4Rgba2u32Rgba<ImVec4>(color_marker_colors[i]);
             color_markers[i].color    = std::format("0x{:08X}", rgba);
             color_markers[i].position = color_marker_positions[i];
-            color_markers[i].midpoint = color_marker_midpoints[i];
+            if (i < color_marker_num - 1) {
+                color_markers[i].midpoint = color_marker_midpoints[i];
+            } else {
+                color_markers[i].midpoint = 0.5f;
+            }
         }
 
         // アルファマーカー
         int32_t alpha_marker_num = static_cast<int32_t>(std::ssize(gradient.m_marker_manager.getAlphaMarkerPos()));
         std::vector<AlphaMarker> alpha_markers(alpha_marker_num);
-        auto alpha_marker_values     = gradient.m_marker_manager.getAlphaMidpointRatios();
-        auto alpha_marker_posisionts = gradient.m_marker_manager.getAlphaMarkerValues();
-        auto alpha_marker_midpoints  = gradient.m_marker_manager.getAlphaMarkerPos();
+        auto alpha_marker_values     = gradient.m_marker_manager.getAlphaMarkerValues();
+        auto alpha_marker_positionts = gradient.m_marker_manager.getAlphaMarkerPos();
+        auto alpha_marker_midpoints  = gradient.m_marker_manager.getAlphaMidpointRatios();
         for (int32_t i = 0; i < alpha_marker_num; ++i) {
             alpha_markers[i].value = alpha_marker_values[i];
-            alpha_markers[i].position    = alpha_marker_posisionts[i];
-            alpha_markers[i].midpoint    = alpha_marker_midpoints[i];
+            alpha_markers[i].position = alpha_marker_positionts[i];
+            if (i < alpha_marker_num - 1) {
+                alpha_markers[i].midpoint = alpha_marker_midpoints[i];
+            } else {
+                alpha_markers[i].midpoint = 0.5f;
+            }
         }
 
         preset.color_markers      = color_markers;
