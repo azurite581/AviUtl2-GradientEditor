@@ -31,7 +31,7 @@ private:
     GradientData* m_data = nullptr;
     ScriptBridge m_script_bridge;
     GradientConfigManager m_config_manager;
-    PresetConfig m_preset_config;
+    Preset m_preset_config;
     HistoryConfig m_history_config;
 
     PresetWindow m_preset_window;

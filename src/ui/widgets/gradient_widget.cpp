@@ -58,6 +58,7 @@ GradientData* drawGradientEditor(
         gradient_data->getMarkerManager()->setDefaultMarkers(data.m_marker_manager.getMarkers());
         gradient_data->getMarkerManager()->setDefaultAlphaMarkers(data.m_marker_manager.getAlphaMarkers());
         gradient_data->setColorBlurWidth(data.m_blur_width);
+        gradient_data->setAlphaBlurWidth(data.m_alpha_blur_width);
         gradient_data->setColorSpace(data.m_color_space);
         gradient_data->setInterpDir(data.m_interp_dir);
         it = g_editor_gradients.emplace(label, std::move(gradient_data)).first;
@@ -71,6 +72,7 @@ GradientData* drawGradientEditor(
         gradient_data->getMarkerManager()->setDefaultMarkers(data.m_marker_manager.getMarkers());
         gradient_data->getMarkerManager()->setDefaultAlphaMarkers(data.m_marker_manager.getAlphaMarkers());
         gradient_data->setColorBlurWidth(data.m_blur_width);
+        gradient_data->setAlphaBlurWidth(data.m_alpha_blur_width);
         gradient_data->setColorSpace(data.m_color_space);
         gradient_data->setInterpDir(data.m_interp_dir);
     }
@@ -248,6 +250,7 @@ ID3D11ShaderResourceView* getGradientSrv(
         gradient_data->getMarkerManager()->setDefaultMarkers(data.m_marker_manager.getMarkers());
         gradient_data->getMarkerManager()->setDefaultAlphaMarkers(data.m_marker_manager.getAlphaMarkers());
         gradient_data->setColorBlurWidth(data.m_blur_width);
+        gradient_data->setAlphaBlurWidth(data.m_alpha_blur_width);
         gradient_data->setColorSpace(data.m_color_space);
         gradient_data->setInterpDir(data.m_interp_dir);
         it = gradient_datas.emplace(label, std::move(gradient_data)).first;
@@ -256,6 +259,7 @@ ID3D11ShaderResourceView* getGradientSrv(
         gradient_datas[label].get()->getMarkerManager()->setDefaultMarkers(data.m_marker_manager.getMarkers());
         gradient_datas[label].get()->getMarkerManager()->setDefaultAlphaMarkers(data.m_marker_manager.getAlphaMarkers());
         gradient_datas[label].get()->setColorBlurWidth(data.m_blur_width);
+        gradient_datas[label].get()->setAlphaBlurWidth(data.m_alpha_blur_width);
         gradient_datas[label].get()->setColorSpace(data.m_color_space);
         gradient_datas[label].get()->setInterpDir(data.m_interp_dir);
     }

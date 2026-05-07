@@ -151,6 +151,15 @@ std::vector<float> GradientMarkerManager::getMidpointRatios() const
     return ratios;
 }
 
+std::vector<float> GradientMarkerManager::getAlphaMidpointRatios() const
+{
+    std::vector<float> ratios(static_cast<uint32_t>(std::ssize(m_alpha_markers)) - 1);
+    for (const auto& [i, marker] : m_alpha_markers | std::views::take(std::ssize(m_alpha_markers) - 1) | std::views::enumerate) {
+        ratios[static_cast<uint32_t>(i)] = marker.midpoint.ratio;
+    }
+    return ratios;
+}
+
 float GradientMarkerManager::getMarkerPosFromMousePos(const ImVec2& mouse_pos) const
 {
     ImVec2 mouse_pos_on_gradient = getMousePosOnGradient(mouse_pos);

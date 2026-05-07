@@ -67,9 +67,12 @@ MainView::MainView(LoggerWrapperInterface* logger_wrapper, ConfigWrapperInterfac
     m_config_manager.setPresetFilePath(preset_path);
     auto preset_load_result = m_config_manager.loadPresetConfig();
     if (!preset_load_result.is_success()) {
-        m_logger_wrapper->error("{}", preset_load_result.error.c_str());  // エラーメッセージに '{' または '}' があると std::format_error になるため "{}" で受け取る
+        auto error_msg = preset_load_result.error + "\n";
+        m_logger_wrapper->error("{}", error_msg);  // エラーメッセージに '{' または '}' があると std::format_error になるため "{}" で受け取る
+        OutputDebugStringA(error_msg.c_str());
     }
     m_preset_config = preset_load_result.config;
+    m_logger_wrapper->error("preset_num = {}", std::ssize(preset_load_result.config.presets));
 
     // 履歴ファイルがなければ作成
     std::filesystem::path history_path = config_folder_path / HISTORY_FILE_NAME;

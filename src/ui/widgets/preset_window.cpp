@@ -11,7 +11,7 @@
 #include "imgui_utils.h"
 #include "misc/cpp/imgui_stdlib.h"
 
-void PresetWindow::render(GradientConfigManager& manager, PresetConfig& cfg)
+void PresetWindow::render(GradientConfigManager& manager, Preset& cfg)
 {
     static std::vector<std::string> categories;
     static int32_t category_selected_index    = m_selected_category_index = cfg.selected_category;
@@ -405,7 +405,9 @@ void PresetWindow::render(GradientConfigManager& manager, PresetConfig& cfg)
                 auto preset = manager.gradient2preset(m_target_gradient_data);
                 auto result = manager.overwritePreset(cfg, preset, m_selected_preset_index, input_preset_name, selected_category_name);
                 if (!result.is_success) {
-                    m_logger_wrapper->error("{}", result.error);
+                    auto error_msg = result.error + "\n";
+                    m_logger_wrapper->error("{}", error_msg);
+                    OutputDebugStringA(error_msg.c_str());
                 } else {
                     loadCategories();
                 }
@@ -508,7 +510,7 @@ void PresetWindow::render(GradientConfigManager& manager, PresetConfig& cfg)
     ImGui::End();
 }
 
-void PresetWindow::renderPresetList(GradientConfigManager& manager, PresetConfig& cfg, std::string_view category)
+void PresetWindow::renderPresetList(GradientConfigManager& manager, Preset& cfg, std::string_view category)
 {
     bool is_delete               = false;
     static uint32_t delete_index = 0;
@@ -740,13 +742,15 @@ void PresetWindow::renderPresetList(GradientConfigManager& manager, PresetConfig
     }
 }
 
-void PresetWindow::writeSelectedCategoryToConfig(GradientConfigManager& manager, PresetConfig& cfg)
+void PresetWindow::writeSelectedCategoryToConfig(GradientConfigManager& manager, Preset& cfg)
 {
     cfg.selected_category = m_selected_category_index;
 
     // 書き込み
     auto result = manager.writePreset(cfg);
-    if (result.is_success) {
-        m_logger_wrapper->error("{}", result.error);
+    if (!result.is_success) {
+        auto error_msg = result.error + "\n";
+        m_logger_wrapper->error("{}", error_msg);
+        OutputDebugStringA(error_msg.c_str());
     }
 }
