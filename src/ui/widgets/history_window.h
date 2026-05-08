@@ -31,6 +31,8 @@ public:
     std::deque<HistoryData> m_history_data;
 
 private:
+    static constexpr float MODAL_WINDOW_WIDTH   = 120.0f;
+    static constexpr float ITEM_SPACING_SCALE_Y = 0.25f;
     static constexpr int32_t HISTORY_MAX_COUNT = 50;
 
     LoggerWrapperInterface* m_logger_wrapper;

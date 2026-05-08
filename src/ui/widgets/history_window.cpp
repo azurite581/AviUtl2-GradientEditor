@@ -52,14 +52,41 @@ void HistoryWindow::render(GradientConfigManager& manager, History& cfg)
 
         imgui_utils::alignForWidth(ImGui::GetFrameHeight(), 1.0f);  // 右揃え
         if (imgui_utils::squareIconButton(ICON_MS_DELETE_HISTORY, "##delete_history")) {
-            manager.deleteHistory(cfg);
-            loadHistory();
+            ImGui::OpenPopup((m_config_wrapper->tr(L"すべての履歴を削除") + "###delete_history").c_str());
         }
 
         if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNormal | ImGuiHoveredFlags_NoSharedDelay | ImGuiHoveredFlags_AllowWhenDisabled)) {
             ImGui::SetTooltip(m_config_wrapper->tr(L"すべての履歴を削除").c_str(), ImGui::GetStyle().HoverDelayNormal);
         }
 
+        // 履歴削除確認ポップアップ
+        static ImGuiWindowFlags modal_flags = ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoMove;
+        ImVec2 center = ImGui::GetMainViewport()->GetCenter();
+        ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
+        if (ImGui::BeginPopupModal((m_config_wrapper->tr(L"すべての履歴を削除") + "###delete_history").c_str(), nullptr, modal_flags)) {
+            ImGui::Text("すべての履歴を削除しますか？");
+            ImGui::Dummy(ImVec2(0, ImGui::GetFrameHeight() * ITEM_SPACING_SCALE_Y));
+
+            // 2つのボタンを中央に配置
+            float btn_width = MODAL_WINDOW_WIDTH * 2 + ImGui::GetStyle().ItemSpacing.x * 1;
+            float avail     = ImGui::GetContentRegionAvail().x;
+            float off       = (avail - btn_width) * 0.5f;
+            if (off > 0.0f) ImGui::SetCursorPosX(ImGui::GetCursorPosX() + off);
+
+            if (ImGui::Button((m_config_wrapper->tr(L"キャンセル") + "###cancel").c_str(), ImVec2(MODAL_WINDOW_WIDTH, 0))) {
+                ImGui::CloseCurrentPopup();
+            }
+            ImGui::SetItemDefaultFocus();
+            ImGui::SameLine();
+
+            if (ImGui::Button((m_config_wrapper->tr(L"削除") + "###delete_history").c_str(), ImVec2(MODAL_WINDOW_WIDTH, 0))) {
+                manager.deleteHistory(cfg);
+                loadHistory();
+                ImGui::CloseCurrentPopup();
+            }
+
+            ImGui::EndPopup();
+        }
 
         int32_t history_num = static_cast<int32_t>(std::ssize(m_history_data));
         if (history_num >= 1) {
