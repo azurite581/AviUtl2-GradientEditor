@@ -9,6 +9,7 @@
 
 #include "IconsMaterialSymbols.h"
 #include "alias_parser.h"
+#include "app_state.h"
 #include "color_conv.h"
 #include "constants.h"
 #include "gradient_widget.h"
@@ -136,7 +137,11 @@ void MainView::render()
                 const nfdchar_t* filter_list = "grd,GRD";
                 const nfdchar_t* default_path = NULL;
 
+                // ファイルダイアログが開いている間は、ホストアプリケーションのメインウィンドウを非アクティブ状態にする
+                ::EnableWindow(gradient_editor::g_app_state.host_app_hwnd, FALSE);
                 result = NFD_OpenDialogMultiple(filter_list, default_path, &out_path_set);
+                ::EnableWindow(gradient_editor::g_app_state.host_app_hwnd, TRUE);
+
                 switch (result) {
                 case NFD_OKAY:
                 {
@@ -145,7 +150,6 @@ void MainView::render()
                         std::string utf8_path = nfd_path ? std::string(nfd_path) : std::string();
                         std::u8string_view u8sv(reinterpret_cast<const char8_t*>(utf8_path.data()), utf8_path.size());
                         std::filesystem::path grd_path(u8sv);
-                        m_logger_wrapper->warn("{}", utf8_path);
 
                         std::error_code ec;
                         if (!std::filesystem::exists(grd_path, ec)) {
@@ -163,7 +167,11 @@ void MainView::render()
                         } else {
                             auto [presets, message] = GradientConfigManager::grd2preset(grd.value());
                             for (const auto& msg :message) {
-                                m_logger_wrapper->warn("{}", msg);
+                                if (msg.starts_with("[Result]")) {
+                                    m_logger_wrapper->log("{}", msg);
+                                } else {
+                                    m_logger_wrapper->warn("{}", msg);
+                                }
                             }
 
                             for (const auto& preset : presets) {
@@ -179,6 +187,7 @@ void MainView::render()
                         }
                     }
                     NFD_PathSet_Free(&out_path_set);
+
                     break;
                 }
                 case NFD_CANCEL:
@@ -296,7 +305,8 @@ void MainView::renderGradientEditor()
     // スクリプトへ反映
     ImGui::SameLine();
     bool off_to_on = false;
-    if (imgui_utils::pushToggleButton(m_config_wrapper->tr(L"反映").c_str(), &m_apply)) {
+    bool create_new_object_ = create_new_object;
+    if (imgui_utils::pushToggleButton(m_config_wrapper->tr(L"反映").c_str(), &m_apply, &create_new_object_)) {
         plugin2_utils::call_edit_lambda(gradient_editor::g_app_state.edit_handle->call_edit_section_param, [&](EDIT_SECTION* edit) {
             auto focus_obj = edit->get_focus_object();
             if (!focus_obj) return;
@@ -304,6 +314,7 @@ void MainView::renderGradientEditor()
         });
         if (m_apply) off_to_on = true;
     }
+
     if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNormal)) ImGui::SetTooltip(m_config_wrapper->tr(L"スクリプトへ値を反映").c_str());
     if (m_apply) m_load = false;
 
@@ -340,7 +351,6 @@ void MainView::renderGradientEditor()
     ImGui::SameLine();
     bool is_delete_alpha_marker = imgui_utils::squareIconButton(ICON_MS_DELETE, "##alpha_marker_delete");
     if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNormal)) ImGui::SetTooltip(m_config_wrapper->tr(L"選択中のアルファマーカーを削除").c_str());
-
 
     if (off_to_on || (m_apply && is_refresh)) {
         plugin2_utils::call_edit_lambda(gradient_editor::g_app_state.edit_handle->call_edit_section_param, [&](EDIT_SECTION* edit) {
