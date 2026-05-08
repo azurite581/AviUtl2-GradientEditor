@@ -5,19 +5,21 @@
 #include <cstdint>
 #include <filesystem>
 #include <fstream>
+#include <numbers>
 #include <string>
 #include <string_view>
-#include <vector>
-#include <variant>
-#include <numbers>
 #include <unordered_set>
+#include <variant>
+#include <vector>
+#include <utility>
 
 #include "color_conv.h"
 #include "gradient_data.h"
 #include "gradient_marker.h"
+#include "grd_parser.h"
 #include "json.hpp"
 #include "str_conv.h"
-#include "grd_parser.h"
+
 
 // 共通の結果型
 template <typename T>
@@ -109,7 +111,7 @@ inline void to_json(nlohmann::ordered_json& j, const AlphaMarker& c)
 
 inline void from_json(const nlohmann::ordered_json& j, AlphaMarker& c)
 {
-    c.value = j.value("value", c.value);
+    c.value    = j.value("value", c.value);
     c.position = j.value("position", c.position);
     c.midpoint = j.value("midpoint", c.midpoint);
 }
@@ -267,7 +269,7 @@ inline void from_json(const nlohmann::ordered_json& j, Preset& c)
     // バージョン、選択カテゴリー、カテゴリーの配列は新旧共通項目
     c.version           = j.value("version", "0.0.0");
     c.selected_category = j.value("selected_category", c.selected_category);
-    c.categories = j.value("categories", c.categories);
+    c.categories        = j.value("categories", c.categories);
 
     if (c.version == "0.0.0") {
         // 旧形式で読み込んでから新形式の構造に変換する
@@ -386,7 +388,7 @@ inline void from_json(const nlohmann::ordered_json& j, History& c)
             new_histories.push_back(nh);
         }
         c.histories = new_histories;
-        c.version = "0.5.0";  // 書き込み時は v0.5.0 の形式にする
+        c.version   = "0.5.0";  // 書き込み時は v0.5.0 の形式にする
     } else if (c.version == "0.5.0") {
         c.histories = j.value("histories", c.histories);
     }
@@ -444,7 +446,7 @@ private:
 
         try {
             nlohmann::ordered_json j = nlohmann::ordered_json::parse(ifs);
-            result.config = j.get<T>();
+            result.config            = j.get<T>();
         } catch (const nlohmann::json::exception& e) {
             result.error  = e.what();
             result.config = default_cfg;
@@ -544,11 +546,11 @@ public:
         // カラーマーカー
         int32_t color_marker_num = static_cast<int32_t>(std::ssize(gradient.m_marker_manager.getMarkerPos()));
         std::vector<ColorMarker> color_markers(color_marker_num);
-        std::vector<ImVec4> color_marker_colors   = gradient.m_marker_manager.getMarkerColors();
-        auto color_marker_positions = gradient.m_marker_manager.getMarkerPos();
-        auto color_marker_midpoints = gradient.m_marker_manager.getMidpointRatios();
+        std::vector<ImVec4> color_marker_colors = gradient.m_marker_manager.getMarkerColors();
+        auto color_marker_positions             = gradient.m_marker_manager.getMarkerPos();
+        auto color_marker_midpoints             = gradient.m_marker_manager.getMidpointRatios();
         for (int32_t i = 0; i < color_marker_num; ++i) {
-            uint32_t rgba              = color_conv::vec4normRgba2u32Rgba<ImVec4>(color_marker_colors[i]);
+            uint32_t rgba             = color_conv::vec4normRgba2u32Rgba<ImVec4>(color_marker_colors[i]);
             color_markers[i].color    = std::format("0x{:08X}", rgba);
             color_markers[i].position = color_marker_positions[i];
             if (i < color_marker_num - 1) {
@@ -565,7 +567,7 @@ public:
         auto alpha_marker_positionts = gradient.m_marker_manager.getAlphaMarkerPos();
         auto alpha_marker_midpoints  = gradient.m_marker_manager.getAlphaMidpointRatios();
         for (int32_t i = 0; i < alpha_marker_num; ++i) {
-            alpha_markers[i].value = alpha_marker_values[i];
+            alpha_markers[i].value    = alpha_marker_values[i];
             alpha_markers[i].position = alpha_marker_positionts[i];
             if (i < alpha_marker_num - 1) {
                 alpha_markers[i].midpoint = alpha_marker_midpoints[i];
@@ -584,18 +586,20 @@ public:
         return preset;
     }
 
-    // Photoshop Gradient から Gradient Editor のプリセット形式に変換
-    static std::vector<GradientPreset> grd2preset(const GRD& grd, const std::string& category_name = "uncategorized")
+    // Photoshop Gradient（GRD）から Gradient Editor のプリセット形式に変換
+    static std::pair<std::vector<GradientPreset>, std::vector<std::string>> grd2preset(const GRD& grd, const std::string& category_name = "Uncategorized")
     {
         std::vector<GradientPreset> gradient_preset;
+        std::vector<std::string> message;  // エラーメッセージなどを格納する
+
         for (const auto& grad : grd.gradient_list.gradient_list) {
             GradientPreset preset;
-            preset.name = grad.gradient_name;
+            preset.name     = grad.gradient_name;
             preset.category = category_name;
 
             // 対応する項目がないものは初期値にする
-            preset.alpha_blur_width = 1.0f;
-            preset.color_space = 0;
+            preset.alpha_blur_width   = 1.0f;
+            preset.color_space        = 0;
             preset.interpolation_path = 0;
 
             bool conversion_completed = true;
@@ -619,49 +623,54 @@ public:
                     // using ColorObject = std::variant<BookColor, CMYC, Grsc, HSBC, LbCl, RGBC>;
                     int32_t color_type_index = col.color_object.index();
                     switch (color_type_index) {
-                    case 0:  // BookColor
-                        conversion_completed = false;
-                        break;
-                    case 1:  // CMYC
-                        conversion_completed = false;
-                        break;
-                    case 2:  // Grsc
-                    {
-                        const auto& gray = std::get<2>(col.color_object);
-                        const auto u32_gray = static_cast<uint32_t>((gray.gray / 100.0) * 255.0f + 0.5f);
-                        const auto u32_rgba = color_conv::vec4Rgba2u32Rgba<ImVec4>({static_cast<float>(u32_gray), static_cast<float>(u32_gray), static_cast<float>(u32_gray), 255.0f});
-                        color_marker.color = std::format("0x{:08X}", u32_rgba);
-                        break;
-                    }
-                    case 3:  // HSBC
-                    {
-                        const auto& hsb = std::get<3>(col.color_object);
-                        const auto norm_srgb = color_conv::hsv2srgb({hsb.hue * std::numbers::pi / 180.0, hsb.saturate / 100.0, hsb.brightness / 100.0});
-                        const ImVec4 norm_rgba = ImVec4{ static_cast<float>(norm_srgb.r), static_cast<float>(norm_srgb.g), static_cast<float>(norm_srgb.b), 1.0f };
-                        const auto u32_rgba = color_conv::vec4normRgba2u32Rgba<ImVec4>(norm_rgba);
-                        color_marker.color = std::format("0x{:08X}", u32_rgba);
-                        break;
-                    }
-                    case 4:  // LbCl
-                    {
-                        const auto& lab = std::get<4>(col.color_object);
-                        const auto norm_srgb = color_conv::d50lab2srgb({lab.luminance, lab.a, lab.b});
-                        const ImVec4 norm_rgba = ImVec4{ static_cast<float>(norm_srgb.r), static_cast<float>(norm_srgb.g), static_cast<float>(norm_srgb.b), 1.0f };
-                        const auto u32_rgba = color_conv::vec4normRgba2u32Rgba<ImVec4>(norm_rgba);
-                        color_marker.color = std::format("0x{:08X}", u32_rgba);
-                        break;
-                    }
-                    case 5:  // RGBC
-                    {
-                        const auto& rgb = std::get<5>(col.color_object);
-                        const ImVec4 rgba = ImVec4{ static_cast<float>(rgb.red), static_cast<float>(rgb.green), static_cast<float>(rgb.blue), 255.0f };
-                        const auto u32_rgba = color_conv::vec4Rgba2u32Rgba<ImVec4>(rgba);
-                        color_marker.color = std::format("0x{:08X}", u32_rgba);
-                        break;
-                    }
-                    default:
-                        conversion_completed = false;
-                        break;
+                        case 0:  // BookColor
+                            message.push_back("BookColor stop is not supported.\n");
+                            conversion_completed = false;
+                            break;
+                        case 1:  // CMYC
+                            message.push_back("CMYK stop is not supported.\n");
+                            conversion_completed = false;
+                            break;
+                        case 2:  // Grsc
+                        {
+                            const auto& gray    = std::get<2>(col.color_object);
+                            const auto u32_gray = static_cast<uint32_t>((gray.gray / 100.0) * 255.0f + 0.5f);
+                            const auto u32_rgba = color_conv::vec4Rgba2u32Rgba<ImVec4>({static_cast<float>(u32_gray), static_cast<float>(u32_gray), static_cast<float>(u32_gray), 255.0f});
+                            color_marker.color  = std::format("0x{:08X}", u32_rgba);
+                            break;
+                        }
+                        case 3:  // HSBC
+                        {
+                            const auto& hsb        = std::get<3>(col.color_object);
+                            const auto norm_srgb   = color_conv::hsv2srgb({hsb.hue * std::numbers::pi / 180.0, hsb.saturate / 100.0, hsb.brightness / 100.0});
+                            const ImVec4 norm_rgba = ImVec4{static_cast<float>(norm_srgb.r), static_cast<float>(norm_srgb.g), static_cast<float>(norm_srgb.b), 1.0f};
+                            const auto u32_rgba    = color_conv::vec4normRgba2u32Rgba<ImVec4>(norm_rgba);
+                            color_marker.color     = std::format("0x{:08X}", u32_rgba);
+                            break;
+                        }
+                        case 4:  // LbCl
+                        {
+                            const auto& lab        = std::get<4>(col.color_object);
+                            const auto norm_srgb   = color_conv::d50lab2srgb({lab.luminance, lab.a, lab.b});
+                            const ImVec4 norm_rgba = ImVec4{static_cast<float>(norm_srgb.r), static_cast<float>(norm_srgb.g), static_cast<float>(norm_srgb.b), 1.0f};
+                            const auto u32_rgba    = color_conv::vec4normRgba2u32Rgba<ImVec4>(norm_rgba);
+                            color_marker.color     = std::format("0x{:08X}", u32_rgba);
+                            break;
+                        }
+                        case 5:  // RGBC
+                        {
+                            const auto& rgb     = std::get<5>(col.color_object);
+                            const ImVec4 rgba   = ImVec4{static_cast<float>(rgb.red), static_cast<float>(rgb.green), static_cast<float>(rgb.blue), 255.0f};
+                            const auto u32_rgba = color_conv::vec4Rgba2u32Rgba<ImVec4>(rgba);
+                            color_marker.color  = std::format("0x{:08X}", u32_rgba);
+                            break;
+                        }
+                        default:
+                        {
+                            message.push_back("Unknown color type.\n");
+                            conversion_completed = false;
+                            break;
+                        }
                     }
                     color_markers.push_back(color_marker);
                 }
@@ -675,7 +684,7 @@ public:
                 std::vector<AlphaMarker> alpha_markers;
                 for (const auto& transparency : solid_grad.transparency_stops.transparency_stop_objects) {
                     AlphaMarker alpha_marker;
-                    alpha_marker.value = static_cast<float>(transparency.opacity / 100.0);
+                    alpha_marker.value    = static_cast<float>(transparency.opacity / 100.0);
                     alpha_marker.position = static_cast<float>(transparency.location / 4096.0);
                     alpha_marker.midpoint = static_cast<float>(transparency.midpoint / 100.0);
                     alpha_markers.push_back(alpha_marker);
@@ -683,6 +692,7 @@ public:
                 preset.alpha_markers = alpha_markers;
             } else {
                 // ノイズグラデーションは無視する
+                message.push_back("Noise gradients are not supported.\n");
                 conversion_completed = false;
                 continue;
             }
@@ -693,7 +703,7 @@ public:
             }
         }
 
-        return gradient_preset;
+        return {gradient_preset, message};
     }
 
     static GradientData history2gradient(const GradientHistory& history)
@@ -736,11 +746,11 @@ public:
         // カラーマーカー
         int32_t color_marker_num = static_cast<int32_t>(std::ssize(gradient.m_marker_manager.getMarkerPos()));
         std::vector<ColorMarker> color_markers(color_marker_num);
-        std::vector<ImVec4> color_marker_colors   = gradient.m_marker_manager.getMarkerColors();
-        auto color_marker_positions = gradient.m_marker_manager.getMarkerPos();
-        auto color_marker_midpoints = gradient.m_marker_manager.getMidpointRatios();
+        std::vector<ImVec4> color_marker_colors = gradient.m_marker_manager.getMarkerColors();
+        auto color_marker_positions             = gradient.m_marker_manager.getMarkerPos();
+        auto color_marker_midpoints             = gradient.m_marker_manager.getMidpointRatios();
         for (int32_t i = 0; i < color_marker_num; ++i) {
-            uint32_t rgba              = color_conv::vec4normRgba2u32Rgba<ImVec4>(color_marker_colors[i]);
+            uint32_t rgba             = color_conv::vec4normRgba2u32Rgba<ImVec4>(color_marker_colors[i]);
             color_markers[i].color    = std::format("0x{:08X}", rgba);
             color_markers[i].position = color_marker_positions[i];
             if (i < color_marker_num - 1) {
@@ -757,7 +767,7 @@ public:
         auto alpha_marker_positionts = gradient.m_marker_manager.getAlphaMarkerPos();
         auto alpha_marker_midpoints  = gradient.m_marker_manager.getAlphaMidpointRatios();
         for (int32_t i = 0; i < alpha_marker_num; ++i) {
-            alpha_markers[i].value = alpha_marker_values[i];
+            alpha_markers[i].value    = alpha_marker_values[i];
             alpha_markers[i].position = alpha_marker_positionts[i];
             if (i < alpha_marker_num - 1) {
                 alpha_markers[i].midpoint = alpha_marker_midpoints[i];
@@ -862,7 +872,7 @@ public:
         }
 
         if (category_name_exists) {
-            return { true, "" };
+            return {true, ""};
         }
 
         cfg.categories.push_back(name.data());

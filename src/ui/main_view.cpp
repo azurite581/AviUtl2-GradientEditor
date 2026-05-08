@@ -5,6 +5,7 @@
 #include <filesystem>
 #include <format>
 #include <iostream>
+#include <string_view>
 
 #include "IconsMaterialSymbols.h"
 #include "alias_parser.h"
@@ -129,7 +130,7 @@ void MainView::render()
     // メニューバーの描画
     if (ImGui::BeginMenuBar()) {
         if (ImGui::BeginMenu(m_config_wrapper->tr(L"ファイル").c_str())) {
-            if (ImGui::MenuItem(m_config_wrapper->tr(L"GRDファイルの読み込み").c_str(), nullptr)) {
+            if (ImGui::MenuItem(m_config_wrapper->tr(L"プリセットを読み込む").c_str(), nullptr)) {
                 nfdpathset_t out_path_set;
                 nfdresult_t result;
                 const nfdchar_t* filter_list = "grd,GRD";
@@ -140,14 +141,33 @@ void MainView::render()
                 case NFD_OKAY:
                 {
                     for (size_t i = 0; i < NFD_PathSet_GetCount(&out_path_set); ++i) {
-                        std::filesystem::path grd_path = NFD_PathSet_GetPath(&out_path_set, i);
+                        const nfdchar_t* nfd_path = NFD_PathSet_GetPath(&out_path_set, i);
+                        std::string utf8_path = nfd_path ? std::string(nfd_path) : std::string();
+                        std::u8string_view u8sv(reinterpret_cast<const char8_t*>(utf8_path.data()), utf8_path.size());
+                        std::filesystem::path grd_path(u8sv);
+                        m_logger_wrapper->warn("{}", utf8_path);
+
+                        std::error_code ec;
+                        if (!std::filesystem::exists(grd_path, ec)) {
+                            m_logger_wrapper->warn("The specified file ({}) does not exist.", grd_path.filename().string());
+                            continue;
+                        }
+                        if (ec) {
+                            m_logger_wrapper->warn("{}", ec.message());
+                            continue;
+                        }
+
                         auto grd = parseGRD(grd_path);
                         if (!grd) {
                             m_logger_wrapper->error("{}", grd.error());
                         } else {
-                            auto presets = GradientConfigManager::grd2preset(grd.value());
+                            auto [presets, message] = GradientConfigManager::grd2preset(grd.value());
+                            for (const auto& msg :message) {
+                                m_logger_wrapper->warn("{}", msg);
+                            }
+
                             for (const auto& preset : presets) {
-                                auto file_name = grd_path.stem().string();
+                                std::string file_name = str_conv::wideCharToMultiByte(grd_path.stem().wstring());
 
                                 // ファイル名をカテゴリー名として読み込む
                                 m_config_manager.addCategory(m_preset_config, file_name);
