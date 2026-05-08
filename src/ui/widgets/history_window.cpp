@@ -28,7 +28,7 @@ void HistoryWindow::pushHistory(const GradientData& gradient_data)
     }
 }
 
-void HistoryWindow::render(GradientConfigManager& manager, HistoryConfig& cfg)
+void HistoryWindow::render(GradientConfigManager& manager, History& cfg)
 {
     static ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse;
     if (ImGui::Begin((m_config_wrapper->tr(L"履歴") + "###history_window").c_str()), nullptr, window_flags) {
@@ -91,12 +91,12 @@ void HistoryWindow::render(GradientConfigManager& manager, HistoryConfig& cfg)
     ImGui::End();
 }
 
-void HistoryWindow::writeHistoryToConfig(GradientConfigManager& manager, HistoryConfig& cfg)
+void HistoryWindow::writeHistoryToConfig(GradientConfigManager& manager, History& cfg)
 {
     cfg.histories.clear();
 
     for (auto history : m_history_data) {
-        OldGradientHistory gradient_history = manager.gradient2history(history.data);
+        auto gradient_history = manager.gradient2history(history.data);
         gradient_history.name = history.name;
         cfg.histories.push_back(gradient_history);
     }

@@ -32,7 +32,7 @@ private:
     ScriptBridge m_script_bridge;
     GradientConfigManager m_config_manager;
     Preset m_preset_config;
-    HistoryConfig m_history_config;
+    History m_history_config;
 
     PresetWindow m_preset_window;
     HistoryWindow m_history_window;

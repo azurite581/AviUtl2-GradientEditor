@@ -114,11 +114,11 @@ struct GradientPreset {
     std::string category{"Uncategorized"};
     std::string name{"default"};
     std::vector<ColorMarker> color_markers{{"0x000000ff", 0.0f, 0.5f}, {"0x000000ff", 1.0f, 0.5f}};
-    std::vector<AlphaMarker> alpha_markers{{1.0f, 0.0f, 0.5f}, {1.0f, 1.0f, 0.5f}};
     float color_blur_width{1.0f};
-    float alpha_blur_width{1.0f};
     int32_t color_space{0};
     int32_t interpolation_path{0};
+    std::vector<AlphaMarker> alpha_markers{{1.0f, 0.0f, 0.5f}, {1.0f, 1.0f, 0.5f}};
+    float alpha_blur_width{1.0f};
 };
 
 inline void to_json(nlohmann::ordered_json& j, const GradientPreset& c)
@@ -127,11 +127,11 @@ inline void to_json(nlohmann::ordered_json& j, const GradientPreset& c)
         {"category", c.category},
         {"name", c.name},
         {"color_markers", c.color_markers},
-        {"alpha_markers", c.alpha_markers},
         {"color_blur_width", c.color_blur_width},
-        {"alpha_blur_width", c.alpha_blur_width},
         {"color_space", c.color_space},
         {"interpolation_path", c.interpolation_path},
+        {"alpha_markers", c.alpha_markers},
+        {"alpha_blur_width", c.alpha_blur_width},
     };
 }
 
@@ -140,11 +140,11 @@ inline void from_json(const nlohmann::ordered_json& j, GradientPreset& c)
     c.category           = j.value("category", c.category);
     c.name               = j.value("name", c.name);
     c.color_markers      = j.value("color_markers", c.color_markers);
-    c.alpha_markers      = j.value("alpha_markers", c.alpha_markers);
     c.color_blur_width   = j.value("color_blur_width", c.color_blur_width);
-    c.alpha_blur_width   = j.value("alpha_blur_width", c.alpha_blur_width);
     c.color_space        = j.value("color_space", c.color_space);
     c.interpolation_path = j.value("interpolation_path", c.interpolation_path);
+    c.alpha_markers      = j.value("alpha_markers", c.alpha_markers);
+    c.alpha_blur_width   = j.value("alpha_blur_width", c.alpha_blur_width);
 }
 
 // 旧形式（v0.4.2 まで）
@@ -187,11 +187,11 @@ inline void from_json(const nlohmann::ordered_json& j, OldGradientHistory& histo
 struct GradientHistory {
     std::string name{"default"};
     std::vector<ColorMarker> color_markers{{"0x000000ff", 0.0f, 0.5f}, {"0x000000ff", 1.0f, 0.5f}};
-    std::vector<AlphaMarker> alpha_markers{{1.0f, 0.0f, 0.5f}, {1.0f, 1.0f, 0.5f}};
     float color_blur_width{1.0f};
-    float alpha_blur_width{1.0f};
     int32_t color_space{0};
     int32_t interpolation_path{0};
+    std::vector<AlphaMarker> alpha_markers{{1.0f, 0.0f, 0.5f}, {1.0f, 1.0f, 0.5f}};
+    float alpha_blur_width{1.0f};
 };
 
 inline void to_json(nlohmann::ordered_json& j, const GradientHistory& c)
@@ -199,11 +199,11 @@ inline void to_json(nlohmann::ordered_json& j, const GradientHistory& c)
     j = nlohmann::ordered_json{
         {"name", c.name},
         {"color_markers", c.color_markers},
-        {"alpha_markers", c.alpha_markers},
         {"color_blur_width", c.color_blur_width},
-        {"alpha_blur_width", c.alpha_blur_width},
         {"color_space", c.color_space},
         {"interpolation_path", c.interpolation_path},
+        {"alpha_markers", c.alpha_markers},
+        {"alpha_blur_width", c.alpha_blur_width},
     };
 }
 
@@ -211,11 +211,11 @@ inline void from_json(const nlohmann::ordered_json& j, GradientHistory& c)
 {
     c.name               = j.value("name", c.name);
     c.color_markers      = j.value("color_markers", c.color_markers);
-    c.alpha_markers      = j.value("alpha_markers", c.alpha_markers);
     c.color_blur_width   = j.value("color_blur_width", c.color_blur_width);
-    c.alpha_blur_width   = j.value("alpha_blur_width", c.alpha_blur_width);
     c.color_space        = j.value("color_space", c.color_space);
     c.interpolation_path = j.value("interpolation_path", c.interpolation_path);
+    c.alpha_markers      = j.value("alpha_markers", c.alpha_markers);
+    c.alpha_blur_width   = j.value("alpha_blur_width", c.alpha_blur_width);
 }
 
 // 旧形式（v0.4.2 まで）
@@ -341,8 +341,51 @@ inline void to_json(nlohmann::ordered_json& j, const History& c)
 
 inline void from_json(const nlohmann::ordered_json& j, History& c)
 {
-    c.version   = j.value("name", c.version);
-    c.histories = j.value("histories", c.histories);
+    c.version = j.value("version", "0.0.0");
+
+    if (c.version == "0.0.0") {
+        // 旧形式で読み込んでから新形式の構造に変換する
+        std::vector<OldGradientHistory> old_histories_{OldGradientHistory{}};
+        auto old_histories = j.value("histories", old_histories_);
+        std::vector<GradientHistory> new_histories;
+
+        for (const auto& op : old_histories) {
+            GradientHistory nh;
+            nh.name               = op.name;
+            nh.color_space        = op.color_space;
+            nh.color_blur_width   = op.blur_width;
+            nh.alpha_blur_width   = 1.0;
+            nh.interpolation_path = op.interpolation_path;
+
+            // カラーマーカー
+            int32_t color_marker_num = static_cast<int32_t>(std::ssize(op.colors));
+            std::vector<ColorMarker> color_markers(color_marker_num);
+            for (int32_t i = 0; i < color_marker_num; ++i) {
+                ColorMarker color_marker;
+                color_marker.color    = op.colors[i];
+                color_marker.position = op.positions[i];
+                if (i < color_marker_num - 1) {
+                    color_marker.midpoint = op.midpoints[i];
+                } else {
+                    color_marker.midpoint = 0.5f;
+                }
+                color_markers[i] = color_marker;
+            }
+            nh.color_markers = color_markers;
+
+            // アルファマーカー
+            std::vector<AlphaMarker> alpha_markers(2);
+            alpha_markers[0] = {1.0f, 0.0f, 0.5f};
+            alpha_markers[1] = {1.0f, 1.0f, 0.5f};
+            nh.alpha_markers = alpha_markers;
+
+            new_histories.push_back(nh);
+        }
+        c.histories = new_histories;
+        c.version = "0.5.0";  // 書き込み時は v0.5.0 の形式にする
+    } else if (c.version == "0.5.0") {
+        c.histories = j.value("histories", c.histories);
+    }
 }
 
 class GradientConfigManager {
@@ -451,9 +494,9 @@ public:
         return loadConfigFile<Preset>(m_preset_path, Preset{});
     }
 
-    ConfigLoadResult<HistoryConfig> loadHistoryConfig() const
+    ConfigLoadResult<History> loadHistoryConfig() const
     {
-        return loadConfigFile<HistoryConfig>(m_history_path, HistoryConfig{});
+        return loadConfigFile<History>(m_history_path, History{});
     }
 
     static GradientData preset2gradient(const GradientPreset& preset)
@@ -537,39 +580,80 @@ public:
         return preset;
     }
 
-    static GradientData history2gradient(const OldGradientHistory& history)
+    static GradientData history2gradient(const GradientHistory& history)
     {
         GradientData gradient{};
-        std::vector<GradientMarkerData> markers_data;
-        for (uint32_t i = 0; i < static_cast<uint32_t>(std::ssize(history.colors)); ++i) {
+
+        // カラーマーカー
+        std::vector<GradientMarkerData> color_markers;
+        for (uint32_t i = 0; i < static_cast<uint32_t>(std::ssize(history.color_markers)); ++i) {
             GradientMarkerData marker_data;
-            marker_data.color = color_conv::u32Rgba2Vec4Rgba<ImVec4>(str_conv::charsToInt(history.colors[i].substr(2, 8), 0xffffffff, 16));
-            marker_data.pos   = history.positions[i];
-            if (static_cast<int32_t>(i) < static_cast<int32_t>(std::ssize(history.colors)) - 1) {
-                marker_data.midpoint.ratio = history.midpoints[i];
-            }
-            markers_data.push_back(marker_data);
+            marker_data.color          = color_conv::u32Rgba2Vec4Rgba<ImVec4>(str_conv::charsToInt(history.color_markers[i].color.substr(2, 8), 0xffffffff, 16));
+            marker_data.pos            = history.color_markers[i].position;
+            marker_data.midpoint.ratio = history.color_markers[i].midpoint;
+            color_markers.push_back(marker_data);
         }
 
-        gradient.m_marker_manager.setDefaultMarkers(markers_data);
-        gradient.m_blur_width  = history.blur_width;
-        gradient.m_color_space = history.color_space;
-        gradient.m_interp_dir  = history.interpolation_path;
+        // アルファマーカー
+        std::vector<AlphaMarkerData> alpha_markers;
+        for (uint32_t i = 0; i < static_cast<uint32_t>(std::ssize(history.alpha_markers)); ++i) {
+            AlphaMarkerData alpha_marker_data;
+            alpha_marker_data.value          = history.alpha_markers[i].value;
+            alpha_marker_data.pos            = history.alpha_markers[i].position;
+            alpha_marker_data.midpoint.ratio = history.alpha_markers[i].midpoint;
+            alpha_markers.push_back(alpha_marker_data);
+        }
+
+        gradient.m_marker_manager.setDefaultMarkers(color_markers);
+        gradient.m_marker_manager.setDefaultAlphaMarkers(alpha_markers);
+        gradient.m_blur_width       = history.color_blur_width;
+        gradient.m_alpha_blur_width = history.alpha_blur_width;
+        gradient.m_color_space      = history.color_space;
+        gradient.m_interp_dir       = history.interpolation_path;
         return gradient;
     }
 
-    static OldGradientHistory gradient2history(GradientData& gradient)
+    static GradientHistory gradient2history(GradientData& gradient)
     {
-        OldGradientHistory history;
-        std::vector<std::string> rgba_hex_strs(static_cast<uint32_t>(std::ssize(gradient.m_marker_manager.getMarkerColors())));
-        for (const auto& [i, marker_color] : gradient.m_marker_manager.getMarkerColors() | std::views::enumerate) {
-            uint32_t rgba    = color_conv::vec4Rgba2u32Rgba<ImVec4>(marker_color);
-            rgba_hex_strs[i] = std::format("0x{:08X}", rgba);
+        GradientHistory history;
+
+        // カラーマーカー
+        int32_t color_marker_num = static_cast<int32_t>(std::ssize(gradient.m_marker_manager.getMarkerPos()));
+        std::vector<ColorMarker> color_markers(color_marker_num);
+        std::vector<ImVec4> color_marker_colors   = gradient.m_marker_manager.getMarkerColors();
+        auto color_marker_positions = gradient.m_marker_manager.getMarkerPos();
+        auto color_marker_midpoints = gradient.m_marker_manager.getMidpointRatios();
+        for (int32_t i = 0; i < color_marker_num; ++i) {
+            uint32_t rgba              = color_conv::vec4Rgba2u32Rgba<ImVec4>(color_marker_colors[i]);
+            color_markers[i].color    = std::format("0x{:08X}", rgba);
+            color_markers[i].position = color_marker_positions[i];
+            if (i < color_marker_num - 1) {
+                color_markers[i].midpoint = color_marker_midpoints[i];
+            } else {
+                color_markers[i].midpoint = 0.5f;
+            }
         }
-        history.colors             = rgba_hex_strs;
-        history.positions          = gradient.m_marker_manager.getMarkerPos();
-        history.midpoints          = gradient.m_marker_manager.getMidpointRatios();
-        history.blur_width         = gradient.getBlurWidth();
+
+        // アルファマーカー
+        int32_t alpha_marker_num = static_cast<int32_t>(std::ssize(gradient.m_marker_manager.getAlphaMarkerPos()));
+        std::vector<AlphaMarker> alpha_markers(alpha_marker_num);
+        auto alpha_marker_values     = gradient.m_marker_manager.getAlphaMarkerValues();
+        auto alpha_marker_positionts = gradient.m_marker_manager.getAlphaMarkerPos();
+        auto alpha_marker_midpoints  = gradient.m_marker_manager.getAlphaMidpointRatios();
+        for (int32_t i = 0; i < alpha_marker_num; ++i) {
+            alpha_markers[i].value = alpha_marker_values[i];
+            alpha_markers[i].position = alpha_marker_positionts[i];
+            if (i < alpha_marker_num - 1) {
+                alpha_markers[i].midpoint = alpha_marker_midpoints[i];
+            } else {
+                alpha_markers[i].midpoint = 0.5f;
+            }
+        }
+
+        history.color_markers      = color_markers;
+        history.alpha_markers      = alpha_markers;
+        history.color_blur_width   = gradient.getBlurWidth();
+        history.alpha_blur_width   = gradient.getAlphaBlurWidth();
         history.color_space        = gradient.getColorSpace();
         history.interpolation_path = gradient.getInterpDir();
         return history;
@@ -682,18 +766,18 @@ public:
     }
 
     // 履歴操作
-    ConfigWriteResult writeHistory(const HistoryConfig& cfg)
+    ConfigWriteResult writeHistory(const History& cfg)
     {
         return writeConfigFile(cfg, m_history_path);
     }
 
-    ConfigWriteResult addHistory(HistoryConfig& cfg, OldGradientHistory history)
+    ConfigWriteResult addHistory(History& cfg, GradientHistory history)
     {
         cfg.histories.push_back(std::move(history));
         return writeConfigFile(cfg, m_history_path);
     }
 
-    ConfigWriteResult deleteHistory(HistoryConfig& cfg)
+    ConfigWriteResult deleteHistory(History& cfg)
     {
         cfg.histories.clear();
         return writeConfigFile(cfg, m_history_path);
