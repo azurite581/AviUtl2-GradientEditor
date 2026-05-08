@@ -16,6 +16,9 @@
 #include "imgui_utils.h"
 #include "plugin2_utils.h"
 #include "str_conv.h"
+#include "grd_parser.h"
+
+#include <nfd.h>
 
 MainView::MainView(LoggerWrapperInterface* logger_wrapper, ConfigWrapperInterface* config_wrapper)
     : m_logger_wrapper{logger_wrapper}, m_config_wrapper{config_wrapper}
@@ -125,6 +128,48 @@ void MainView::render()
 
     // メニューバーの描画
     if (ImGui::BeginMenuBar()) {
+        if (ImGui::BeginMenu(m_config_wrapper->tr(L"ファイル").c_str())) {
+            if (ImGui::MenuItem(m_config_wrapper->tr(L"GRDファイルの読み込み").c_str(), nullptr)) {
+                nfdpathset_t out_path_set;
+                nfdresult_t result;
+                const nfdchar_t* filter_list = "grd,GRD";
+                const nfdchar_t* default_path = NULL;
+
+                result = NFD_OpenDialogMultiple(filter_list, default_path, &out_path_set);
+                switch (result) {
+                case NFD_OKAY:
+                {
+                    for (size_t i = 0; i < NFD_PathSet_GetCount(&out_path_set); ++i) {
+                        std::filesystem::path grd_path = NFD_PathSet_GetPath(&out_path_set, i);
+                        auto grd = parseGRD(grd_path);
+                        if (!grd) {
+                            m_logger_wrapper->error("{}", grd.error());
+                        } else {
+                            auto presets = GradientConfigManager::grd2preset(grd.value());
+                            for (const auto& preset : presets) {
+                                auto file_name = grd_path.stem().string();
+
+                                // ファイル名をカテゴリー名として読み込む
+                                m_config_manager.addCategory(m_preset_config, file_name);
+                                auto categories = m_config_manager.loadCategories(m_preset_config);
+                                m_preset_window.setCategories(categories);
+
+                                m_config_manager.addPreset(m_preset_config, preset, preset.name, file_name);
+                            }
+                        }
+                    }
+                    NFD_PathSet_Free(&out_path_set);
+                    break;
+                }
+                case NFD_CANCEL:
+                    break;
+                case NFD_ERROR:
+                    m_logger_wrapper->error("{}", NFD_GetError());
+                    break;
+                }
+            }
+            ImGui::EndMenu();
+        }
         if (ImGui::BeginMenu(m_config_wrapper->tr(L"表示").c_str())) {
             ImGui::MenuItem(m_config_wrapper->tr(L"プリセット").c_str(), nullptr, &m_window_visible.preset_window);
             ImGui::MenuItem(m_config_wrapper->tr(L"履歴").c_str(), nullptr, &m_window_visible.history_window);

@@ -8,12 +8,16 @@
 #include <string>
 #include <string_view>
 #include <vector>
+#include <variant>
+#include <numbers>
+#include <unordered_set>
 
 #include "color_conv.h"
 #include "gradient_data.h"
 #include "gradient_marker.h"
 #include "json.hpp"
 #include "str_conv.h"
+#include "grd_parser.h"
 
 // 共通の結果型
 template <typename T>
@@ -544,7 +548,7 @@ public:
         auto color_marker_positions = gradient.m_marker_manager.getMarkerPos();
         auto color_marker_midpoints = gradient.m_marker_manager.getMidpointRatios();
         for (int32_t i = 0; i < color_marker_num; ++i) {
-            uint32_t rgba              = color_conv::vec4Rgba2u32Rgba<ImVec4>(color_marker_colors[i]);
+            uint32_t rgba              = color_conv::vec4normRgba2u32Rgba<ImVec4>(color_marker_colors[i]);
             color_markers[i].color    = std::format("0x{:08X}", rgba);
             color_markers[i].position = color_marker_positions[i];
             if (i < color_marker_num - 1) {
@@ -578,6 +582,118 @@ public:
         preset.interpolation_path = gradient.getInterpDir();
 
         return preset;
+    }
+
+    // Photoshop Gradient から Gradient Editor のプリセット形式に変換
+    static std::vector<GradientPreset> grd2preset(const GRD& grd, const std::string& category_name = "uncategorized")
+    {
+        std::vector<GradientPreset> gradient_preset;
+        for (const auto& grad : grd.gradient_list.gradient_list) {
+            GradientPreset preset;
+            preset.name = grad.gradient_name;
+            preset.category = category_name;
+
+            // 対応する項目がないものは初期値にする
+            preset.alpha_blur_width = 1.0f;
+            preset.color_space = 0;
+            preset.interpolation_path = 0;
+
+            bool conversion_completed = true;
+            if (grad.gradient_form == "CstS" && grad.gradient_object.index() == 0) {
+                const auto& solid_grad = std::get<0>(grad.gradient_object);
+
+                // ぼかし幅
+                preset.color_blur_width = static_cast<float>(solid_grad.interpolation / 4096.0);
+
+                // カラーマーカー
+                int32_t color_marker_num = solid_grad.color_stops.item_num;
+                std::vector<ColorMarker> color_markers;
+                for (int32_t j = 0; j < color_marker_num; ++j) {
+                    const auto& col = solid_grad.color_stops.color_stop_objects[j];
+
+                    ColorMarker color_marker;
+                    color_marker.position = static_cast<float>(col.location / 4096.0);
+                    color_marker.midpoint = static_cast<float>(col.midpoint / 100.0);
+
+                    // 色の形式に応じて変換
+                    // using ColorObject = std::variant<BookColor, CMYC, Grsc, HSBC, LbCl, RGBC>;
+                    int32_t color_type_index = col.color_object.index();
+                    switch (color_type_index) {
+                    case 0:  // BookColor
+                        conversion_completed = false;
+                        break;
+                    case 1:  // CMYC
+                        conversion_completed = false;
+                        break;
+                    case 2:  // Grsc
+                    {
+                        const auto& gray = std::get<2>(col.color_object);
+                        const auto u32_gray = static_cast<uint32_t>((gray.gray / 100.0) * 255.0f + 0.5f);
+                        const auto u32_rgba = color_conv::vec4Rgba2u32Rgba<ImVec4>({static_cast<float>(u32_gray), static_cast<float>(u32_gray), static_cast<float>(u32_gray), 255.0f});
+                        color_marker.color = std::format("0x{:08X}", u32_rgba);
+                        break;
+                    }
+                    case 3:  // HSBC
+                    {
+                        const auto& hsb = std::get<3>(col.color_object);
+                        const auto norm_srgb = color_conv::hsv2srgb({hsb.hue * std::numbers::pi / 180.0, hsb.saturate / 100.0, hsb.brightness / 100.0});
+                        const ImVec4 norm_rgba = ImVec4{ static_cast<float>(norm_srgb.r), static_cast<float>(norm_srgb.g), static_cast<float>(norm_srgb.b), 1.0f };
+                        const auto u32_rgba = color_conv::vec4normRgba2u32Rgba<ImVec4>(norm_rgba);
+                        color_marker.color = std::format("0x{:08X}", u32_rgba);
+                        break;
+                    }
+                    case 4:  // LbCl
+                    {
+                        const auto& lab = std::get<4>(col.color_object);
+                        const auto norm_srgb = color_conv::d50lab2srgb({lab.luminance, lab.a, lab.b});
+                        const ImVec4 norm_rgba = ImVec4{ static_cast<float>(norm_srgb.r), static_cast<float>(norm_srgb.g), static_cast<float>(norm_srgb.b), 1.0f };
+                        const auto u32_rgba = color_conv::vec4normRgba2u32Rgba<ImVec4>(norm_rgba);
+                        color_marker.color = std::format("0x{:08X}", u32_rgba);
+                        break;
+                    }
+                    case 5:  // RGBC
+                    {
+                        const auto& rgb = std::get<5>(col.color_object);
+                        const ImVec4 rgba = ImVec4{ static_cast<float>(rgb.red), static_cast<float>(rgb.green), static_cast<float>(rgb.blue), 255.0f };
+                        const auto u32_rgba = color_conv::vec4Rgba2u32Rgba<ImVec4>(rgba);
+                        color_marker.color = std::format("0x{:08X}", u32_rgba);
+                        break;
+                    }
+                    default:
+                        conversion_completed = false;
+                        break;
+                    }
+                    color_markers.push_back(color_marker);
+                }
+
+                if (!conversion_completed) {
+                    break;
+                }
+                preset.color_markers = color_markers;
+
+                // 不透明度マーカー
+                std::vector<AlphaMarker> alpha_markers;
+                for (const auto& transparency : solid_grad.transparency_stops.transparency_stop_objects) {
+                    AlphaMarker alpha_marker;
+                    alpha_marker.value = static_cast<float>(transparency.opacity / 100.0);
+                    alpha_marker.position = static_cast<float>(transparency.location / 4096.0);
+                    alpha_marker.midpoint = static_cast<float>(transparency.midpoint / 100.0);
+                    alpha_markers.push_back(alpha_marker);
+                }
+                preset.alpha_markers = alpha_markers;
+            } else {
+                // ノイズグラデーションは無視する
+                conversion_completed = false;
+                continue;
+            }
+
+            // 全ての変換が成功したときだけプリセットに追加
+            if (conversion_completed) {
+                gradient_preset.push_back(preset);
+            }
+        }
+
+        return gradient_preset;
     }
 
     static GradientData history2gradient(const GradientHistory& history)
@@ -624,7 +740,7 @@ public:
         auto color_marker_positions = gradient.m_marker_manager.getMarkerPos();
         auto color_marker_midpoints = gradient.m_marker_manager.getMidpointRatios();
         for (int32_t i = 0; i < color_marker_num; ++i) {
-            uint32_t rgba              = color_conv::vec4Rgba2u32Rgba<ImVec4>(color_marker_colors[i]);
+            uint32_t rgba              = color_conv::vec4normRgba2u32Rgba<ImVec4>(color_marker_colors[i]);
             color_markers[i].color    = std::format("0x{:08X}", rgba);
             color_markers[i].position = color_marker_positions[i];
             if (i < color_marker_num - 1) {
@@ -716,9 +832,41 @@ public:
     }
 
     // カテゴリー操作
+    std::vector<std::string> loadCategories(Preset& cfg)
+    {
+        std::vector<std::string> categories;
+        std::unordered_set<std::string> seen;
+
+        if (!cfg.categories.empty()) {
+            // 重複無しでカテゴリーを読み込む
+            for (const auto& [i, category] : cfg.categories | std::views::enumerate) {
+                if (seen.insert(category).second) {
+                    categories.push_back(category);
+                }
+            }
+        } else {
+            categories.push_back(GradientConfigManager::DEFAULT_CATEGORY);
+        }
+
+        return categories;
+    }
+
     ConfigWriteResult addCategory(Preset& cfg, std::string_view name)
     {
+        bool category_name_exists = false;
+        for (const auto& category : cfg.categories) {
+            if (category == name) {
+                category_name_exists = true;
+                break;
+            }
+        }
+
+        if (category_name_exists) {
+            return { true, "" };
+        }
+
         cfg.categories.push_back(name.data());
+
         return writeConfigFile(cfg, m_preset_path);
     }
 

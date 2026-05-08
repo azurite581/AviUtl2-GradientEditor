@@ -656,7 +656,7 @@ void GradientMarkerManager::changeColor(const int32_t id, const ImVec4& new_colo
 // 比率に基づいて中間点の絶対座標を再計算する
 void GradientMarkerManager::updateMidpointsPos()
 {
-    for (size_t i = 0; i < m_markers.size() - 1; ++i) {
+    for (int32_t i = 0; i < static_cast<int32_t>(std::ssize(m_markers)) - 1; ++i) {
         float left_pos  = m_markers[i].pos;
         float right_pos = m_markers[i + 1].pos;
         float ratio     = m_markers[i].midpoint.ratio;
@@ -668,7 +668,7 @@ void GradientMarkerManager::updateMidpointsPos()
 
 void GradientMarkerManager::updateAlphaMidpointsPos()
 {
-    for (size_t i = 0; i < m_alpha_markers.size() - 1; ++i) {
+    for (int32_t i = 0; i < static_cast<int32_t>(std::ssize(m_alpha_markers)) - 1; ++i) {
         float left_pos  = m_alpha_markers[i].pos;
         float right_pos = m_alpha_markers[i + 1].pos;
         float ratio     = m_alpha_markers[i].midpoint.ratio;

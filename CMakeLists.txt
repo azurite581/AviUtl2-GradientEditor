@@ -8,7 +8,7 @@ if(NOT DEFINED PLUGIN_VERSION)
     set(PLUGIN_VERSION "0.1.0")
 endif()
 
-project(GradientEditor LANGUAGES CXX)
+project(GradientEditor LANGUAGES C CXX)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(IMGUI_SOURCE third_party/imgui)
@@ -17,6 +17,7 @@ set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
 
 # .cpp font file generation
 include(${CMAKE_SOURCE_DIR}/src/fonts/ImGuiFontCodegen.cmake)
+imgui_font_codegen(${IMGUI_SOURCE}/misc/fonts/binary_to_compressed_c.cpp)
 
 # shader compilation
 include(${CMAKE_SOURCE_DIR}/src/shaders/CompileShaders.cmake)
@@ -80,6 +81,24 @@ target_link_libraries(imgui_dx11 PUBLIC
 )
 target_link_libraries(${PROJECT_NAME} PRIVATE imgui_dx11)
 
+# Native File Dialog
+set(NFD_SOURCE third_party/nativefiledialog/src)
+if(WIN32)
+    add_library(nfd STATIC
+        ${NFD_SOURCE}/nfd_common.c
+        ${NFD_SOURCE}/nfd_win.cpp
+    )
+    target_include_directories(nfd
+        PUBLIC
+            ${NFD_SOURCE}/include
+    )
+    target_link_libraries(nfd
+        PRIVATE
+            comctl32
+    )
+endif()
+target_link_libraries(${PROJECT_NAME} PRIVATE nfd)
+
 target_include_directories(${PROJECT_NAME} PRIVATE src)
 target_include_directories(${PROJECT_NAME} PRIVATE src/core)
 target_include_directories(${PROJECT_NAME} PRIVATE src/fonts)
@@ -89,6 +108,7 @@ target_include_directories(${PROJECT_NAME} PRIVATE src/ui/widgets)
 target_include_directories(${PROJECT_NAME} PRIVATE src/utils/aviutl2)
 target_include_directories(${PROJECT_NAME} PRIVATE src/utils/common)
 target_include_directories(${PROJECT_NAME} PRIVATE src/utils/imgui)
+target_include_directories(${PROJECT_NAME} PRIVATE src/utils/grd_parser)
 target_include_directories(${PROJECT_NAME} PRIVATE preset)
 
 # AviUtl2 SDK
@@ -99,6 +119,7 @@ target_include_directories(${PROJECT_NAME} PRIVATE third_party/json/single_inclu
 
 # IconFont
 target_include_directories(${PROJECT_NAME} PRIVATE third_party/IconFontCppHeaders)
+
 
 if(WIN32)
     target_compile_definitions(${PROJECT_NAME} PRIVATE UNICODE _UNICODE)

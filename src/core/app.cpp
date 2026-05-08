@@ -217,6 +217,12 @@ void App::renderFrame()
     gradient_editor::g_app_state.d3d_manager.setSwapChainOccluded(false);
     gradient_editor::g_app_state.d3d_manager.handleWindowResize();
 
+    // 再入を防ぐ（WM_SIZE 等で renderFrame が再帰的に呼ばれる可能性がある）
+    static thread_local bool s_in_render = false;
+    if (s_in_render)
+        return;
+    s_in_render = true;
+
     ImGui_ImplDX11_NewFrame();
     ImGui_ImplWin32_NewFrame();
     ImGui::NewFrame();
@@ -249,6 +255,9 @@ void App::renderFrame()
 
     HRESULT hr = gradient_editor::g_app_state.d3d_manager.getSwapChain()->Present(1, 0);
     gradient_editor::g_app_state.d3d_manager.setSwapChainOccluded(hr == DXGI_STATUS_OCCLUDED);
+
+    // 再入フラグを解除
+    s_in_render = false;
 }
 
 void App::cleanup()
