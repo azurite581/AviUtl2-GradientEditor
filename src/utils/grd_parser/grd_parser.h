@@ -5,26 +5,27 @@
 #define NOMINMAX
 #include <windows.h>
 
-#include <iostream>
-#include <fstream>
-#include <format>
-#include <filesystem>
-#include <vector>
-#include <string_view>
-#include <string>
-#include <expected>
+#include <array>
 #include <bit>
 #include <concepts>
-#include <variant>
-#include <array>
 #include <cstddef>
+#include <expected>
+#include <filesystem>
+#include <format>
+#include <fstream>
+#include <iostream>
+#include <string>
+#include <string_view>
+#include <variant>
+#include <vector>
+
 
 template <std::integral T>
 inline std::expected<T, std::string> parseIntBE(std::ifstream& file)
 {
     T n = 0;
     if (!file.read(reinterpret_cast<char*>(&n), sizeof(n))) {
-        return std::unexpected{ std::format("Failed to read {}-byte ASCII from stream", sizeof(T)) };
+        return std::unexpected{std::format("Failed to read {}-byte ASCII from stream", sizeof(T))};
     }
     return std::byteswap(n);
 }
@@ -33,7 +34,7 @@ inline std::expected<std::string, std::string> parseID(std::ifstream& file)
 {
     auto len = parseIntBE<uint32_t>(file);
     if (!len) {
-        return std::unexpected{ len.error() };
+        return std::unexpected{len.error()};
     }
     if (len.value() == 0) {
         len = 4;
@@ -42,7 +43,7 @@ inline std::expected<std::string, std::string> parseID(std::ifstream& file)
     std::string id;
     id.resize(len.value());
     if (!file.read(id.data(), len.value())) {
-        return std::unexpected{ std::format("Failed to read {}-byte ASCII from stream", len.value()) };
+        return std::unexpected{std::format("Failed to read {}-byte ASCII from stream", len.value())};
     }
 
     return id;
@@ -50,20 +51,21 @@ inline std::expected<std::string, std::string> parseID(std::ifstream& file)
 
 inline std::expected<std::string, std::string> parseItemType(std::ifstream& file)
 {
-    char item_type[5] = { 0 };
+    char item_type[5] = {0};
     if (!file.read(item_type, 4)) {
-        return std::unexpected{ "Failed to read 4-byte ASCII from stream" };
+        return std::unexpected{"Failed to read 4-byte ASCII from stream"};
     }
     return item_type;
 }
 
-inline std::expected<int32_t, std::string> parseInt32(std::ifstream& file) {
+inline std::expected<int32_t, std::string> parseInt32(std::ifstream& file)
+{
     auto item_type = parseItemType(file);
     if (!item_type) {
-        return std::unexpected{ item_type.error() };
+        return std::unexpected{item_type.error()};
     }
     if (item_type.value() != "long") {
-        return std::unexpected{ "Failed to parse \"long\"" };
+        return std::unexpected{"Failed to parse \"long\""};
     }
 
     return parseIntBE<int32_t>(file);
@@ -73,34 +75,35 @@ inline std::expected<int32_t, std::string> parseInt32WithID(std::ifstream& file,
 {
     auto id = parseID(file);
     if (!id) {
-        return std::unexpected{ id.error() };
+        return std::unexpected{id.error()};
     }
     if (id.value() != expected_id) {
-        return std::unexpected{ "Failed to parse " + std::string{expected_id} };
+        return std::unexpected{"Failed to parse " + std::string{expected_id}};
     }
 
     return parseInt32(file);
 }
 
-inline std::expected<std::vector<std::byte>, std::string> parseRawData(std::ifstream& file) {
+inline std::expected<std::vector<std::byte>, std::string> parseRawData(std::ifstream& file)
+{
     auto item_type = parseItemType(file);
     if (!item_type) {
-        return std::unexpected{ item_type.error() };
+        return std::unexpected{item_type.error()};
     }
     if (item_type.value() != "tdta") {
-        return std::unexpected{ "Failed to parse \"tdta\"" };
+        return std::unexpected{"Failed to parse \"tdta\""};
     }
 
     auto len = parseIntBE<uint32_t>(file);
     if (!len) {
-        return std::unexpected{ len.error() };
+        return std::unexpected{len.error()};
     }
 
     std::vector<std::byte> raw_data;
     raw_data.resize(len.value());
 
     if (!file.read(reinterpret_cast<char*>(raw_data.data()), len.value())) {
-        return std::unexpected{ std::format("Failed to read {}-byte data from stream", len.value()) };
+        return std::unexpected{std::format("Failed to read {}-byte data from stream", len.value())};
     }
 
     return raw_data;
@@ -110,7 +113,7 @@ inline std::expected<bool, std::string> parseBoolean(std::ifstream& file)
 {
     uint8_t b;
     if (!file.read(reinterpret_cast<char*>(&b), 1)) {
-        return std::unexpected{ "Failed to read 1-byte from stream" };
+        return std::unexpected{"Failed to read 1-byte from stream"};
     }
 
     return b != 0;
@@ -120,10 +123,10 @@ inline std::expected<bool, std::string> parseBool(std::ifstream& file)
 {
     auto item_type = parseItemType(file);
     if (!item_type) {
-        return std::unexpected{ item_type.error() };
+        return std::unexpected{item_type.error()};
     }
     if (item_type.value() != "bool") {
-        return std::unexpected{ "Failed to parse \"bool\"" };
+        return std::unexpected{"Failed to parse \"bool\""};
     }
 
     return parseBoolean(file);
@@ -133,7 +136,7 @@ inline std::expected<double, std::string> parseDoubleBE(std::ifstream& file)
 {
     auto value = parseIntBE<int64_t>(file);
     if (!value) {
-        return std::unexpected{ value.error() };
+        return std::unexpected{value.error()};
     }
 
     return std::bit_cast<double>(value.value());
@@ -143,10 +146,10 @@ inline std::expected<double, std::string> parseDouble(std::ifstream& file)
 {
     auto item_type = parseItemType(file);
     if (!item_type) {
-        return std::unexpected{ item_type.error() };
+        return std::unexpected{item_type.error()};
     }
     if (item_type.value() != "doub") {
-        return std::unexpected{ "Failed to parse doub" };
+        return std::unexpected{"Failed to parse doub"};
     }
 
     return parseDoubleBE(file);
@@ -156,18 +159,18 @@ inline std::expected<double, std::string> parseDoubleWithID(std::ifstream& file,
 {
     auto id = parseID(file);
     if (!id) {
-        return std::unexpected{ id.error() };
+        return std::unexpected{id.error()};
     }
     if (id.value() != expected_id) {
-        return std::unexpected{ "Failed to parse " + std::string{expected_id} };
+        return std::unexpected{"Failed to parse " + std::string{expected_id}};
     }
 
     auto item_type = parseItemType(file);
     if (!item_type) {
-        return std::unexpected{ item_type.error() };
+        return std::unexpected{item_type.error()};
     }
     if (item_type.value() != "doub") {
-        return std::unexpected{ "Failed to parse doub" };
+        return std::unexpected{"Failed to parse doub"};
     }
 
     return parseDoubleBE(file);
@@ -177,18 +180,18 @@ inline std::expected<double, std::string> parseUnitDouble(std::ifstream& file, s
 {
     auto item_type = parseItemType(file);
     if (!item_type) {
-        return std::unexpected{ item_type.error() };
+        return std::unexpected{item_type.error()};
     }
     if (item_type.value() != "UntF") {
-        return std::unexpected{ "Failed to parse \"UntF\"" };
+        return std::unexpected{"Failed to parse \"UntF\""};
     }
 
     auto unit_id = parseItemType(file);
     if (!unit_id) {
-        return std::unexpected{ unit_id.error() };
+        return std::unexpected{unit_id.error()};
     }
     if (unit_id.value() != expected_unit_id) {
-        return std::unexpected{ "Failed to parse " + std::string{expected_unit_id} };
+        return std::unexpected{"Failed to parse " + std::string{expected_unit_id}};
     }
 
     return parseDoubleBE(file);
@@ -198,10 +201,10 @@ inline std::expected<double, std::string> parseUnitDoubleWithID(std::ifstream& f
 {
     auto id = parseID(file);
     if (!id) {
-        return std::unexpected{ id.error() };
+        return std::unexpected{id.error()};
     }
     if (id.value() != expected_id) {
-        return std::unexpected{ "Failed to parse " + std::string{expected_id} };
+        return std::unexpected{"Failed to parse " + std::string{expected_id}};
     }
 
     return parseUnitDouble(file, expected_unit_id);
@@ -210,13 +213,13 @@ inline std::expected<double, std::string> parseUnitDoubleWithID(std::ifstream& f
 inline std::expected<std::string, std::string> parseUTF16BE(std::ifstream& file, const uint32_t str_len)
 {
     if (str_len == 0) {
-        return std::unexpected{ "文字数の長さが不正です" };
+        return std::unexpected{"文字数の長さが不正です"};
     }
 
     uint32_t byte_len = str_len * 2;
     std::vector<uint8_t> buffer(byte_len);
     if (!file.read(reinterpret_cast<char*>(buffer.data()), byte_len)) {
-        return std::unexpected{ "ファイルからの読み込みに失敗しました" };
+        return std::unexpected{"ファイルからの読み込みに失敗しました"};
     }
 
     std::u16string u16str;
@@ -238,15 +241,15 @@ inline std::expected<int32_t, std::string> parseListItemNum(std::ifstream& file)
 {
     auto item_type = parseItemType(file);
     if (!item_type) {
-        return std::unexpected{ item_type.error() };
+        return std::unexpected{item_type.error()};
     }
     if (item_type != "VlLs") {
-        return std::unexpected{ "Failed to parse \"VlLs\"" };
+        return std::unexpected{"Failed to parse \"VlLs\""};
     }
 
     auto list_item_num = parseIntBE<int32_t>(file);
     if (!list_item_num) {
-        return std::unexpected{ list_item_num.error() };
+        return std::unexpected{list_item_num.error()};
     }
 
     return list_item_num.value();
@@ -261,20 +264,20 @@ inline std::expected<std::string, std::string> parseUnicodeString(std::ifstream&
 {
     auto item_type = parseItemType(file);
     if (!item_type) {
-        return std::unexpected{ item_type.error() };
+        return std::unexpected{item_type.error()};
     }
     if (item_type != "TEXT") {
-        return std::unexpected{ "Failed to parse \"TEXT\"" };
+        return std::unexpected{"Failed to parse \"TEXT\""};
     }
 
     auto text_len = parseIntBE<uint32_t>(file);
     if (!text_len) {
-        return std::unexpected{ text_len.error() };
+        return std::unexpected{text_len.error()};
     }
 
     auto text = parseUTF16BE(file, text_len.value());
     if (!text) {
-        return std::unexpected{ text.error() };
+        return std::unexpected{text.error()};
     }
 
     return text.value();
@@ -289,43 +292,43 @@ inline std::expected<Object, std::string> parseObject(std::ifstream& file)
 {
     auto item_type = parseItemType(file);
     if (!item_type) {
-        return std::unexpected{ item_type.error() };
+        return std::unexpected{item_type.error()};
     }
     if (item_type.value() != "Objc") {
-        return std::unexpected{ "Failed to parse \"Objc\"" };
+        return std::unexpected{"Failed to parse \"Objc\""};
     }
 
     auto class_name_len = parseIntBE<uint32_t>(file);
     if (!class_name_len) {
-        return std::unexpected{ class_name_len.error() };
+        return std::unexpected{class_name_len.error()};
     }
 
     auto class_name = parseUTF16BE(file, class_name_len.value());
     if (!class_name) {
-        return std::unexpected{ class_name.error() };
+        return std::unexpected{class_name.error()};
     }
 
     auto class_id = parseID(file);
     if (!class_id) {
-        return std::unexpected{ class_id.error() };
+        return std::unexpected{class_id.error()};
     }
 
     auto key_item_num = parseIntBE<uint32_t>(file);
     if (!key_item_num) {
-        return std::unexpected{ key_item_num.error() };
+        return std::unexpected{key_item_num.error()};
     }
 
-    return Object{ Class{ class_name.value(), class_id.value() }, key_item_num.value() };
+    return Object{Class{class_name.value(), class_id.value()}, key_item_num.value()};
 }
 
 inline std::expected<uint64_t, std::string> parseInterpolation(std::ifstream& file)
 {
     auto id = parseID(file);
     if (!id) {
-        return std::unexpected{ id.error() };
+        return std::unexpected{id.error()};
     }
     if (id.value() != "Intr") {
-        return std::unexpected{ "Failed to parse \"Intr\"" };
+        return std::unexpected{"Failed to parse \"Intr\""};
     }
 
     return parseDouble(file);
@@ -335,10 +338,10 @@ inline std::expected<std::string, std::string> parseName(std::ifstream& file)
 {
     auto id = parseID(file);
     if (!id) {
-        return std::unexpected{ id.error() };
+        return std::unexpected{id.error()};
     }
     if (id.value() != "Nm  ") {
-        return std::unexpected{ "Failed to parse \"Nm  \"" };
+        return std::unexpected{"Failed to parse \"Nm  \""};
     }
 
     return parseUnicodeString(file);
@@ -355,10 +358,10 @@ inline std::expected<std::string, std::string> parseBk(std::ifstream& file)
 {
     auto id = parseID(file);
     if (!id) {
-        return std::unexpected{ id.error() };
+        return std::unexpected{id.error()};
     }
     if (id.value() != "Bk  ") {
-        return std::unexpected{ "Failed to parse \"Bk  \"" };
+        return std::unexpected{"Failed to parse \"Bk  \""};
     }
 
     return parseUnicodeString(file);
@@ -368,10 +371,10 @@ inline std::expected<int32_t, std::string> parseBookID(std::ifstream& file)
 {
     auto id = parseID(file);
     if (!id) {
-        return std::unexpected{ id.error() };
+        return std::unexpected{id.error()};
     }
     if (id.value() != "bookID") {
-        return std::unexpected{ "Failed to parse \"bookID\"" };
+        return std::unexpected{"Failed to parse \"bookID\""};
     }
 
     return parseInt32(file);
@@ -381,10 +384,10 @@ inline std::expected<std::vector<std::byte>, std::string> parseBookKey(std::ifst
 {
     auto id = parseID(file);
     if (!id) {
-        return std::unexpected{ id.error() };
+        return std::unexpected{id.error()};
     }
     if (id.value() != "bookKey") {
-        return std::unexpected{ "Failed to parse \"bookKey\"" };
+        return std::unexpected{"Failed to parse \"bookKey\""};
     }
 
     return parseRawData(file);
@@ -394,25 +397,25 @@ inline std::expected<BookColor, std::string> parseBkCl(std::ifstream& file)
 {
     auto book_name = parseBk(file);
     if (!book_name) {
-        return std::unexpected{ book_name.error() };
+        return std::unexpected{book_name.error()};
     }
 
     auto color_name = parseName(file);
     if (!color_name) {
-        return std::unexpected{ color_name.error() };
+        return std::unexpected{color_name.error()};
     }
 
     auto book_id = parseBookID(file);
     if (!book_id) {
-        return std::unexpected{ book_id.error() };
+        return std::unexpected{book_id.error()};
     }
 
     auto book_key = parseBookKey(file);
     if (!book_key) {
-        return std::unexpected{ book_key.error() };
+        return std::unexpected{book_key.error()};
     }
 
-    return BookColor{ book_name.value(), color_name.value(), book_id.value(), book_key.value() };
+    return BookColor{book_name.value(), color_name.value(), book_id.value(), book_key.value()};
 }
 
 struct Enumerated {
@@ -424,45 +427,45 @@ inline std::expected<Enumerated, std::string> parseEnumrated(std::ifstream& file
 {
     auto item_type = parseItemType(file);
     if (!item_type) {
-        return std::unexpected{ item_type.error() };
+        return std::unexpected{item_type.error()};
     }
     if (item_type != "enum") {
-        return std::unexpected{ "Failed to parse \"enum\"" };
+        return std::unexpected{"Failed to parse \"enum\""};
     }
 
     auto enum_type_id = parseID(file);
     if (!enum_type_id) {
-        return std::unexpected{ enum_type_id.error() };
+        return std::unexpected{enum_type_id.error()};
     }
 
     auto enum_value_id = parseID(file);
     if (!enum_value_id) {
-        return std::unexpected{ enum_value_id.error() };
+        return std::unexpected{enum_value_id.error()};
     }
-    return Enumerated{ enum_type_id.value(), enum_value_id.value() };
+    return Enumerated{enum_type_id.value(), enum_value_id.value()};
 }
 
 inline std::expected<std::string, std::string> parseEnumratedWithTypeID(std::ifstream& file, std::string_view expected_type_id)
 {
     auto item_type = parseItemType(file);
     if (!item_type) {
-        return std::unexpected{ item_type.error() };
+        return std::unexpected{item_type.error()};
     }
     if (item_type != "enum") {
-        return std::unexpected{ "Failed to parse \"enum\"" };
+        return std::unexpected{"Failed to parse \"enum\""};
     }
 
     auto enum_type_id = parseID(file);
     if (!enum_type_id) {
-        return std::unexpected{ enum_type_id.error() };
+        return std::unexpected{enum_type_id.error()};
     }
     if (enum_type_id.value() != expected_type_id) {
-        return std::unexpected{ std::format("Failed to parse \"{}\"", expected_type_id) };
+        return std::unexpected{std::format("Failed to parse \"{}\"", expected_type_id)};
     }
 
     auto enum_value_id = parseID(file);
     if (!enum_value_id) {
-        return std::unexpected{ enum_value_id.error() };
+        return std::unexpected{enum_value_id.error()};
     }
 
     return enum_value_id.value();
@@ -472,27 +475,23 @@ inline std::expected<Enumerated, std::string> parseGradientForm(std::ifstream& f
 {
     auto id = parseID(file);
     if (!id) {
-        return std::unexpected{ id.error() };
+        return std::unexpected{id.error()};
     }
     if (id.value() != "GrdF") {
-        return std::unexpected{ "Failed to parse \"GrdF\"" };
+        return std::unexpected{"Failed to parse \"GrdF\""};
     }
 
     return parseEnumrated(file);
 }
 
-
-
-
-
 inline std::expected<Enumerated, std::string> parseType(std::ifstream& file)
 {
     auto id = parseID(file);
     if (!id) {
-        return std::unexpected{ id.error() };
+        return std::unexpected{id.error()};
     }
     if (id.value() != "Type") {
-        return std::unexpected{ "Failed to parse \"Type\"" };
+        return std::unexpected{"Failed to parse \"Type\""};
     }
 
     return parseEnumrated(file);
@@ -508,20 +507,20 @@ inline std::expected<HSBC, std::string> parseHSBC(std::ifstream& file)
 {
     auto hue = parseUnitDoubleWithID(file, "#Ang", "H   ");
     if (!hue) {
-        return std::unexpected{ hue.error() };
+        return std::unexpected{hue.error()};
     }
 
     auto saturate = parseDoubleWithID(file, "Strt");
     if (!saturate) {
-        return std::unexpected{ saturate.error() };
+        return std::unexpected{saturate.error()};
     }
 
     auto brightness = parseDoubleWithID(file, "Brgh");
     if (!brightness) {
-        return std::unexpected{ brightness.error() };
+        return std::unexpected{brightness.error()};
     }
 
-    return HSBC{ hue.value(), saturate.value(), brightness.value() };
+    return HSBC{hue.value(), saturate.value(), brightness.value()};
 }
 
 struct RGBC {
@@ -534,20 +533,20 @@ inline std::expected<RGBC, std::string> parseRGBC(std::ifstream& file)
 {
     auto red = parseDoubleWithID(file, "Rd  ");
     if (!red) {
-        return std::unexpected{ red.error() };
+        return std::unexpected{red.error()};
     }
 
     auto green = parseDoubleWithID(file, "Grn ");
     if (!green) {
-        return std::unexpected{ green.error() };
+        return std::unexpected{green.error()};
     }
 
     auto blue = parseDoubleWithID(file, "Bl  ");
     if (!blue) {
-        return std::unexpected{ blue.error() };
+        return std::unexpected{blue.error()};
     }
 
-    return RGBC{ red.value(), green.value(), blue.value() };
+    return RGBC{red.value(), green.value(), blue.value()};
 }
 
 struct CMYC {
@@ -561,25 +560,25 @@ inline std::expected<CMYC, std::string> parseCMYC(std::ifstream& file)
 {
     auto cyan = parseDoubleWithID(file, "Cyn ");
     if (!cyan) {
-        return std::unexpected{ cyan.error() };
+        return std::unexpected{cyan.error()};
     }
 
     auto magenta = parseDoubleWithID(file, "Mgnt");
     if (!magenta) {
-        return std::unexpected{ magenta.error() };
+        return std::unexpected{magenta.error()};
     }
 
     auto yellow = parseDoubleWithID(file, "Ylw ");
     if (!yellow) {
-        return std::unexpected{ yellow.error() };
+        return std::unexpected{yellow.error()};
     }
 
     auto black = parseDoubleWithID(file, "Blck");
     if (!black) {
-        return std::unexpected{ black.error() };
+        return std::unexpected{black.error()};
     }
 
-    return CMYC{ magenta.value(), magenta.value(), yellow.value(), black.value() };
+    return CMYC{magenta.value(), magenta.value(), yellow.value(), black.value()};
 }
 
 struct Grsc {
@@ -590,10 +589,10 @@ inline std::expected<Grsc, std::string> parseGrsc(std::ifstream& file)
 {
     auto gray = parseDoubleWithID(file, "Gry ");
     if (!gray) {
-        return std::unexpected{ gray.error() };
+        return std::unexpected{gray.error()};
     }
 
-    return Grsc{ gray.value() };
+    return Grsc{gray.value()};
 }
 
 struct LbCl {
@@ -606,20 +605,20 @@ inline std::expected<LbCl, std::string> parseLbCl(std::ifstream& file)
 {
     auto luminance = parseDoubleWithID(file, "Lmnc");
     if (!luminance) {
-        return std::unexpected{ luminance.error() };
+        return std::unexpected{luminance.error()};
     }
 
     auto a = parseDoubleWithID(file, "A   ");
     if (!a) {
-        return std::unexpected{ a.error() };
+        return std::unexpected{a.error()};
     }
 
     auto b = parseDoubleWithID(file, "B   ");
     if (!b) {
-        return std::unexpected{ b.error() };
+        return std::unexpected{b.error()};
     }
 
-    return LbCl{ luminance.value(), a.value(), b.value() };
+    return LbCl{luminance.value(), a.value(), b.value()};
 }
 
 using ColorObject = std::variant<BookColor, CMYC, Grsc, HSBC, LbCl, RGBC>;
@@ -667,7 +666,6 @@ struct PrintColorObject {
         std::cout << std::format("green: {}", color.green) << "\n";
         std::cout << std::format("blue: {}", color.blue) << "\n";
     }
-
 };
 
 struct ColorStopObject {
@@ -702,64 +700,59 @@ inline std::expected<ColorObject, std::string> parseColorObject(std::ifstream& f
 {
     auto objc = parseObject(file);
     if (!objc) {
-        return std::unexpected{ objc.error() };
+        return std::unexpected{objc.error()};
     }
 
     std::string color_type = objc.value().class_.id;
     if (color_type == "BkCl") {
         auto book_color = parseBkCl(file);
         if (!book_color) {
-            return std::unexpected{ book_color.error() };
+            return std::unexpected{book_color.error()};
         }
         return book_color.value();
-    }
-    else if (color_type == "CMYC") {
+    } else if (color_type == "CMYC") {
         auto cmyk = parseCMYC(file);
         if (!cmyk) {
-            return std::unexpected{ cmyk.error() };
+            return std::unexpected{cmyk.error()};
         }
         return cmyk.value();
-    }
-    else if (color_type == "Grsc") {
+    } else if (color_type == "Grsc") {
         auto gray = parseGrsc(file);
         if (!gray) {
-            return std::unexpected{ gray.error() };
+            return std::unexpected{gray.error()};
         }
         return gray.value();
-    }
-    else if (color_type == "HSBC") {
+    } else if (color_type == "HSBC") {
         auto hsb = parseHSBC(file);
         if (!hsb) {
-            return std::unexpected{ hsb.error() };
+            return std::unexpected{hsb.error()};
         }
         return hsb.value();
-    }
-    else if (color_type == "LbCl") {
+    } else if (color_type == "LbCl") {
         auto lab = parseLbCl(file);
         if (!lab) {
-            return std::unexpected{ lab.error() };
+            return std::unexpected{lab.error()};
         }
         return lab.value();
-    }
-    else if (color_type == "RGBC") {
+    } else if (color_type == "RGBC") {
         auto rgb = parseRGBC(file);
         if (!rgb) {
-            return std::unexpected{ rgb.error() };
+            return std::unexpected{rgb.error()};
         }
         return rgb.value();
     }
 
-    return std::unexpected{ "Failed to parse Color Object" };
+    return std::unexpected{"Failed to parse Color Object"};
 }
 
 inline std::expected<Enumerated, std::string> parseColorStopType(std::ifstream& file)
 {
     auto type = parseType(file);
     if (!type) {
-        return std::unexpected{ type.error() };
+        return std::unexpected{type.error()};
     }
     if (type.value().type_id != "Clry") {
-        return std::unexpected{ "Failed to parse \"Clry\"" };
+        return std::unexpected{"Failed to parse \"Clry\""};
     }
 
     return type;
@@ -771,41 +764,41 @@ inline std::expected<ColorStopObject, std::string> parseColorStopObject(std::ifs
 
     auto objc = parseObject(file);
     if (!objc) {
-        return std::unexpected{ objc.error() };
+        return std::unexpected{objc.error()};
     }
     if (objc.value().class_.id != "Clrt") {
-        return std::unexpected{ "Failed to parse \"Clrt\"" };
+        return std::unexpected{"Failed to parse \"Clrt\""};
     }
 
     auto id = parseID(file);
     if (!id) {
-        return std::unexpected{ id.error() };
+        return std::unexpected{id.error()};
     }
     if (id.value() != "Clr ") {
-        return std::unexpected{ "Failed to parse \"Clr \"" };
+        return std::unexpected{"Failed to parse \"Clr \""};
     }
 
     auto color_object = parseColorObject(file);
     if (!color_object) {
-        return std::unexpected{ color_object.error() };
+        return std::unexpected{color_object.error()};
     }
     color_stop_object.color_object = color_object.value();
 
     auto color_stop_type = parseColorStopType(file);
     if (!color_stop_type) {
-        return std::unexpected{ color_stop_type.error() };
+        return std::unexpected{color_stop_type.error()};
     }
     color_stop_object.type = color_stop_type.value().value_id;
 
     auto location = parseInt32WithID(file, "Lctn");
     if (!location) {
-        return std::unexpected{ "Failed to parse \"Lctn\"" };
+        return std::unexpected{"Failed to parse \"Lctn\""};
     }
     color_stop_object.location = location.value();
 
     auto midpoint = parseInt32WithID(file, "Mdpn");
     if (!midpoint) {
-        return std::unexpected{ "Failed to parse \"Mdpn\"" };
+        return std::unexpected{"Failed to parse \"Mdpn\""};
     }
     color_stop_object.midpoint = midpoint.value();
 
@@ -831,15 +824,15 @@ inline std::expected<ColorStops, std::string> parseColorStops(std::ifstream& fil
 
     auto id = parseID(file);
     if (!id) {
-        return std::unexpected{ id.error() };
+        return std::unexpected{id.error()};
     }
     if (id.value() != "Clrs") {
-        return std::unexpected{ "Failed to parse \"Clrs\"" };
+        return std::unexpected{"Failed to parse \"Clrs\""};
     }
 
     auto list_item_num = parseListItemNum(file);
     if (!list_item_num) {
-        return std::unexpected{ list_item_num.error() };
+        return std::unexpected{list_item_num.error()};
     }
     color_stops.item_num = list_item_num.value();
 
@@ -847,7 +840,7 @@ inline std::expected<ColorStops, std::string> parseColorStops(std::ifstream& fil
     for (auto& object : color_stop_objects) {
         auto color_stop_object = parseColorStopObject(file);
         if (!color_stop_object) {
-            return std::unexpected{ color_stop_object.error() };
+            return std::unexpected{color_stop_object.error()};
         }
         object = color_stop_object.value();
     }
@@ -875,27 +868,27 @@ inline std::expected<TransparencyStopObject, std::string> parseTransparencyStopO
 
     auto objc = parseObject(file);
     if (!objc) {
-        return std::unexpected{ objc.error() };
+        return std::unexpected{objc.error()};
     }
     if (objc.value().class_.id != "TrnS") {
-        return std::unexpected{ "Failed to parse \"TrnS\"" };
+        return std::unexpected{"Failed to parse \"TrnS\""};
     }
 
     auto opacity = parseUnitDoubleWithID(file, "#Prc", "Opct");
     if (!opacity) {
-        return std::unexpected{ opacity.error() };
+        return std::unexpected{opacity.error()};
     }
     transparency_stop_object.opacity = opacity.value();
 
     auto location = parseInt32WithID(file, "Lctn");
     if (!location) {
-        return std::unexpected{ location.error() };
+        return std::unexpected{location.error()};
     }
     transparency_stop_object.location = location.value();
 
     auto midpoint = parseInt32WithID(file, "Mdpn");
     if (!midpoint) {
-        return std::unexpected{ midpoint.error() };
+        return std::unexpected{midpoint.error()};
     }
     transparency_stop_object.midpoint = midpoint.value();
 
@@ -919,22 +912,22 @@ inline std::expected<TransparencyStops, std::string> parseTransparencyStops(std:
 
     auto id = parseID(file);
     if (!id) {
-        return std::unexpected{ id.error() };
+        return std::unexpected{id.error()};
     }
     if (id.value() != "Trns") {
-        return std::unexpected{ "Failed to parse \"Trns\"" };
+        return std::unexpected{"Failed to parse \"Trns\""};
     }
 
     auto list_item_num = parseListItemNum(file);
     if (!list_item_num) {
-        return std::unexpected{ list_item_num.error() };
+        return std::unexpected{list_item_num.error()};
     }
 
     std::vector<TransparencyStopObject> stop_objects(list_item_num.value());
     for (auto& e : stop_objects) {
         auto stop_object = parseTransparencyStopObject(file);
         if (!stop_object) {
-            return std::unexpected{ stop_object.error() };
+            return std::unexpected{stop_object.error()};
         }
         e = stop_object.value();
     }
@@ -962,19 +955,19 @@ inline std::expected<CustomStopsGradientObject, std::string> parseCustomStopsGra
 
     auto interpolation = parseInterpolation(file);
     if (!interpolation) {
-        return std::unexpected{ interpolation.error() };
+        return std::unexpected{interpolation.error()};
     }
     custom_sops_gradient_object.interpolation = interpolation.value();
 
     auto color_stops = parseColorStops(file);
     if (!color_stops) {
-        return std::unexpected{ color_stops.error() };
+        return std::unexpected{color_stops.error()};
     }
     custom_sops_gradient_object.color_stops = color_stops.value();
 
     auto transparency_stops = parseTransparencyStops(file);
     if (!transparency_stops) {
-        return std::unexpected{ transparency_stops.error() };
+        return std::unexpected{transparency_stops.error()};
     }
     custom_sops_gradient_object.transparency_stops = transparency_stops.value();
 
@@ -1008,68 +1001,68 @@ inline std::expected<ColorNoiseGradientObject, std::string> parseColorNoiseGradi
 
     auto id = parseID(file);
     if (id != "ShTr") {
-        return std::unexpected{ id.error() };
+        return std::unexpected{id.error()};
     }
     auto show_transparency = parseBool(file);
     if (!show_transparency) {
-        return std::unexpected{ show_transparency.error() };
+        return std::unexpected{show_transparency.error()};
     }
     color_noise_gradient_object.show_transparency = show_transparency.value();
 
     id = parseID(file);
     if (id != "VctC") {
-        return std::unexpected{ id.error() };
+        return std::unexpected{id.error()};
     }
     auto vector_color = parseBool(file);
     if (!vector_color) {
-        return std::unexpected{ vector_color.error() };
+        return std::unexpected{vector_color.error()};
     }
     color_noise_gradient_object.vector_color = vector_color.value();
 
     id = parseID(file);
     if (id != "ClrS") {
-        return std::unexpected{ id.error() };
+        return std::unexpected{id.error()};
     }
     auto color_space = parseEnumratedWithTypeID(file, "ClrS");
     if (!color_space) {
-        return std::unexpected{ color_space.error() };
+        return std::unexpected{color_space.error()};
     }
     color_noise_gradient_object.color_space = color_space.value();
 
     auto random_seed = parseInt32WithID(file, "RndS");
     if (!random_seed) {
-        return std::unexpected{ random_seed.error() };
+        return std::unexpected{random_seed.error()};
     }
     color_noise_gradient_object.random_seed = random_seed.value();
 
     auto smoothness = parseInt32WithID(file, "Smth");
     if (!smoothness) {
-        return std::unexpected{ smoothness.error() };
+        return std::unexpected{smoothness.error()};
     }
     color_noise_gradient_object.smoothness = smoothness.value();
 
     id = parseID(file);
     if (id != "Mnm ") {
-        return std::unexpected{ id.error() };
+        return std::unexpected{id.error()};
     }
     [[maybe_unused]] auto list_num = parseListItemNum(file);
     for (auto& e : color_noise_gradient_object.minimum_values) {
         auto value = parseDouble(file);
         if (!value) {
-            return std::unexpected{ value.error() };
+            return std::unexpected{value.error()};
         }
         e = value.value();
     }
 
     id = parseID(file);
     if (id != "Mxm ") {
-        return std::unexpected{ id.error() };
+        return std::unexpected{id.error()};
     }
     list_num = parseListItemNum(file);
     for (auto& e : color_noise_gradient_object.maximum_values) {
         auto value = parseDouble(file);
         if (!value) {
-            return std::unexpected{ value.error() };
+            return std::unexpected{value.error()};
         }
         e = value.value();
     }
@@ -1110,43 +1103,43 @@ inline std::expected<Gradient, std::string> parseGradient(std::ifstream& file)
 
     auto object = parseObject(file);
     if (!object) {
-        return std::unexpected{ object.error() };
+        return std::unexpected{object.error()};
     }
 
     auto id = parseID(file);
     if (!id) {
-        return std::unexpected{ id.error() };
+        return std::unexpected{id.error()};
     }
     if (id.value() != "Grad") {
-        return std::unexpected{ "Failed to parse \"Grad\"" };
+        return std::unexpected{"Failed to parse \"Grad\""};
     }
     object = parseObject(file);
     if (!object) {
-        return std::unexpected{ object.error() };
+        return std::unexpected{object.error()};
     }
 
     auto gradient_name = parseName(file);
     if (!gradient_name) {
-        return std::unexpected{ gradient_name.error() };
+        return std::unexpected{gradient_name.error()};
     }
     gradient.gradient_name = gradient_name.value();
 
     auto gradient_form = parseGradientForm(file);
     if (!gradient_form) {
-        return std::unexpected{ gradient_form.error() };
+        return std::unexpected{gradient_form.error()};
     }
     gradient.gradient_form = gradient_form.value().value_id;
 
     if (gradient_form.value().value_id == "CstS") {
         auto custom_sops_gradient_object = parseCustomStopsGradientObject(file);
         if (!custom_sops_gradient_object) {
-            return std::unexpected{ custom_sops_gradient_object.error() };
+            return std::unexpected{custom_sops_gradient_object.error()};
         }
         gradient.gradient_object = custom_sops_gradient_object.value();
     } else if (gradient_form.value().value_id == "ClNs") {
         auto color_noise_gradient_object = parseColorNoiseGradientObject(file);
         if (!color_noise_gradient_object) {
-            return std::unexpected{ color_noise_gradient_object.error() };
+            return std::unexpected{color_noise_gradient_object.error()};
         }
         gradient.gradient_object = color_noise_gradient_object.value();
     }
@@ -1169,15 +1162,15 @@ inline std::expected<GradientList, std::string> parseGradientList(std::ifstream&
 {
     auto id = parseID(file);
     if (!id) {
-        return std::unexpected{ id.error() };
+        return std::unexpected{id.error()};
     }
     if (id.value() != "GrdL") {
-        return std::unexpected{ "Failed to parse \"GrdL\"" };
+        return std::unexpected{"Failed to parse \"GrdL\""};
     }
 
     auto list_item_num = parseListItemNum(file);
     if (!list_item_num) {
-        return std::unexpected{ list_item_num.error() };
+        return std::unexpected{list_item_num.error()};
     }
 
     std::vector<Gradient> gradient_list(list_item_num.value());
@@ -1185,12 +1178,12 @@ inline std::expected<GradientList, std::string> parseGradientList(std::ifstream&
     for (auto& e : gradient_list) {
         auto gradient = parseGradient(file);
         if (!gradient) {
-            return std::unexpected{ gradient.error() };
+            return std::unexpected{gradient.error()};
         }
         e = gradient.value();
     }
 
-    return GradientList{ gradient_list };
+    return GradientList{gradient_list};
 }
 
 struct Header {
@@ -1203,22 +1196,22 @@ inline std::expected<Header, std::string> parseHeader(std::ifstream& file)
 {
     Header header;
 
-    char signature_[5] = { 0 };
+    char signature_[5] = {0};
     if (!file.read(signature_, 4)) {
-        return std::unexpected{ "Failed to parse signature" };
+        return std::unexpected{"Failed to parse signature"};
     }
     std::string signature = signature_;
-    header.signature = signature;
+    header.signature      = signature;
 
     auto version = parseIntBE<uint16_t>(file);
     if (!version) {
-        return std::unexpected{ version.error() };
+        return std::unexpected{version.error()};
     }
     header.version = version.value();
 
     auto descriptor_version = parseIntBE<uint32_t>(file);
     if (!descriptor_version) {
-        return std::unexpected{ descriptor_version.error() };
+        return std::unexpected{descriptor_version.error()};
     }
     header.descriptor_version = descriptor_version.value();
 
@@ -1234,18 +1227,18 @@ inline std::expected<GRD, std::string> parseGRD(const std::filesystem::path& fil
 {
     std::ifstream file(file_path, std::ios::binary);
     if (!file) {
-        return std::unexpected{ "Failed to load the file" };
+        return std::unexpected{"Failed to load the file"};
     }
 
     auto header = parseHeader(file);
     if (!header) {
-        return std::unexpected{ header.error() };
+        return std::unexpected{header.error()};
     }
     if (header.value().signature != "8BGR") {
-        return std::unexpected{ "Unsupported file format"};
+        return std::unexpected{"Unsupported file format"};
     }
     if (header.value().version != 5) {
-        return std::unexpected{ "Unsupported version" };
+        return std::unexpected{"Unsupported version"};
     }
 
     // 未知領域
@@ -1253,12 +1246,12 @@ inline std::expected<GRD, std::string> parseGRD(const std::filesystem::path& fil
 
     auto gradient_list = parseGradientList(file);
     if (!gradient_list) {
-        return std::unexpected{ gradient_list.error() };
+        return std::unexpected{gradient_list.error()};
     }
 
     // フッターは不要のためパースしない
 
-    return GRD{ header.value(), gradient_list.value() };
+    return GRD{header.value(), gradient_list.value()};
 }
 
 #endif
