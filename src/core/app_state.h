@@ -40,6 +40,8 @@ struct ApplicationState {
     // 設定ファイルのパス
     std::filesystem::path settings_file_path;
 
+    HWND host_app_hwnd = nullptr;
+
     void cleanup()
     {
         if (gui_thread.joinable()) {

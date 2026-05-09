@@ -126,6 +126,7 @@ EXTERN_C __declspec(dllexport) void RegisterPlugin(HOST_APP_TABLE* host)
         host->set_plugin_information(PLUGIN_INFO);
     }
     gradient_editor::g_app_state.edit_handle = host->create_edit_handle();
+    gradient_editor::g_app_state.host_app_hwnd = gradient_editor::g_app_state.edit_handle->get_host_app_window();
 
     std::promise<HWND> p;
     auto f                = p.get_future();

@@ -81,24 +81,6 @@ target_link_libraries(imgui_dx11 PUBLIC
 )
 target_link_libraries(${PROJECT_NAME} PRIVATE imgui_dx11)
 
-# Native File Dialog
-set(NFD_SOURCE third_party/nativefiledialog/src)
-if(WIN32)
-    add_library(nfd STATIC
-        ${NFD_SOURCE}/nfd_common.c
-        ${NFD_SOURCE}/nfd_win.cpp
-    )
-    target_include_directories(nfd
-        PUBLIC
-            ${NFD_SOURCE}/include
-    )
-    target_link_libraries(nfd
-        PRIVATE
-            comctl32
-    )
-endif()
-target_link_libraries(${PROJECT_NAME} PRIVATE nfd)
-
 target_include_directories(${PROJECT_NAME} PRIVATE src)
 target_include_directories(${PROJECT_NAME} PRIVATE src/core)
 target_include_directories(${PROJECT_NAME} PRIVATE src/fonts)

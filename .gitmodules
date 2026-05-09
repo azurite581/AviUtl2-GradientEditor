@@ -11,6 +11,3 @@
 [submodule "third_party/aviutl2_sdk_mirror"]
 	path = third_party/aviutl2_sdk_mirror
 	url = https://github.com/aviutl2/aviutl2_sdk_mirror.git
-[submodule "third_party/nativefiledialog"]
-	path = third_party/nativefiledialog
-	url = https://github.com/mlabbe/nativefiledialog.git
