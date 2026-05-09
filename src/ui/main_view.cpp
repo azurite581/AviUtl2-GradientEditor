@@ -18,7 +18,7 @@
 #include "imgui_utils.h"
 #include "plugin2_utils.h"
 #include "str_conv.h"
-#include "grd_parser.h"
+#include "grd_codec.h"
 #include "file_dialog.h"
 
 MainView::MainView(LoggerWrapperInterface* logger_wrapper, ConfigWrapperInterface* config_wrapper)
