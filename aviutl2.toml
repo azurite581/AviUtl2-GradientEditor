@@ -21,10 +21,6 @@ build = "cd ./script && aulua build"
 source = "./out_script/@GradientEditor.anm2"
 destination = "Script/@GradientEditor.anm2"
 
-[artifacts.GradientEditor_default_preset_json]
-source = "./preset/gradient_editor_default_preset.json"
-destination = "Plugin/GradientEditorPreset/gradient_editor_default_preset.json"
-
 [development]
 aviutl2_version = "latest"
 
@@ -35,4 +31,4 @@ package_template = "package.txt"
 profile = "release"
 output_dir = "release"
 zip_name = "{name}-v{version}"
-include = ["GradientEditor_aux2", "GradientEditor_anm2", "GradientEditor_default_preset_json"]
+include = ["GradientEditor_aux2", "GradientEditor_anm2"]

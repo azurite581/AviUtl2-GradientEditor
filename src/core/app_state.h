@@ -42,6 +42,11 @@ struct ApplicationState {
 
     HWND host_app_hwnd = nullptr;
 
+    struct Settigs {
+        uint32_t ui_scale = 100;
+    };
+    Settigs settings;
+
     void cleanup()
     {
         if (gui_thread.joinable()) {

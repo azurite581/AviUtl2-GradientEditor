@@ -12,21 +12,21 @@
 #include "app_state.h"
 #include "color_conv.h"
 #include "constants.h"
+#include "file_dialog.h"
 #include "gradient_widget.h"
+#include "grd_codec.h"
 #include "imgui.h"
 #include "imgui_internal.h"
 #include "imgui_utils.h"
 #include "plugin2_utils.h"
 #include "str_conv.h"
-#include "grd_codec.h"
-#include "file_dialog.h"
 
 MainView::MainView(LoggerWrapperInterface* logger_wrapper, ConfigWrapperInterface* config_wrapper)
     : m_logger_wrapper{logger_wrapper}, m_config_wrapper{config_wrapper}
 {
     // std::cout の出力先をファイルにリダイレクトする（デバッグ用）
-    //std::ofstream file("log.txt");
-    //std::cout.rdbuf(file.rdbuf());
+    // std::ofstream file("log.txt");
+    // std::cout.rdbuf(file.rdbuf());
 
     m_preset_window.setLoggerWrapper(m_logger_wrapper);
     m_preset_window.setConfigWrapper(m_config_wrapper);
@@ -34,7 +34,7 @@ MainView::MainView(LoggerWrapperInterface* logger_wrapper, ConfigWrapperInterfac
     m_history_window.setConfigWrapper(m_config_wrapper);
     m_script_bridge.setLoggerWrapper(m_logger_wrapper);
 
-    std::filesystem::path data_path = gradient_editor::g_app_state.config_handle->app_data_path;
+    std::filesystem::path data_path          = gradient_editor::g_app_state.config_handle->app_data_path;
     std::filesystem::path config_folder_path = data_path / L"Plugin" / CONFIG_FOLDER_NAME;
 
     // プリセットフォルダがなければ作成
@@ -45,25 +45,11 @@ MainView::MainView(LoggerWrapperInterface* logger_wrapper, ConfigWrapperInterfac
     // プリセットファイルがなければ作成
     std::filesystem::path preset_path = config_folder_path / PRESET_FILE_NAME;
     if (!std::filesystem::exists(preset_path)) {
-        std::error_code ec;
-
-        bool is_copied = std::filesystem::copy_file(
-            config_folder_path / L"gradient_editor_default_preset.json",
-            preset_path,
-            std::filesystem::copy_options::skip_existing,
-            ec
-        );
-
-        // コピー元ファイルが存在しない、またはコピーに失敗した場合
-        if (!is_copied) {
-            m_logger_wrapper->warn("Copy skipped or failed: {}", ec.message());
-
-            std::ofstream ofs(preset_path, std::ios::binary);
-            if (ofs.is_open()) {
-                ofs << GradientConfigManager::DEFAULT_PRESET_FILE_JSON;
-            } else {
-                m_logger_wrapper->error("Failed to create preset file at: {}", preset_path.string());
-            }
+        std::ofstream ofs(preset_path, std::ios::binary);
+        if (ofs.is_open()) {
+            ofs << GradientConfigManager::DEFAULT_PRESET_FILE_JSON;
+        } else {
+            m_logger_wrapper->error("Failed to create preset file at: {}", preset_path.string());
         }
     }
 
@@ -128,13 +114,15 @@ void MainView::render()
     ImGui::Begin("###gradient_editor_window", nullptr, window_flags);
 
     // メニューバーの描画
+    std::string settings_popup_name = m_config_wrapper->tr(L"UIの設定") + "###style_settings";
+    bool open_style_settings_popup  = false;
+
     if (ImGui::BeginMenuBar()) {
         if (ImGui::BeginMenu(m_config_wrapper->tr(L"ファイル").c_str())) {
             if (ImGui::MenuItem(m_config_wrapper->tr(L"プリセットを読み込む").c_str(), nullptr)) {
                 auto open_file_dialog_result = openFiles(gradient_editor::g_app_state.host_app_hwnd);
                 switch (open_file_dialog_result.result) {
-                    case FileDialogResult::FD_OKAY:
-                    {
+                    case FileDialogResult::FD_OKAY: {
                         auto paths = std::get<static_cast<int32_t>(FileDialogResult::FD_OKAY)>(open_file_dialog_result.value);
                         for (const auto& path : paths) {
                             auto grd = parseGRD(path);
@@ -145,9 +133,11 @@ void MainView::render()
 
                             // GRDファイル → プリセット形式変換時のログをまとめて表示
                             auto [presets, message] = GradientConfigManager::grd2preset(grd.value());
-                            for (const auto& msg :message) {
-                                if (msg.starts_with("[Result]")) m_logger_wrapper->log("{}", msg);
-                                else m_logger_wrapper->warn("{}", msg);
+                            for (const auto& msg : message) {
+                                if (msg.starts_with("[Result]"))
+                                    m_logger_wrapper->log("{}", msg);
+                                else
+                                    m_logger_wrapper->warn("{}", msg);
                             }
 
                             // プリセットをプリセットウィンドウに読み込む
@@ -162,12 +152,10 @@ void MainView::render()
                         }
                         break;
                     }
-                    case FileDialogResult::FD_CANCEL:
-                    {
+                    case FileDialogResult::FD_CANCEL: {
                         break;
                     }
-                    case FileDialogResult::FD_ERROR:
-                    {
+                    case FileDialogResult::FD_ERROR: {
                         auto error_msg = std::get<static_cast<int32_t>(FileDialogResult::FD_ERROR)>(open_file_dialog_result.value);
                         m_logger_wrapper->error(L"{}", error_msg);
                         break;
@@ -180,40 +168,38 @@ void MainView::render()
                 if (ImGui::MenuItem(m_config_wrapper->tr(L"現在のグラデーション").c_str(), nullptr)) {
                     auto open_file_dialog_result = writeFile(gradient_editor::g_app_state.host_app_hwnd);
                     switch (open_file_dialog_result.result) {
-                    case FileDialogResult::FD_OKAY:
-                    {
-                        auto path = std::get<static_cast<int32_t>(FileDialogResult::FD_OKAY)>(open_file_dialog_result.value);
-                        std::string file_name = str_conv::wideCharToMultiByte(path.stem().wstring());
+                        case FileDialogResult::FD_OKAY: {
+                            auto path             = std::get<static_cast<int32_t>(FileDialogResult::FD_OKAY)>(open_file_dialog_result.value);
+                            std::string file_name = str_conv::wideCharToMultiByte(path.stem().wstring());
 
-                        if (m_data == nullptr) break;
-                        // グラデーションデータ → グラデーションプリセット形式
-                        auto gradient_preset = GradientConfigManager::gradient2preset(*m_data);
-                        gradient_preset.name = file_name;  // ファイル名をプリセット名にする
+                            if (m_data == nullptr) break;
+                            // グラデーションデータ → グラデーションプリセット形式
+                            auto gradient_preset = GradientConfigManager::gradient2preset(*m_data);
+                            gradient_preset.name = file_name;  // ファイル名をプリセット名にする
 
-                        // グラデーションプリセット → GRD 形式
-                        const auto grd = GradientConfigManager::presets2grd({gradient_preset});
-                        if (!grd) {
-                            m_logger_wrapper->error("{}", grd.error());
+                            // グラデーションプリセット → GRD 形式
+                            const auto grd = GradientConfigManager::presets2grd({gradient_preset});
+                            if (!grd) {
+                                m_logger_wrapper->error("{}", grd.error());
+                                break;
+                            }
+
+                            const auto write_grd_result = writeGRD(grd.value(), path);
+                            if (!write_grd_result) {
+                                m_logger_wrapper->error("{}", write_grd_result.error());
+                            }
+
+                            m_logger_wrapper->log("Successfully exported file: {}", path.string());
                             break;
                         }
-
-                        const auto write_grd_result = writeGRD(grd.value(), path);
-                        if (!write_grd_result) {
-                            m_logger_wrapper->error("{}", write_grd_result.error());
+                        case FileDialogResult::FD_CANCEL: {
+                            break;
                         }
-
-                        break;
-                    }
-                    case FileDialogResult::FD_CANCEL:
-                    {
-                        break;
-                    }
-                    case FileDialogResult::FD_ERROR:
-                    {
-                        auto error_msg = std::get<static_cast<int32_t>(FileDialogResult::FD_ERROR)>(open_file_dialog_result.value);
-                        m_logger_wrapper->error(L"{}", error_msg);
-                        break;
-                    }
+                        case FileDialogResult::FD_ERROR: {
+                            auto error_msg = std::get<static_cast<int32_t>(FileDialogResult::FD_ERROR)>(open_file_dialog_result.value);
+                            m_logger_wrapper->error(L"{}", error_msg);
+                            break;
+                        }
                     }
                 }
 
@@ -224,44 +210,41 @@ void MainView::render()
                         if (ImGui::MenuItem(category.c_str(), nullptr)) {
                             auto open_file_dialog_result = writeFile(gradient_editor::g_app_state.host_app_hwnd);
                             switch (open_file_dialog_result.result) {
-                            case FileDialogResult::FD_OKAY:
-                            {
-                                auto path = std::get<static_cast<int32_t>(FileDialogResult::FD_OKAY)>(open_file_dialog_result.value);
+                                case FileDialogResult::FD_OKAY: {
+                                    auto path = std::get<static_cast<int32_t>(FileDialogResult::FD_OKAY)>(open_file_dialog_result.value);
 
-                                // 選択したカテゴリのプリセットを取得
-                                std::vector<GradientPreset> presets;
-                                for (const auto& [i, preset] : m_preset_config.presets | std::views::enumerate) {
-                                    if (preset.category == category) {
-                                        presets.push_back(preset);
+                                    // 選択したカテゴリのプリセットを取得
+                                    std::vector<GradientPreset> presets;
+                                    for (const auto& [i, preset] : m_preset_config.presets | std::views::enumerate) {
+                                        if (preset.category == category) {
+                                            presets.push_back(preset);
+                                        }
                                     }
-                                }
 
-                                // グラデーションプリセット → GRD 形式
-                                const auto grd = GradientConfigManager::presets2grd(presets);
-                                if (!grd) {
-                                    m_logger_wrapper->error("{}", grd.error());
+                                    // グラデーションプリセット → GRD 形式
+                                    const auto grd = GradientConfigManager::presets2grd(presets);
+                                    if (!grd) {
+                                        m_logger_wrapper->error("{}", grd.error());
+                                        break;
+                                    }
+
+                                    // GRD ファイルとして出力
+                                    const auto write_grd_result = writeGRD(grd.value(), path);
+                                    if (!write_grd_result) {
+                                        m_logger_wrapper->error("{}", write_grd_result.error());
+                                    }
+
+                                    m_logger_wrapper->log("Successfully exported file: {}", path.string());
                                     break;
                                 }
-
-                                // GRD ファイルとして出力
-                                const auto write_grd_result = writeGRD(grd.value(), path);
-                                if (!write_grd_result) {
-                                    m_logger_wrapper->error("{}", write_grd_result.error());
+                                case FileDialogResult::FD_CANCEL: {
+                                    break;
                                 }
-
-                                m_logger_wrapper->log("Preset output successful. Path: {}", path.string());
-                                break;
-                            }
-                            case FileDialogResult::FD_CANCEL:
-                            {
-                                break;
-                            }
-                            case FileDialogResult::FD_ERROR:
-                            {
-                                auto error_msg = std::get<static_cast<int32_t>(FileDialogResult::FD_ERROR)>(open_file_dialog_result.value);
-                                m_logger_wrapper->error(L"{}", error_msg);
-                                break;
-                            }
+                                case FileDialogResult::FD_ERROR: {
+                                    auto error_msg = std::get<static_cast<int32_t>(FileDialogResult::FD_ERROR)>(open_file_dialog_result.value);
+                                    m_logger_wrapper->error(L"{}", error_msg);
+                                    break;
+                                }
                             }
                         }
                     }
@@ -271,12 +254,68 @@ void MainView::render()
             }
             ImGui::EndMenu();
         }
+
         if (ImGui::BeginMenu(m_config_wrapper->tr(L"表示").c_str())) {
             ImGui::MenuItem(m_config_wrapper->tr(L"プリセット").c_str(), nullptr, &m_window_visible.preset_window);
             ImGui::MenuItem(m_config_wrapper->tr(L"履歴").c_str(), nullptr, &m_window_visible.history_window);
             ImGui::EndMenu();
         }
+
+        if (ImGui::BeginMenu(m_config_wrapper->tr(L"設定").c_str())) {
+            if (ImGui::MenuItem(m_config_wrapper->tr(L"UIの設定").c_str(), nullptr)) {
+                open_style_settings_popup = true;
+            }
+            ImGui::EndMenu();
+        }
+
         ImGui::EndMenuBar();
+    }
+
+    if (open_style_settings_popup) {
+        ImGui::OpenPopup(settings_popup_name.c_str());
+    }
+
+    static ImGuiWindowFlags modal_flags = ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoMove;
+    ImVec2 center                       = ImGui::GetMainViewport()->GetCenter();
+    ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
+
+    static float old_font_scale_main = ImGui::GetStyle().FontScaleMain;
+
+    if (ImGui::BeginPopupModal(settings_popup_name.c_str(), nullptr, modal_flags)) {
+        if (ImGui::IsWindowAppearing()) {
+            old_font_scale_main = ImGui::GetStyle().FontScaleMain;
+        }
+
+        static constexpr float ITEM_SPACING_SCALE_Y = 0.25f;
+        ImGui::AlignTextToFramePadding();
+        ImGui::TextUnformatted("UIのサイズ");
+        ImGui::SameLine();
+        static float font_scale_main = old_font_scale_main;
+        if (ImGui::DragFloat("##ui_size", &font_scale_main, 0.02f, 0.5f, 4.0f, "%.2f")) {
+            ImGui::GetStyle().FontScaleMain = font_scale_main;
+        }
+
+        ImGui::Dummy(ImVec2(0, ImGui::GetFrameHeight() * ITEM_SPACING_SCALE_Y));
+
+        float button_width          = ImGui::GetFrameHeight() * 4;
+        float combined_button_width = button_width * 2 + ImGui::GetStyle().ItemSpacing.x * 1;
+        float avail                 = ImGui::GetContentRegionAvail().x;
+        float off                   = (avail - combined_button_width) * 0.5f;
+        if (off > 0.0f) ImGui::SetCursorPosX(ImGui::GetCursorPosX() + off);
+
+        if (ImGui::Button(m_config_wrapper->tr(L"キャンセル").c_str(), ImVec2(button_width, 0))) {
+            font_scale_main = old_font_scale_main;
+            ImGui::GetStyle().FontScaleMain = old_font_scale_main;
+            ImGui::CloseCurrentPopup();
+        }
+        ImGui::SetItemDefaultFocus();
+        ImGui::SameLine();
+        if (ImGui::Button(m_config_wrapper->tr(L"OK").c_str(), ImVec2(button_width, 0))) {
+            gradient_editor::g_app_state.settings.ui_scale = static_cast<uint32_t>(font_scale_main * 100);
+            ImGui::CloseCurrentPopup();
+        }
+
+        ImGui::EndPopup();
     }
 
     static ImGuiWindowClass side_window_class;
@@ -311,7 +350,7 @@ void MainView::renderGradientEditor()
 {
     ImGui::Begin("###gradient_editor_window");
 
-    static float frame_height = ImGui::GetFrameHeight();
+    float frame_height = ImGui::GetFrameHeight();
 
     static GradientData replace_data;
     if (!m_is_init && !m_history_window.m_history_data.empty()) {
@@ -376,7 +415,7 @@ void MainView::renderGradientEditor()
 
     // スクリプトへ反映
     ImGui::SameLine();
-    bool off_to_on = false;
+    bool off_to_on          = false;
     bool create_new_object_ = create_new_object;
     if (imgui_utils::pushToggleButton(m_config_wrapper->tr(L"反映").c_str(), &m_apply, &create_new_object_)) {
         plugin2_utils::call_edit_lambda(gradient_editor::g_app_state.edit_handle->call_edit_section_param, [&](EDIT_SECTION* edit) {
@@ -434,7 +473,7 @@ void MainView::renderGradientEditor()
             // 反映が ON だが対象のエフェクトが付いていない場合
             auto effect_count = edit->count_object_effect(focus_obj, effect_full_name.c_str());
             if (effect_count == 0 && m_apply) {
-                auto alias = edit->get_object_alias(focus_obj);
+                auto alias   = edit->get_object_alias(focus_obj);
                 auto obj_idx = alias_parser::getLastObjectIndex(alias);
                 if (!obj_idx) return;
 
@@ -442,12 +481,12 @@ void MainView::renderGradientEditor()
                 if (!object0_effect_name) return;
 
                 static constexpr const char* EXCLUDE_EFFECTS[6] = {
-                        "オーディオバッファ",
-                        "カメラ制御",
-                        "グループ制御(音声)",
-                        "フィルタ効果",
-                        "音声ファイル",
-                        "時間制御(オブジェクト)",
+                    "オーディオバッファ",
+                    "カメラ制御",
+                    "グループ制御(音声)",
+                    "フィルタ効果",
+                    "音声ファイル",
+                    "時間制御(オブジェクト)",
                 };
                 for (const auto e : EXCLUDE_EFFECTS) {
                     if (object0_effect_name == e) return;
@@ -501,7 +540,7 @@ void MainView::renderGradientEditor()
         ImVec2(std::clamp(ImGui::GetContentRegionAvail().x, 1.0f, 4096.0f), frame_height * scale::relative::GRADIENT_HEIGHT),
         replace_data,
         CustomUI::GradientEditorFlags_None |
-        CustomUI::GradientEditorFlags_AlphaMarker,
+            CustomUI::GradientEditorFlags_AlphaMarker,
         should_replace,
         config);
 
@@ -579,14 +618,14 @@ void MainView::renderGradientEditor()
 
     // グラデーションエディタからスクリプトへ値を反映するかどうかのフラグ
     bool is_changed_apply =
-        off_to_on ||                                              // 「反映」が OFF から ON に切り替わった
-        create_new_object ||                                      // オブジェクトが新たに作成された
-        (m_apply && (                                             // または「反映」ON の状態で、
-                        m_preset_window.isPresetClicked() ||      // プリセットがクリックされた
-                        is_refresh ||                             // 更新ボタンが押された
-                        is_changed_section_effect ||              // 対象とするスクリプトが変更された
-                        is_changed_effect_index ||                // 同じスクリプトが複数ある際、対象とするスクリプトのインデックスが変更された
-                        is_reverse || is_reverse_alpha_marker     // マーカー反転のボタンが押された
+        off_to_on ||                                           // 「反映」が OFF から ON に切り替わった
+        create_new_object ||                                   // オブジェクトが新たに作成された
+        (m_apply && (                                          // または「反映」ON の状態で、
+                        m_preset_window.isPresetClicked() ||   // プリセットがクリックされた
+                        is_refresh ||                          // 更新ボタンが押された
+                        is_changed_section_effect ||           // 対象とするスクリプトが変更された
+                        is_changed_effect_index ||             // 同じスクリプトが複数ある際、対象とするスクリプトのインデックスが変更された
+                        is_reverse || is_reverse_alpha_marker  // マーカー反転のボタンが押された
                         ));
     // または各値がグラデーションエディタ側で変更された
     // マーカーの削除、リセット、均等配置による変更は isChangedValues() で検知できる
@@ -732,8 +771,8 @@ void MainView::renderAlphaPropertyEditor(GradientData* data)
     ImGui::SameLine();
     ImGui::BeginGroup();
     {
-        auto curr    = m_script_bridge.getValues();
-        float width  = ImGui::GetContentRegionAvail().x;
+        auto curr   = m_script_bridge.getValues();
+        float width = ImGui::GetContentRegionAvail().x;
 
         ImGui::SetNextItemWidth(width);
         float value = curr.selected_alpha_marker_value * 100.0f;

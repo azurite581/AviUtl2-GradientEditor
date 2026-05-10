@@ -67,19 +67,19 @@ void HistoryWindow::render(GradientConfigManager& manager, History& cfg)
             ImGui::Text("すべての履歴を削除しますか？");
             ImGui::Dummy(ImVec2(0, ImGui::GetFrameHeight() * ITEM_SPACING_SCALE_Y));
 
-            // 2つのボタンを中央に配置
-            float btn_width = MODAL_WINDOW_WIDTH * 2 + ImGui::GetStyle().ItemSpacing.x * 1;
+            float button_width = ImGui::GetFrameHeight() * 4;
+            float combined_button_width = button_width * 2 + ImGui::GetStyle().ItemSpacing.x * 1;
             float avail     = ImGui::GetContentRegionAvail().x;
-            float off       = (avail - btn_width) * 0.5f;
+            float off       = (avail - combined_button_width) * 0.5f;
             if (off > 0.0f) ImGui::SetCursorPosX(ImGui::GetCursorPosX() + off);
 
-            if (ImGui::Button((m_config_wrapper->tr(L"キャンセル") + "###cancel").c_str(), ImVec2(MODAL_WINDOW_WIDTH, 0))) {
+            if (ImGui::Button((m_config_wrapper->tr(L"キャンセル") + "###cancel").c_str(), ImVec2(button_width, 0))) {
                 ImGui::CloseCurrentPopup();
             }
             ImGui::SetItemDefaultFocus();
             ImGui::SameLine();
 
-            if (ImGui::Button((m_config_wrapper->tr(L"削除") + "###delete_history").c_str(), ImVec2(MODAL_WINDOW_WIDTH, 0))) {
+            if (ImGui::Button((m_config_wrapper->tr(L"削除") + "###delete_history").c_str(), ImVec2(button_width, 0))) {
                 manager.deleteHistory(cfg);
                 loadHistory();
                 ImGui::CloseCurrentPopup();

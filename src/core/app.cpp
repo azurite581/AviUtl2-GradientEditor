@@ -1,5 +1,6 @@
 #include "app.h"
 
+#include <algorithm>
 #include <iterator>
 #include <vector>
 
@@ -81,6 +82,7 @@ void App::run(std::promise<HWND>&& hwnd_promise)
     // imgui.ini を自動生成しないようにする
     io.IniFilename = nullptr;
     readSettings();  // 設定を読み込む
+    style.FontScaleMain = gradient_editor::g_app_state.settings.ui_scale / 100.0f;
 
     ImGui_ImplWin32_Init(hwnd);
     ImGui_ImplDX11_Init(gradient_editor::g_app_state.d3d_manager.getDevice().Get(), gradient_editor::g_app_state.d3d_manager.getDeviceContext().Get());
@@ -128,9 +130,9 @@ void App::run(std::promise<HWND>&& hwnd_promise)
     // テキスト
     style.Colors[ImGuiCol_Text] = aulColor2imVec4("Text");
     // ボタン
-    style.Colors[ImGuiCol_Button]         = aulColor2imVec4("ButtonBody");
-    style.Colors[ImGuiCol_ButtonHovered]  = aulColor2imVec4("ButtonBodyHover");
-    style.Colors[ImGuiCol_ButtonActive]   = aulColor2imVec4("ButtonBodyPress");
+    style.Colors[ImGuiCol_Button]        = aulColor2imVec4("ButtonBody");
+    style.Colors[ImGuiCol_ButtonHovered] = aulColor2imVec4("ButtonBodyHover");
+    style.Colors[ImGuiCol_ButtonActive]  = aulColor2imVec4("ButtonBodyPress");
     // フレーム
     style.Colors[ImGuiCol_FrameBg]        = aulColor2imVec4("ButtonBody");
     style.Colors[ImGuiCol_FrameBgHovered] = aulColor2imVec4("ButtonBodyHover");
@@ -159,10 +161,10 @@ void App::run(std::promise<HWND>&& hwnd_promise)
     style.Colors[ImGuiCol_ResizeGripHovered] = aulColor2imVec4("Border");
     style.Colors[ImGuiCol_ResizeGripActive]  = aulColor2imVec4("BorderFocus");
     // スクロールバー
-    style.Colors[ImGuiCol_ScrollbarBg] = aulColor2imVec4("Background");
-    style.Colors[ImGuiCol_ScrollbarGrab] = aulColor2imVec4("ButtonBody");
+    style.Colors[ImGuiCol_ScrollbarBg]          = aulColor2imVec4("Background");
+    style.Colors[ImGuiCol_ScrollbarGrab]        = aulColor2imVec4("ButtonBody");
     style.Colors[ImGuiCol_ScrollbarGrabHovered] = aulColor2imVec4("ButtonBodyHover");
-    style.Colors[ImGuiCol_ScrollbarGrabActive] = aulColor2imVec4("ButtonBodyPress");
+    style.Colors[ImGuiCol_ScrollbarGrabActive]  = aulColor2imVec4("ButtonBodyPress");
 
     //
     // グラデーションエディタ用の D3D を初期化
@@ -278,11 +280,28 @@ void App::cleanup()
 
 void App::readSettings()
 {
+    auto getConfigInt = [](const std::filesystem::path file_path, const char* section_name, const char* key_name, const uint32_t def) {
+        if (file_path.empty()) {
+            return def;
+        }
+
+        auto result = ::GetPrivateProfileIntA(
+            section_name,
+            key_name,
+            def,
+            file_path.string().c_str());
+
+        return result;
+    };
+
     // 設定ファイル全体を読み込む
     std::ifstream ifs(gradient_editor::g_app_state.settings_file_path);
     std::string settings_content((std::istreambuf_iterator<char>(ifs)), std::istreambuf_iterator<char>());
 
-    // [imgui] セクションを抽出
+    auto ui_scale                                  = getConfigInt(gradient_editor::g_app_state.settings_file_path, "settings", "ui_scale", 100);
+    gradient_editor::g_app_state.settings.ui_scale = std::clamp(ui_scale, 50u, 400u);
+
+    // [imgui] セクション以下全体を抽出
     size_t imgui_start = settings_content.find("[imgui]");
     if (imgui_start == std::string::npos) return;
 
@@ -313,7 +332,13 @@ void App::writeSettings()
     std::string imgui_data_str(imgui_data, imgui_size);
 
     // 再書き込み
-    std::string settings_data_str = "[imgui]\n";
+    std::string settings_data_str{};
+    settings_data_str += "[settings]\n";
+    settings_data_str += std::format("ui_scale={}\n", gradient_editor::g_app_state.settings.ui_scale);
+
+    settings_data_str += "\n";
+
+    settings_data_str += "[imgui]\n";
     settings_data_str += imgui_data_str;
     std::ofstream ofs(gradient_editor::g_app_state.settings_file_path);
     ofs << settings_data_str;
