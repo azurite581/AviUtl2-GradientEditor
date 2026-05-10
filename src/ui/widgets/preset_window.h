@@ -25,6 +25,7 @@ public:
 
     void setCategories(std::vector<std::string>& categories) noexcept { m_categories = categories; }
 
+
 private:
     static constexpr float MODAL_WINDOW_WIDTH   = 120.0f;
     static constexpr float ITEM_SPACING_SCALE_Y = 0.25f;

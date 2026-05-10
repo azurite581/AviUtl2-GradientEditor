@@ -79,6 +79,19 @@ constexpr uint32_t u32Rgba2u32Abgr(const uint32_t rgba)
     return (a << 24) | (b << 16) | (g << 8) | r;
 }
 
+struct RGBA {
+    uint8_t r, g, b, a;
+};
+
+inline RGBA hexRgba2rgba(const uint32_t rgba)
+{
+    return {
+        static_cast<uint8_t>((rgba >> 24) & 0xFF),
+        static_cast<uint8_t>((rgba >> 16) & 0xFF),
+        static_cast<uint8_t>((rgba >> 8)  & 0xFF),
+        static_cast<uint8_t>(rgba & 0xFF),
+    };
+}
 
 inline double gammaDecord(const double x)
 {

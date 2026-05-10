@@ -1,6 +1,7 @@
 #ifndef FILE_DIALOG_H
 #define FILE_DIALOG_H
 
+#include <variant>
 #define WIN32_LEAN_AND_MEAN
 #define NOMINMAX
 #include <shobjidl.h>
@@ -10,7 +11,7 @@
 #include <filesystem>
 #include <string>
 #include <vector>
-
+#include <variant>
 
 inline std::wstring hresultToString(HRESULT hr)
 {
@@ -38,17 +39,25 @@ inline std::wstring hresultToString(HRESULT hr)
     return message;
 }
 
-inline std::expected<std::vector<std::filesystem::path>, std::wstring> openFiles(const HWND owner = nullptr)
-{
-    std::vector<std::filesystem::path> result;
+enum class FileDialogResult {
+    FD_OKAY,
+    FD_CANCEL,
+    FD_ERROR
+};
 
+struct OpenFileDialogResult {
+    FileDialogResult result;
+    std::variant<std::vector<std::filesystem::path>, std::monostate, std::wstring> value;
+};
+
+inline OpenFileDialogResult openFiles(const HWND owner = nullptr)
+{
     HRESULT hr = CoInitializeEx(
         nullptr,
         COINIT_APARTMENTTHREADED);
 
     if (FAILED(hr)) {
-        return std::unexpected{
-            hresultToString(hr)};
+        return { FileDialogResult::FD_ERROR, hresultToString(hr)};
     }
 
     IFileOpenDialog* dialog = nullptr;
@@ -61,9 +70,7 @@ inline std::expected<std::vector<std::filesystem::path>, std::wstring> openFiles
 
     if (FAILED(hr)) {
         CoUninitialize();
-
-        return std::unexpected{
-            hresultToString(hr)};
+        return { FileDialogResult::FD_ERROR, hresultToString(hr)};
     }
 
     COMDLG_FILTERSPEC filters[] = {
@@ -82,8 +89,7 @@ inline std::expected<std::vector<std::filesystem::path>, std::wstring> openFiles
         dialog->Release();
         CoUninitialize();
 
-        return std::unexpected{
-            hresultToString(hr)};
+        return { FileDialogResult::FD_ERROR, hresultToString(hr)};
     }
 
     hr = dialog->SetOptions(
@@ -94,9 +100,7 @@ inline std::expected<std::vector<std::filesystem::path>, std::wstring> openFiles
     if (FAILED(hr)) {
         dialog->Release();
         CoUninitialize();
-
-        return std::unexpected{
-            hresultToString(hr)};
+        return { FileDialogResult::FD_ERROR, hresultToString(hr)};
     }
 
     hr = dialog->Show(owner);
@@ -104,17 +108,13 @@ inline std::expected<std::vector<std::filesystem::path>, std::wstring> openFiles
     if (hr == HRESULT_FROM_WIN32(ERROR_CANCELLED)) {
         dialog->Release();
         CoUninitialize();
-
-        return std::unexpected{
-            L"Canceled"};
+        return { FileDialogResult::FD_CANCEL, std::monostate{}};
     }
 
     if (FAILED(hr)) {
         dialog->Release();
         CoUninitialize();
-
-        return std::unexpected{
-            hresultToString(hr)};
+        return { FileDialogResult::FD_ERROR, hresultToString(hr)};
     }
 
     IShellItemArray* items = nullptr;
@@ -124,9 +124,7 @@ inline std::expected<std::vector<std::filesystem::path>, std::wstring> openFiles
     if (FAILED(hr)) {
         dialog->Release();
         CoUninitialize();
-
-        return std::unexpected{
-            hresultToString(hr)};
+        return { FileDialogResult::FD_ERROR, hresultToString(hr)};
     }
 
     DWORD count = 0;
@@ -137,11 +135,10 @@ inline std::expected<std::vector<std::filesystem::path>, std::wstring> openFiles
         items->Release();
         dialog->Release();
         CoUninitialize();
-
-        return std::unexpected{
-            hresultToString(hr)};
+        return { FileDialogResult::FD_ERROR, hresultToString(hr)};
     }
 
+    std::vector<std::filesystem::path> paths;
     for (DWORD i = 0; i < count; ++i) {
         IShellItem* item = nullptr;
 
@@ -158,8 +155,7 @@ inline std::expected<std::vector<std::filesystem::path>, std::wstring> openFiles
             &path);
 
         if (SUCCEEDED(hr)) {
-            result.emplace_back(path);
-
+            paths.emplace_back(path);
             CoTaskMemFree(path);
         }
 
@@ -171,19 +167,22 @@ inline std::expected<std::vector<std::filesystem::path>, std::wstring> openFiles
 
     CoUninitialize();
 
-    return result;
+    return { FileDialogResult::FD_OKAY, paths };
 }
 
-inline std::expected<std::filesystem::path, std::wstring> writeFile(const HWND owner = nullptr)
-{
-    std::filesystem::path out_path;
+struct WriteFileDialogResult {
+    FileDialogResult result;
+    std::variant<std::filesystem::path, std::monostate, std::wstring> value;
+};
 
+inline WriteFileDialogResult writeFile(const HWND owner = nullptr)
+{
     HRESULT hr = CoInitializeEx(
         nullptr,
         COINIT_APARTMENTTHREADED);
 
     if (FAILED(hr)) {
-        return std::unexpected{hresultToString(hr)};
+        return { FileDialogResult::FD_ERROR, hresultToString(hr)};
     }
 
     IFileSaveDialog* dialog = nullptr;
@@ -196,7 +195,7 @@ inline std::expected<std::filesystem::path, std::wstring> writeFile(const HWND o
 
     if (FAILED(hr)) {
         CoUninitialize();
-        return std::unexpected{hresultToString(hr)};
+        return { FileDialogResult::FD_ERROR, hresultToString(hr)};
     }
 
     COMDLG_FILTERSPEC filters[] = {
@@ -210,13 +209,13 @@ inline std::expected<std::filesystem::path, std::wstring> writeFile(const HWND o
     if (hr == HRESULT_FROM_WIN32(ERROR_CANCELLED)) {
         dialog->Release();
         CoUninitialize();
-        return std::unexpected{L"Canceled"};
+        return { FileDialogResult::FD_CANCEL, std::monostate{}};
     }
 
     if (FAILED(hr)) {
         dialog->Release();
         CoUninitialize();
-        return std::unexpected{hresultToString(hr)};
+        return { FileDialogResult::FD_ERROR, hresultToString(hr)};
     }
 
     IShellItem* item = nullptr;
@@ -226,7 +225,7 @@ inline std::expected<std::filesystem::path, std::wstring> writeFile(const HWND o
     if (FAILED(hr)) {
         dialog->Release();
         CoUninitialize();
-        return std::unexpected{hresultToString(hr)};
+        return { FileDialogResult::FD_ERROR, hresultToString(hr)};
     }
 
     PWSTR path = nullptr;
@@ -239,10 +238,10 @@ inline std::expected<std::filesystem::path, std::wstring> writeFile(const HWND o
         item->Release();
         dialog->Release();
         CoUninitialize();
-        return std::unexpected{hresultToString(hr)};
+        return { FileDialogResult::FD_ERROR, hresultToString(hr)};
     }
 
-    out_path = path;
+    std::filesystem::path out_path = path;
 
     CoTaskMemFree(path);
 
@@ -251,7 +250,7 @@ inline std::expected<std::filesystem::path, std::wstring> writeFile(const HWND o
 
     CoUninitialize();
 
-    return out_path;
+    return { FileDialogResult::FD_OKAY, out_path };
 }
 
 #endif

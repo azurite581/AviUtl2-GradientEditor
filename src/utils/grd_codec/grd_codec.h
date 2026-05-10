@@ -306,13 +306,13 @@ public:
 	std::expected<std::string, std::string> readUTF16BE(uint32_t str_len)
 	{
 		if (str_len == 0) {
-			return std::unexpected{ "文字数の長さが不正です" };
+			return std::unexpected{ "The character count is invalid" };
 		}
 
 		uint32_t byte_len = str_len * 2;
 		std::vector<uint8_t> buffer(byte_len);
 		if (!file_.read(reinterpret_cast<char*>(buffer.data()), byte_len)) {
-			return std::unexpected{ "ファイルからの読み込みに失敗しました" };
+			return std::unexpected{ "Failed to read from file" };
 		}
 
 		std::u16string u16str;

@@ -3,6 +3,7 @@
 
 #include <compare>
 #include <cstdint>
+#include <expected>
 #include <filesystem>
 #include <fstream>
 #include <numbers>
@@ -707,6 +708,76 @@ public:
         message.push_back(result_log);
 
         return {gradient_preset, message};
+    }
+
+    // プリセット形式から GRD 形式に変換する
+    static std::expected<GRD, std::string> presets2grd(const std::vector<GradientPreset>& gradient)
+    {
+        GRD grd;
+        grd.header = {
+            .signature = "8BGR",
+            .version = 5,
+            .descriptor_version = 16,
+        };
+
+        grd.descripter_object = {
+            .key_item_num = 1
+        };
+
+        std::vector<Gradient> gradient_list;
+        for (const auto& g : gradient) {
+            Gradient grd_gradient;
+            grd_gradient.gradient_name = g.name;
+            grd_gradient.gradient_form = "CstS";  // カスタムストップグラデーション形式
+
+            // CustomStopsGradientObject = {interpolation, color_stops, transparency_stops}
+            // interpolation
+            CustomStopsGradientObject grd_gradient_object;
+            grd_gradient_object.interpolation = g.color_blur_width * 4096;
+
+            // color_stops
+            ColorStops color_stops;
+            color_stops.item_num = static_cast<int32_t>(std::ssize(g.color_markers));
+            std::vector<ColorStopObject> color_stop_object(color_stops.item_num);
+            for (int32_t j = 0; auto& cso : color_stop_object) {
+                cso.type = "UsrS";  // ユーザーストップ
+                cso.location = static_cast<int32_t>(g.color_markers[j].position * 4096.0);
+                cso.midpoint = static_cast<int32_t>(g.color_markers[j].midpoint * 100.0);
+
+                RGBC rgbc;
+                uint32_t t = std::stoul(g.color_markers[j].color, nullptr, 16);
+                auto rgba = color_conv::hexRgba2rgba(t);
+                rgbc.red = rgba.r;
+                rgbc.green = rgba.g;
+                rgbc.blue = rgba.b;
+
+                cso.color_object.color_type = "RGBC";
+                cso.color_object.color_object_variant = rgbc;
+
+                ++j;
+            }
+            color_stops.color_stop_objects = color_stop_object;
+            grd_gradient_object.color_stops = color_stops;
+
+            // transparency_stops
+            TransparencyStops trns_stops;
+            std::vector<TransparencyStopObject> trns_stop_objects;
+            for (const auto& alpha : g.alpha_markers) {
+                TransparencyStopObject trns_stop_object;
+                trns_stop_object.location = static_cast<int32_t>(alpha.position * 4096.0);
+                trns_stop_object.midpoint = static_cast<int32_t>(alpha.midpoint * 100.0);
+                trns_stop_object.opacity = alpha.value * 100.0;
+                trns_stop_objects.push_back(trns_stop_object);
+            }
+            trns_stops.transparency_stop_objects = trns_stop_objects;
+            grd_gradient_object.transparency_stops = trns_stops;
+
+            grd_gradient.gradient_object = grd_gradient_object;
+            gradient_list.push_back(grd_gradient);
+        }
+        grd.gradient_list.gradient_list = gradient_list;
+
+        return grd;
     }
 
     static GradientData history2gradient(const GradientHistory& history)

@@ -131,50 +131,140 @@ void MainView::render()
     if (ImGui::BeginMenuBar()) {
         if (ImGui::BeginMenu(m_config_wrapper->tr(L"ファイル").c_str())) {
             if (ImGui::MenuItem(m_config_wrapper->tr(L"プリセットを読み込む").c_str(), nullptr)) {
-
-                auto load_paths = openFiles(gradient_editor::g_app_state.host_app_hwnd);
-
-                if (load_paths) {
-                    for (const auto& path : load_paths.value()) {
-                        auto grd = parseGRD(path);
-                        if (!grd) {
-                            m_logger_wrapper->error("{}", grd.error());
-                        } else {
-                            // ログをまとめて表示
-                            auto [presets, message] = GradientConfigManager::grd2preset(grd.value());
-                            for (const auto& msg :message) {
-                                if (msg.starts_with("[Result]")) {
-                                    m_logger_wrapper->log("{}", msg);
-                                } else {
-                                    m_logger_wrapper->warn("{}", msg);
-                                }
+                auto open_file_dialog_result = openFiles(gradient_editor::g_app_state.host_app_hwnd);
+                switch (open_file_dialog_result.result) {
+                    case FileDialogResult::FD_OKAY:
+                    {
+                        auto paths = std::get<static_cast<int32_t>(FileDialogResult::FD_OKAY)>(open_file_dialog_result.value);
+                        for (const auto& path : paths) {
+                            auto grd = parseGRD(path);
+                            if (!grd) {
+                                m_logger_wrapper->error("{}", grd.error());
+                                continue;
                             }
 
-                            // プリセットを読み込む
-                            for (const auto& preset : presets) {
-                                std::string file_name = str_conv::wideCharToMultiByte(path.stem().wstring());
+                            // GRDファイル → プリセット形式変換時のログをまとめて表示
+                            auto [presets, message] = GradientConfigManager::grd2preset(grd.value());
+                            for (const auto& msg :message) {
+                                if (msg.starts_with("[Result]")) m_logger_wrapper->log("{}", msg);
+                                else m_logger_wrapper->warn("{}", msg);
+                            }
 
-                                // ファイル名をカテゴリー名として読み込む
+                            // プリセットをプリセットウィンドウに読み込む
+                            for (const auto& preset : presets) {
+                                // ファイル名をカテゴリー名にする
+                                std::string file_name = str_conv::wideCharToMultiByte(path.stem().wstring());
                                 m_config_manager.addCategory(m_preset_config, file_name);
                                 auto categories = m_config_manager.loadCategories(m_preset_config);
                                 m_preset_window.setCategories(categories);
-
                                 m_config_manager.addPreset(m_preset_config, preset, preset.name, file_name);
                             }
                         }
+                        break;
+                    }
+                    case FileDialogResult::FD_CANCEL:
+                    {
+                        break;
+                    }
+                    case FileDialogResult::FD_ERROR:
+                    {
+                        auto error_msg = std::get<static_cast<int32_t>(FileDialogResult::FD_ERROR)>(open_file_dialog_result.value);
+                        m_logger_wrapper->error(L"{}", error_msg);
+                        break;
                     }
                 }
             }
 
             if (ImGui::BeginMenu(m_config_wrapper->tr(L"プリセットを出力").c_str())) {
+                // 現在のグラデーションのみを GRD ファイルとして出力
                 if (ImGui::MenuItem(m_config_wrapper->tr(L"現在のグラデーション").c_str(), nullptr)) {
-                    auto out_path = writeFile(gradient_editor::g_app_state.host_app_hwnd);
-                    if (out_path) {
-                        m_logger_wrapper->log("{}", out_path.value().string());
+                    auto open_file_dialog_result = writeFile(gradient_editor::g_app_state.host_app_hwnd);
+                    switch (open_file_dialog_result.result) {
+                    case FileDialogResult::FD_OKAY:
+                    {
+                        auto path = std::get<static_cast<int32_t>(FileDialogResult::FD_OKAY)>(open_file_dialog_result.value);
+                        std::string file_name = str_conv::wideCharToMultiByte(path.stem().wstring());
+
+                        if (m_data == nullptr) break;
+                        // グラデーションデータ → グラデーションプリセット形式
+                        auto gradient_preset = GradientConfigManager::gradient2preset(*m_data);
+                        gradient_preset.name = file_name;  // ファイル名をプリセット名にする
+
+                        // グラデーションプリセット → GRD 形式
+                        const auto grd = GradientConfigManager::presets2grd({gradient_preset});
+                        if (!grd) {
+                            m_logger_wrapper->error("{}", grd.error());
+                            break;
+                        }
+
+                        const auto write_grd_result = writeGRD(grd.value(), path);
+                        if (!write_grd_result) {
+                            m_logger_wrapper->error("{}", write_grd_result.error());
+                        }
+
+                        break;
+                    }
+                    case FileDialogResult::FD_CANCEL:
+                    {
+                        break;
+                    }
+                    case FileDialogResult::FD_ERROR:
+                    {
+                        auto error_msg = std::get<static_cast<int32_t>(FileDialogResult::FD_ERROR)>(open_file_dialog_result.value);
+                        m_logger_wrapper->error(L"{}", error_msg);
+                        break;
+                    }
                     }
                 }
-                if (ImGui::BeginMenu(m_config_wrapper->tr(L"カテゴリ").c_str())) {
 
+                // カテゴリ内のプリセットをまとめて GRD ファイルとして出力
+                if (ImGui::BeginMenu(m_config_wrapper->tr(L"カテゴリ").c_str())) {
+                    auto categories = m_config_manager.loadCategories(m_preset_config);
+                    for (const auto& category : categories) {
+                        if (ImGui::MenuItem(category.c_str(), nullptr)) {
+                            auto open_file_dialog_result = writeFile(gradient_editor::g_app_state.host_app_hwnd);
+                            switch (open_file_dialog_result.result) {
+                            case FileDialogResult::FD_OKAY:
+                            {
+                                auto path = std::get<static_cast<int32_t>(FileDialogResult::FD_OKAY)>(open_file_dialog_result.value);
+
+                                // 選択したカテゴリのプリセットを取得
+                                std::vector<GradientPreset> presets;
+                                for (const auto& [i, preset] : m_preset_config.presets | std::views::enumerate) {
+                                    if (preset.category == category) {
+                                        presets.push_back(preset);
+                                    }
+                                }
+
+                                // グラデーションプリセット → GRD 形式
+                                const auto grd = GradientConfigManager::presets2grd(presets);
+                                if (!grd) {
+                                    m_logger_wrapper->error("{}", grd.error());
+                                    break;
+                                }
+
+                                // GRD ファイルとして出力
+                                const auto write_grd_result = writeGRD(grd.value(), path);
+                                if (!write_grd_result) {
+                                    m_logger_wrapper->error("{}", write_grd_result.error());
+                                }
+
+                                m_logger_wrapper->log("Preset output successful. Path: {}", path.string());
+                                break;
+                            }
+                            case FileDialogResult::FD_CANCEL:
+                            {
+                                break;
+                            }
+                            case FileDialogResult::FD_ERROR:
+                            {
+                                auto error_msg = std::get<static_cast<int32_t>(FileDialogResult::FD_ERROR)>(open_file_dialog_result.value);
+                                m_logger_wrapper->error(L"{}", error_msg);
+                                break;
+                            }
+                            }
+                        }
+                    }
                     ImGui::EndMenu();
                 }
                 ImGui::EndMenu();
