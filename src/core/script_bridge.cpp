@@ -1,6 +1,7 @@
 #include "script_bridge.h"
 
 #include <algorithm>
+#include <format>
 #include <ranges>
 
 #include "alias_parser.h"
@@ -17,13 +18,15 @@ void ScriptBridge::loadGradientFromScript(EDIT_SECTION* edit,
     OBJECT_HANDLE object_handle = edit->get_focus_object();
     if (!object_handle) return;
 
+    const std::wstring effect_name_with_idx = std::format(L"{}:{}", effect_name, effect_index);
+
     // マーカー数
     uint32_t marker_count = plugin2_utils::getObjectItemValue(edit, object_handle, effect_name.c_str(), effect_index, L"マーカー数", 2u, target_move_index);
     data.getMarkerManager()->changeMarkerCount(marker_count);
 
     auto markers = data.getMarkerManager()->getMarkers();
 
-    std::string pos_array_str = edit->get_object_item_value(object_handle, effect_name.c_str(), L"位置");
+    std::string pos_array_str = edit->get_object_item_value(object_handle, effect_name_with_idx.c_str(), L"位置");
     auto pos_result = alias_parser::splitStr<float>(pos_array_str, ",");
     if (!pos_result) {
         m_logger_wrapper->error("Failed to parse 位置: {}", pos_result.error());
@@ -33,7 +36,7 @@ void ScriptBridge::loadGradientFromScript(EDIT_SECTION* edit,
         }
     }
 
-    std::string mid_array_str = edit->get_object_item_value(object_handle, effect_name.c_str(), L"中間点");
+    std::string mid_array_str = edit->get_object_item_value(object_handle, effect_name_with_idx.c_str(), L"中間点");
     auto mid_result = alias_parser::splitStr<float>(mid_array_str, ",");
     if (!mid_result) {
         m_logger_wrapper->error("Failed to parse 中間点: {}", mid_result.error());
@@ -43,9 +46,9 @@ void ScriptBridge::loadGradientFromScript(EDIT_SECTION* edit,
         }
     }
 
-    std::string color_array_str = edit->get_object_item_value(object_handle, effect_name.c_str(), L"色");
+    std::string color_array_str = edit->get_object_item_value(object_handle, effect_name_with_idx.c_str(), L"色");
     auto color_result = alias_parser::splitStr<uint32_t>(color_array_str, ",");
-    std::string alpha_array_str = edit->get_object_item_value(object_handle, effect_name.c_str(), L"色の透明度");
+    std::string alpha_array_str = edit->get_object_item_value(object_handle, effect_name_with_idx.c_str(), L"色の透明度");
     auto alpha_result = alias_parser::splitStr<float>(alpha_array_str, ",");
     if (!color_result) {
         m_logger_wrapper->error("Failed to parse 色: {}", color_result.error());
@@ -72,7 +75,7 @@ void ScriptBridge::loadGradientFromScript(EDIT_SECTION* edit,
     uint32_t alpha_marker_count = plugin2_utils::getObjectItemValue(edit, object_handle, effect_name.c_str(), effect_index, L"アルファマーカー数", 2u, target_move_index);
     data.getMarkerManager()->changeAlphaMarkerCount(alpha_marker_count);
 
-    std::string alpha_value_array_str = edit->get_object_item_value(object_handle, effect_name.c_str(), L"アルファ値");
+    std::string alpha_value_array_str = edit->get_object_item_value(object_handle, effect_name_with_idx.c_str(), L"アルファ値");
     auto alpha_value_result = alias_parser::splitStr<float>(alpha_value_array_str, ",");
     if (!alpha_value_result) {
         m_logger_wrapper->error("Failed to parse アルファ値: {}", alpha_value_result.error());
@@ -82,7 +85,7 @@ void ScriptBridge::loadGradientFromScript(EDIT_SECTION* edit,
         }
     }
 
-    std::string alpha_pos_array_str = edit->get_object_item_value(object_handle, effect_name.c_str(), L"アルファ位置");
+    std::string alpha_pos_array_str = edit->get_object_item_value(object_handle, effect_name_with_idx.c_str(), L"アルファ位置");
     auto alpha_pos_result = alias_parser::splitStr<float>(alpha_pos_array_str, ",");
     if (!alpha_pos_result) {
         m_logger_wrapper->error("Failed to parse アルファ位置: {}", alpha_pos_result.error());
@@ -92,7 +95,7 @@ void ScriptBridge::loadGradientFromScript(EDIT_SECTION* edit,
         }
     }
 
-    std::string alpha_mid_array_str = edit->get_object_item_value(object_handle, effect_name.c_str(), L"アルファ中間点");
+    std::string alpha_mid_array_str = edit->get_object_item_value(object_handle, effect_name_with_idx.c_str(), L"アルファ中間点");
     auto alpha_mid_result = alias_parser::splitStr<float>(alpha_mid_array_str, ",");
     if (!alpha_mid_result) {
         m_logger_wrapper->error("Failed to parse アルファ中間点: {}", alpha_mid_result.error());
@@ -147,6 +150,8 @@ void ScriptBridge::applyGradientToScript(EDIT_SECTION* edit,
     OBJECT_HANDLE object_handle = edit->get_focus_object();
     if (!object_handle) return;
 
+    const std::wstring effect_name_with_idx = std::format(L"{}:{}", effect_name, effect_index);
+
     auto markers          = data.getMarkerManager()->getMarkers();
     uint32_t marker_count = static_cast<uint32_t>(markers.size());
 
@@ -172,10 +177,10 @@ void ScriptBridge::applyGradientToScript(EDIT_SECTION* edit,
             }
         }
     }
-    edit->set_object_item_value(object_handle, effect_name.c_str(), L"色", col_array_str.c_str());
-    edit->set_object_item_value(object_handle, effect_name.c_str(), L"色の透明度", alpha_array_str.c_str());
-    edit->set_object_item_value(object_handle, effect_name.c_str(), L"位置", pos_array_str.c_str());
-    edit->set_object_item_value(object_handle, effect_name.c_str(), L"中間点", mid_array_str.c_str());
+    edit->set_object_item_value(object_handle, effect_name_with_idx.c_str(), L"色", col_array_str.c_str());
+    edit->set_object_item_value(object_handle, effect_name_with_idx.c_str(), L"色の透明度", alpha_array_str.c_str());
+    edit->set_object_item_value(object_handle, effect_name_with_idx.c_str(), L"位置", pos_array_str.c_str());
+    edit->set_object_item_value(object_handle, effect_name_with_idx.c_str(), L"中間点", mid_array_str.c_str());
 
     // ぼかし幅
     plugin2_utils::setObjectItemValue(edit, object_handle, effect_name.c_str(), effect_index, L"ぼかし幅", data.getBlurWidth() * 100.0f, 100.0f);
@@ -185,7 +190,7 @@ void ScriptBridge::applyGradientToScript(EDIT_SECTION* edit,
 
     auto alpha_markers = data.getMarkerManager()->getAlphaMarkers();
     uint32_t alpha_marker_count = static_cast<uint32_t>(alpha_markers.size());
-    edit->set_object_item_value(object_handle, effect_name.c_str(), L"アルファマーカー数", std::to_string(alpha_marker_count).c_str());
+    edit->set_object_item_value(object_handle, effect_name_with_idx.c_str(), L"アルファマーカー数", std::to_string(alpha_marker_count).c_str());
 
     std::string alpha_pos_array_str, alpha_value_array_str, alpha_mid_array_str;
     for (uint32_t i = 0; i < alpha_marker_count; ++i) {
@@ -201,9 +206,9 @@ void ScriptBridge::applyGradientToScript(EDIT_SECTION* edit,
             }
         }
     }
-    edit->set_object_item_value(object_handle, effect_name.c_str(), L"アルファ位置", alpha_pos_array_str.c_str());
-    edit->set_object_item_value(object_handle, effect_name.c_str(), L"アルファ値", alpha_value_array_str.c_str());
-    edit->set_object_item_value(object_handle, effect_name.c_str(), L"アルファ中間点", alpha_mid_array_str.c_str());
+    edit->set_object_item_value(object_handle, effect_name_with_idx.c_str(), L"アルファ位置", alpha_pos_array_str.c_str());
+    edit->set_object_item_value(object_handle, effect_name_with_idx.c_str(), L"アルファ値", alpha_value_array_str.c_str());
+    edit->set_object_item_value(object_handle, effect_name_with_idx.c_str(), L"アルファ中間点", alpha_mid_array_str.c_str());
 
     // ぼかし幅
     plugin2_utils::setObjectItemValue(edit, object_handle, effect_name.c_str(), effect_index, L"アルファぼかし幅", data.getAlphaBlurWidth() * 100.0f, 100.0f);
