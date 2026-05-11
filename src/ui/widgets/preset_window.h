@@ -28,6 +28,9 @@ public:
 
 private:
     static constexpr float MODAL_WINDOW_WIDTH   = 120.0f;
+
+    // ImGui::GetFrameHeight() を基準としたときの相対スケール
+    static constexpr float PRESET_GRADIENT_HEIGHT = 1.25f;
     static constexpr float ITEM_SPACING_SCALE_Y = 0.25f;
 
     LoggerWrapperInterface* m_logger_wrapper;
@@ -35,6 +38,7 @@ private:
 
     std::string m_preset_name{};
     std::string m_old_category_name{};
+    std::string m_old_preset_name{};
     bool m_is_initialized{false};
     bool m_is_clicked_preset{false};
     GradientData m_selected_gradient;

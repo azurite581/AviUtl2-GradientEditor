@@ -181,7 +181,8 @@ float4 unpremulti(float4 col)
     return col.a > 0.0 ? float4(col.rgb / col.a, 1.0) : float4(col.rgb, 1.0);
 }
 
-float4 psmain(float4 pos : SV_Position, float2 uv : TEXCOORD) : SV_Target {
+float4 psmain(float4 pos : SV_Position, float2 uv : TEXCOORD) : SV_Target
+{
     float4 tex_col = src.Sample(samp, uv);
 
     // アンチエイリアス等でアルファが1未満の場合、RGBがPre-multipliedだと輝度が低く判定されてしまうため、

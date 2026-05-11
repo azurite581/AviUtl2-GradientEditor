@@ -510,6 +510,15 @@ void GradientMarkerManager::resetMidpoints()
     }
 }
 
+void GradientMarkerManager::resetAlphaMidpoints()
+{
+    for (const auto& [i, marker] : m_alpha_markers | std::views::enumerate) {
+        if (i < static_cast<uint32_t>(std::ssize(m_alpha_markers)) - 1) {
+            setAlphaMidpointRatio(marker.id, 0.5f);
+        }
+    }
+}
+
 void GradientMarkerManager::addMarker(const int32_t id, const float marker_pos, const ImVec4& color, const float midpoint_ratio)
 {
     GradientMarkerData new_marker;
@@ -989,6 +998,16 @@ void GradientMarkerManager::distributeMarkersAndMipointsEvenly()
     for (const auto& [i, marker] : m_markers | std::views::enumerate) {
         if (i < static_cast<float>(std::ssize(m_markers) - 1)) {
             moveMidpoint(marker.id, (i + 1) / static_cast<float>(std::ssize(m_markers)));
+        }
+    }
+}
+
+void GradientMarkerManager::distributeAlphaMarkersAndAlphaMipointsEvenly()
+{
+    distributeAlphaMarkersEvenly();
+    for (const auto& [i, marker] : m_alpha_markers | std::views::enumerate) {
+        if (i < static_cast<float>(std::ssize(m_alpha_markers) - 1)) {
+            moveAlphaMidpoint(marker.id, (i + 1) / static_cast<float>(std::ssize(m_alpha_markers)));
         }
     }
 }

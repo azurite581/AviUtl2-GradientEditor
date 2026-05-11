@@ -704,7 +704,7 @@ public:
             }
         }
 
-        auto result_log = std::format("[Result] Number of gradient presets loaded: {}\n", std::ssize(gradient_preset));
+        auto result_log = std::format("Number of gradient presets loaded: {}\n", std::ssize(gradient_preset));
         message.push_back(result_log);
 
         return {gradient_preset, message};

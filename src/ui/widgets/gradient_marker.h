@@ -262,6 +262,7 @@ public:
     void reverseMarkers();
     void reverseAlphaMarkers();
     void resetMidpoints();
+    void resetAlphaMidpoints();
     void sortMarkers();
     void sortAlphaMarkers();
     void sortMarkersById();
@@ -278,6 +279,7 @@ public:
     void distributeMarkersEvenly();
     void distributeAlphaMarkersEvenly();
     void distributeMarkersAndMipointsEvenly();
+    void distributeAlphaMarkersAndAlphaMipointsEvenly();
 
 
     //
