@@ -1012,6 +1012,70 @@ void GradientMarkerManager::distributeAlphaMarkersAndAlphaMipointsEvenly()
     }
 }
 
+void GradientMarkerManager::selectNextMarker()
+{
+    if (std::ssize(m_markers) <= 2) return;
+
+    int32_t idx = getIndexById(m_state.selected_marker_id);
+    if (idx == -1) return;
+
+    ++idx;
+
+    if (idx < std::ssize(m_markers)) {
+        m_state.selected_marker_id = m_markers[idx].id;
+    } else {
+        m_state.selected_marker_id = m_markers.front().id;
+    }
+}
+
+void GradientMarkerManager::selectBackMarker()
+{
+    if (std::ssize(m_markers) <= 2) return;
+
+    int32_t idx = getIndexById(m_state.selected_marker_id);
+    if (idx == -1) return;
+
+    --idx;
+
+    if (idx >= 0) {
+        m_state.selected_marker_id = m_markers[idx].id;
+    } else {
+        m_state.selected_marker_id = m_markers.back().id;
+    }
+}
+
+void GradientMarkerManager::selectNextAlphaMarker()
+{
+    if (std::ssize(m_alpha_markers) <= 2) return;
+
+    int32_t idx = getAlphaIndexById(m_state.selected_alpha_marker_id);
+    if (idx == -1) return;
+
+    ++idx;
+
+    if (idx < std::ssize(m_alpha_markers)) {
+        m_state.selected_alpha_marker_id = m_alpha_markers[idx].id;
+    } else {
+        m_state.selected_alpha_marker_id = m_alpha_markers.front().id;
+    }
+}
+
+void GradientMarkerManager::selectBackAlphaMarker()
+{
+    if (std::ssize(m_alpha_markers) <= 2) return;
+
+    int32_t idx = getAlphaIndexById(m_state.selected_alpha_marker_id);
+    if (idx == -1) return;
+
+    --idx;
+
+    if (idx >= 0) {
+        m_state.selected_alpha_marker_id = m_alpha_markers[idx].id;
+    } else {
+        m_state.selected_alpha_marker_id = m_alpha_markers.back().id;
+    }
+}
+
 void GradientMarkerManager::drawMarker(const char* label, ImVec2 p0, ImVec2 p1, const ImVec4& color, const int32_t id, const bool is_upward) const
 {
     ImDrawList* draw_list = ImGui::GetWindowDrawList();

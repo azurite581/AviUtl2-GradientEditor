@@ -449,8 +449,13 @@ void MainView::renderGradientEditor()
     if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNormal)) ImGui::SetTooltip(m_config_wrapper->tr(L"アルファマーカーをリセット").c_str());
     ImGui::SameLine();
 
-    float alpha_tool_buttons_width = frame_height * 5 + ImGui::GetStyle().ItemSpacing.x * 4;
+    float alpha_tool_buttons_width = frame_height * 7 + ImGui::GetStyle().ItemSpacing.x * 5;
     imgui_utils::alignForWidth(alpha_tool_buttons_width, 1.0f);  // 右揃えにする
+
+    bool select_back_alpha_marker = imgui_utils::squareIconButton(ICON_MS_ARROW_BACK_2, "##select_back_alpha_marker");
+    ImGui::SameLine(0, 0);
+    bool select_next_alpha_marker = imgui_utils::squareIconButton(ICON_MS_PLAY_ARROW, "##select_next_alpha_marker");
+    ImGui::SameLine();
     bool is_distribute_alpha_marker = imgui_utils::squareIconButton(ICON_MS_ARROW_RANGE, "##alpha_marker_distribute");
     if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNormal)) ImGui::SetTooltip(m_config_wrapper->tr(L"アルファマーカーを等間隔に配置").c_str());
     ImGui::SameLine();
@@ -560,9 +565,14 @@ void MainView::renderGradientEditor()
     if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNormal)) ImGui::SetTooltip(m_config_wrapper->tr(L"リセット").c_str());
     ImGui::SameLine();
 
-    float tb_width = frame_height * 5 + ImGui::GetStyle().ItemSpacing.x * 4;
+    constexpr int32_t tool_icon_num = 7;
+    float tb_width = frame_height * tool_icon_num + ImGui::GetStyle().ItemSpacing.x * (tool_icon_num - 2);
     imgui_utils::alignForWidth(tb_width, 1.0f);  // 右揃えにする
 
+    bool select_back_marker = imgui_utils::squareIconButton(ICON_MS_ARROW_BACK_2, "##left");
+    ImGui::SameLine(0, 0);
+    bool select_next_marker = imgui_utils::squareIconButton(ICON_MS_PLAY_ARROW, "##right");
+    ImGui::SameLine();
     bool is_distribute_marker = imgui_utils::squareIconButton(ICON_MS_ARROW_RANGE, "##distribute");
     if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNormal)) ImGui::SetTooltip(m_config_wrapper->tr(L"マーカーを等間隔に配置").c_str());
     ImGui::SameLine();
@@ -585,6 +595,8 @@ void MainView::renderGradientEditor()
         m_data->setInterpDir(0);
         m_data->setColorBlurWidth(1.0f);
     }
+    if (select_back_marker) m_data->getMarkerManager()->selectBackMarker();
+    if (select_next_marker) m_data->getMarkerManager()->selectNextMarker();
     if (is_distribute_marker) m_data->getMarkerManager()->distributeMarkersEvenly();
     if (is_distribute_marker_and_midpoint) m_data->getMarkerManager()->distributeMarkersAndMipointsEvenly();
     if (is_reset_midpoint) m_data->getMarkerManager()->resetMidpoints();
@@ -596,6 +608,8 @@ void MainView::renderGradientEditor()
         m_data->getMarkerManager()->setDefaultAlphaMarkers();
         m_data->setAlphaBlurWidth(1.0f);
     }
+    if (select_back_alpha_marker) m_data->getMarkerManager()->selectBackAlphaMarker();
+    if (select_next_alpha_marker) m_data->getMarkerManager()->selectNextAlphaMarker();
     if (is_distribute_alpha_marker) m_data->getMarkerManager()->distributeAlphaMarkersEvenly();
     if (is_distribute_alpha_marker_and_alpha_midpoint) m_data->getMarkerManager()->distributeAlphaMarkersAndAlphaMipointsEvenly();
     if (is_reset_alpha_midpoint) m_data->getMarkerManager()->resetAlphaMidpoints();

@@ -273,14 +273,16 @@ public:
     void showAlphaSliderPopup();
     void deleteMarker(const int32_t id);
     void deleteAlphaMarker(const int32_t id);
-
     void deleteSelectedMarker();
     void deleteSelectedAlphaMarker();
     void distributeMarkersEvenly();
     void distributeAlphaMarkersEvenly();
     void distributeMarkersAndMipointsEvenly();
     void distributeAlphaMarkersAndAlphaMipointsEvenly();
-
+    void selectNextMarker();
+    void selectBackMarker();
+    void selectNextAlphaMarker();
+    void selectBackAlphaMarker();
 
     //
     // イベント
