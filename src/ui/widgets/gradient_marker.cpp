@@ -342,14 +342,14 @@ void GradientMarkerManager::setDefaultAlphaMarkers(const std::vector<AlphaMarker
     m_alpha_markers.clear();
     for (const auto& [i, marker] : alpha_marker_data | std::views::enumerate) {
         AlphaMarkerData data = {
-            .id    = static_cast<int32_t>(ALPHA_MARKER_ID_OFFSET + i),
+            .id    = static_cast<int32_t>(i),
             .pos   = std::clamp(marker.pos, 0.0f, 1.0f),
             .value = std::clamp(marker.value, 0.0f, 1.0f)};
         m_alpha_markers.push_back(data);
     }
 
-    m_state.selected_alpha_marker_id = ALPHA_MARKER_ID_OFFSET;
-    m_state.alpha_marker_id_counter = static_cast<int32_t>(ALPHA_MARKER_ID_OFFSET + std::ssize(m_alpha_markers));
+    m_state.selected_alpha_marker_id = 0;
+    m_state.alpha_marker_id_counter = static_cast<int32_t>(std::ssize(m_alpha_markers));
 
     sortAlphaMarkers();
     updateAlphaMidpointsPos();
@@ -689,7 +689,7 @@ void GradientMarkerManager::updateMarkerId()
     sortMarkers();  // 位置順に昇順ソートして元の並びに戻す
 }
 
-void GradientMarkerManager::updateMarker(const ImVec2& mouse_pos, const ImVec4& new_marker_color, const uint32_t max_marker_count)
+void GradientMarkerManager::updateMarker(const ImVec2& mouse_pos, const ImVec4& new_marker_color)
 {
     if (!m_io_enable) return;
     if (m_state.clicked_midpoint_id >= 0) return;
@@ -707,7 +707,7 @@ void GradientMarkerManager::updateMarker(const ImVec2& mouse_pos, const ImVec4& 
         m_state.is_marker_added = false;  // 追加モードではない
         float marker_pos        = getMarkerPosFromMousePos(mouse_pos);
         moveMarker(m_state.selected_marker_id, marker_pos);
-    } else if (m_state.clicked_marker_id == std::to_underlying(Region::Marker) && ImGui::IsMouseClicked(ImGuiMouseButton_Left) && !m_state.is_open_popup && std::ssize(m_markers) < max_marker_count) {
+    } else if (m_state.clicked_marker_id == std::to_underlying(Region::Marker) && ImGui::IsMouseClicked(ImGuiMouseButton_Left) && !m_state.is_open_popup && std::ssize(m_markers) < m_marker_max_count) {
         // クリックされた位置に中間点が無く、マーカー描画領域内かつ、現在のマーカー数がマーカーの最大数未満なら
         // クリック位置にマーカーを作成
         float marker_pos = getMarkerPosFromMousePos(mouse_pos);
@@ -725,7 +725,7 @@ void GradientMarkerManager::updateMarker(const ImVec2& mouse_pos, const ImVec4& 
     return;
 }
 
-void GradientMarkerManager::updateAlphaMarker(const ImVec2& mouse_pos, const float new_value, const uint32_t max_alpha_marker_count)
+void GradientMarkerManager::updateAlphaMarker(const ImVec2& mouse_pos, const float new_value)
 {
     if (!m_io_enable) return;
     if (m_state.clicked_alpha_midpoint_id >= 0) return;
@@ -743,7 +743,7 @@ void GradientMarkerManager::updateAlphaMarker(const ImVec2& mouse_pos, const flo
         m_state.is_alpha_marker_added = false;
         float marker_pos              = getMarkerPosFromMousePos(mouse_pos);
         moveAlphaMarker(m_state.selected_alpha_marker_id, marker_pos);
-    } else if (m_state.clicked_alpha_marker_id == std::to_underlying(Region::AlphaMarker) && ImGui::IsMouseClicked(ImGuiMouseButton_Left) && !m_state.is_open_popup && std::ssize(m_alpha_markers) < max_alpha_marker_count) {
+    } else if (m_state.clicked_alpha_marker_id == std::to_underlying(Region::AlphaMarker) && ImGui::IsMouseClicked(ImGuiMouseButton_Left) && !m_state.is_open_popup && std::ssize(m_alpha_markers) < m_marker_max_count) {
         // クリックされた位置にアルファマーカーが無く、アルファマーカー描画領域内かつ、現在のアルファマーカー数がアルファマーカーの最大数未満なら
         // クリック位置にアルファマーカーを作成
         float marker_pos = getMarkerPosFromMousePos(mouse_pos);

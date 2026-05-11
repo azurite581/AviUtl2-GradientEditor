@@ -104,8 +104,10 @@ GradientData* drawGradientEditor(
 
     float marker_half_width = gradient_marker->getMarkerWidth() * 0.5f;
 
+    // コンフィグの設定
+    gradient_marker->setMarkerMaxCount(config.max_marker_count);
     gradient_marker->setIOEnable(config.io_enable);
-    gradient_marker->setMarkerWidth(static_cast<uint32_t>(config.marker_width));  // マーカーの幅をセット
+    gradient_marker->setMarkerWidth(static_cast<uint32_t>(config.marker_width));
 
     // 中間点をグラデーションの上に描画
     if (!(flags & GradientEditorFlags_NoMidpoint) && !((flags & GradientEditorFlags_MidpointBelowGradient)) && !(flags & GradientEditorFlags_AlphaMarker)) {
@@ -219,8 +221,8 @@ GradientData* drawGradientEditor(
     // 中間点をクリックしているかに基づいてマーカーの更新を行うかどうかを判断するため、マーカーの更新は中間点の更新より後に行う必要がある
     gradient_marker->updateMidpoint(mouse_pos);
     gradient_marker->updateAlphaMidpoint(mouse_pos);
-    gradient_marker->updateMarker(mouse_pos, new_marker_color, config.max_marker_count);
-    gradient_marker->updateAlphaMarker(mouse_pos, 1.0f, config.max_marker_count);
+    gradient_marker->updateMarker(mouse_pos, new_marker_color);
+    gradient_marker->updateAlphaMarker(mouse_pos, 1.0f);
 
     ImGui::PushID(gradient_marker);
     gradient_marker->showColorPickerPopup();

@@ -44,7 +44,7 @@ constexpr const wchar_t* CONFIG_FOLDER_NAME  = L"GradientEditorPreset";
 constexpr const wchar_t* PRESET_FILE_NAME    = L"gradient_editor_preset.json";
 constexpr const wchar_t* HISTORY_FILE_NAME   = L"gradient_editor_history.json";
 
-#ifdef MARKER_COUNT
+#if defined(MARKER_COUNT)
 inline constexpr uint32_t MAX_MARKER_COUNT = MARKER_COUNT;
 #else
 inline constexpr uint32_t MAX_MARKER_COUNT = 30;

@@ -2,7 +2,7 @@ Texture2D<float4> src : register(t0);
 SamplerState samp : register(s0);
 
 #define EPS 1e-6
-static const int MARKER_MAX_COUNT = 30;
+static const int MARKER_MAX_COUNT = ${MARKER_MAX_COUNT};
 static const int GRADIENT_MAX_COUNT = MARKER_MAX_COUNT - 1;
 
 cbuffer constant0 : register(b0) {
@@ -19,11 +19,11 @@ cbuffer constant0 : register(b0) {
     float color_space;
     float interp_dir;
     float gradient_w;
-    float marker_count;
+    float color_section_count;
     float4 start_col[MARKER_MAX_COUNT];
     float4 stop_col[MARKER_MAX_COUNT];
     float4 pos_and_mid[GRADIENT_MAX_COUNT];
-    float alpha_marker_count;
+    float alpha_section_count;
     float alpha_blur_width;
     float2 PAD3;
     float4 alpha_pos_and_mid[GRADIENT_MAX_COUNT];
@@ -182,12 +182,8 @@ float4 makeGradient(float4 col1, float4 col2, float t, float mid, float width, f
     return blend_colors(col1, col2, smoothPulse(t, mid, width), color_space, interp_dir);
 }
 
-float4 psmain(float4 pos : SV_Position, float2 uv : TEXCOORD) : SV_Target {
-    int safe_marker_count = min(marker_count, MARKER_MAX_COUNT);
-    int safe_gradient_count = clamp(safe_marker_count - 1, 1, MARKER_MAX_COUNT - 1);
-
-    if (safe_marker_count <= 0) return float4(1, 1, 1, 1);
-
+float4 psmain(float4 pos : SV_Position, float2 uv : TEXCOORD) : SV_Target
+{
     float x = 1.0;
 
     // 画面の長辺または短辺で正規化
@@ -340,50 +336,51 @@ float4 psmain(float4 pos : SV_Position, float2 uv : TEXCOORD) : SV_Target {
     }
 
     x = 1.0 - x;
-    float4 out_col = (x <= pos_and_mid[0].x) ? start_col[0] : start_col[safe_marker_count - 1];
-    out_col.rgb *= out_col.a;
-    x = saturate(x);
+
+    int grad_sec_n = (int)color_section_count;
+    float4 out_col = (x <= pos_and_mid[0].x) ? start_col[0] : start_col[grad_sec_n];
 
     // 区間ごとにグラデーションを作る
-    for (int i = 0; i < safe_gradient_count; i++) {
-        float p_curr = pos_and_mid[i].x;  // 区間の開始位置
-        float p_next = pos_and_mid[i].y;  // 区間の終了位置
+    [loop]
+    for (int i = 0; i < grad_sec_n; ++i) {
+        float2 pos = pos_and_mid[i].xy;
 
         // x が現在の区間内にある場合
-        if (p_curr <= x && x < p_next) {
-            float dist = p_next - p_curr;
-            float t = (x - p_curr) / dist;
-            out_col = makeGradient(start_col[i], stop_col[i], t, pos_and_mid[i].z, gradient_w, color_space, interp_dir);
+        if (pos.x <= x && x < pos.y) {
+            float t = (x - pos.x) / (pos.y - pos.x);
+            out_col = makeGradient(
+                start_col[i],
+                stop_col[i],
+                t,
+                pos_and_mid[i].z,
+                gradient_w,
+                color_space,
+                interp_dir
+            );
             break;
         }
     }
 
-    float alpha = 1.0;
-    if (x < alpha_pos_and_mid[0].x) {
-        alpha = alpha_pos_and_mid[0].z;
-        out_col.a *= alpha;
-        out_col.rgb *= out_col.a;
-        return out_col;
-    } else if (x >= alpha_pos_and_mid[(int)alpha_marker_count - 2].y) {
-        alpha = alpha_pos_and_mid[(int)alpha_marker_count - 2].w;
-        out_col.a *= alpha;
-        out_col.rgb *= out_col.a;
-        return out_col;
-    }
-    for (int j = 0; j < (int)alpha_marker_count - 1; j++) {
-        float p_curr = alpha_pos_and_mid[j].x;  // 区間の開始位置
-        float p_next = alpha_pos_and_mid[j].y;  // 区間の終了位置
+    int alpha_sec_n = (int)alpha_section_count;
+    float alpha = (x <= alpha_pos_and_mid[0].x) ? alpha_value[0].x : alpha_value[alpha_sec_n - 1].y;
 
-        // x が現在の区間内にある場合
-        if (p_curr <= x && x < p_next) {
-            float dist = p_next - p_curr;
-            float t = (x - p_curr) / dist;
-            alpha = lerp(alpha_value[j].x, alpha_value[j].y, smoothPulse(t, alpha_pos_and_mid[j].z, alpha_blur_width));
-            out_col.a *= alpha;
-            out_col.rgb *= out_col.a;
+    [loop]
+    for (int j = 0; j < alpha_sec_n; ++j) {
+        float2 pos = alpha_pos_and_mid[j].xy;
+
+        if (pos.x <= x && x < pos.y) {
+            float t = (x - pos.x) / (pos.y - pos.x);
+            alpha = lerp(
+                alpha_value[j].x,
+                alpha_value[j].y,
+                smoothPulse(t, alpha_pos_and_mid[j].z, alpha_blur_width)
+            );
             break;
         }
     }
+
+    out_col.a *= alpha;
+    out_col.rgb *= out_col.a;
 
     return out_col;
 }

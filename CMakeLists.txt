@@ -12,7 +12,7 @@ project(GradientEditor LANGUAGES C CXX)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(IMGUI_SOURCE third_party/imgui)
-set(MARKER_COUNT 30 CACHE STRING "marker count")
+set(MARKER_COUNT 40 CACHE STRING "marker count")  # MARKER_COUNT マクロ定義
 set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
 
 # .cpp font file generation
@@ -101,7 +101,6 @@ target_include_directories(${PROJECT_NAME} PRIVATE third_party/json/single_inclu
 
 # IconFont
 target_include_directories(${PROJECT_NAME} PRIVATE third_party/IconFontCppHeaders)
-
 
 if(WIN32)
     target_compile_definitions(${PROJECT_NAME} PRIVATE UNICODE _UNICODE)

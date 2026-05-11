@@ -2,7 +2,7 @@ Texture2D<float4> src : register(t0);
 SamplerState samp : register(s0);
 
 #define EPS 1e-6
-static const int MARKER_MAX_COUNT = 30;
+static const int MARKER_MAX_COUNT = ${MARKER_MAX_COUNT};
 static const int GRADIENT_MAX_COUNT = MARKER_MAX_COUNT - 1;
 
 cbuffer constant0 : register(b0) {
@@ -13,13 +13,15 @@ cbuffer constant0 : register(b0) {
     float color_space;
     float interp_dir;
     float gradient_w;
-    float marker_count;
+    float color_section_count;
     float4 start_col[MARKER_MAX_COUNT];
     float4 stop_col[MARKER_MAX_COUNT];
     float4 pos_and_mid[GRADIENT_MAX_COUNT];
-    float alpha_marker_count;
-    float3 PAD2;
-    float4 alpha_pos_and_value[GRADIENT_MAX_COUNT];
+    float alpha_section_count;
+    float alpha_blur_width;
+    float2 PAD2;
+    float4 alpha_pos_and_mid[GRADIENT_MAX_COUNT];
+    float4 alpha_value[GRADIENT_MAX_COUNT];
 }
 
 float4 blend_colors(float4 color1, float4 color2, float t, float color_space, int interp_dir)
@@ -228,52 +230,50 @@ float4 psmain(float4 pos : SV_Position, float2 uv : TEXCOORD) : SV_Target {
         }
     }
 
-    int safe_marker_count = min(marker_count, MARKER_MAX_COUNT);
-    int safe_gradient_count = clamp(safe_marker_count - 1, 1, MARKER_MAX_COUNT - 1);
+    int grad_sec_n = (int)color_section_count;
+    float4 out_col = (x <= pos_and_mid[0].x) ? start_col[0] : start_col[grad_sec_n];
 
-    float4 out_col = (x <= pos_and_mid[0].x) ? start_col[0] : start_col[safe_marker_count - 1];
-    out_col.rgb *= out_col.a;
-    x = saturate(x);
-
-    for (int i = 0; i < safe_gradient_count; i++) {
-        float p_curr = pos_and_mid[i].x;
-        float p_next = pos_and_mid[i].y;
-
-        // luma が現在の区間内にある場合
-        if (p_curr <= x && x < p_next) {
-            float dist = p_next - p_curr;
-            float t = (x - p_curr) / dist;
-            out_col = makeGradient(start_col[i], stop_col[i], t, pos_and_mid[i].z, gradient_w, color_space, interp_dir);
-            break;
-        }
-    }
-
-    float alpha = 1.0;
-    if (x < alpha_pos_and_value[0].x) {
-        alpha = alpha_pos_and_value[0].z;
-        out_col.a *= alpha;
-        out_col.rgb *= out_col.a;
-        return out_col;
-    } else if (x >= alpha_pos_and_value[(int)alpha_marker_count - 2].y) {
-        alpha = alpha_pos_and_value[(int)alpha_marker_count - 2].w;
-        out_col.a *= alpha;
-        out_col.rgb *= out_col.a;
-        return out_col;
-    }
-    for (int j = 0; j < (int)alpha_marker_count - 1; j++) {
-        float p_curr = alpha_pos_and_value[j].x;  // 区間の開始位置
-        float p_next = alpha_pos_and_value[j].y;  // 区間の終了位置
+    // 区間ごとにグラデーションを作る
+    [loop]
+    for (int i = 0; i < grad_sec_n; ++i) {
+        float2 pos = pos_and_mid[i].xy;
 
         // x が現在の区間内にある場合
-        if (p_curr <= x && x < p_next) {
-            float dist = p_next - p_curr;
-            float t = (x - p_curr) / dist;
-            alpha = lerp(alpha_pos_and_value[j].z, alpha_pos_and_value[j].w, t);
-            out_col.a *= alpha;
-            out_col.rgb *= out_col.a;
+        if (pos.x <= x && x < pos.y) {
+            float t = (x - pos.x) / (pos.y - pos.x);
+            out_col = makeGradient(
+                start_col[i],
+                stop_col[i],
+                t,
+                pos_and_mid[i].z,
+                gradient_w,
+                color_space,
+                interp_dir
+            );
             break;
         }
     }
+
+    int alpha_sec_n = (int)alpha_section_count;
+    float alpha = (x <= alpha_pos_and_mid[0].x) ? alpha_value[0].x : alpha_value[alpha_sec_n - 1].y;
+
+    [loop]
+    for (int j = 0; j < alpha_sec_n; ++j) {
+        float2 pos = alpha_pos_and_mid[j].xy;
+
+        if (pos.x <= x && x < pos.y) {
+            float t = (x - pos.x) / (pos.y - pos.x);
+            alpha = lerp(
+                alpha_value[j].x,
+                alpha_value[j].y,
+                smoothPulse(t, alpha_pos_and_mid[j].z, alpha_blur_width)
+            );
+            break;
+        }
+    }
+
+    out_col.a *= alpha;
+    out_col.rgb *= out_col.a;
 
     return out_col;
 }

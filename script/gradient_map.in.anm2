@@ -47,7 +47,7 @@ local edge_mode = 0
 local blend_mode = 0
 
 --group:グラデーションデータ,false
---separator:カラーマーカー
+--separator:色設定
 ---$value:色
 local color_rgb_table = {0x000000,0xffffff}
 
@@ -63,17 +63,6 @@ local color_mid_table = {0.50}
 ---$value:マーカー数
 local marker_num = 2
 
---separator:アルファマーカー
----$value:アルファ値
-local alpha_val_table = {1.00,1.00}
-
----$value:アルファ位置
-local alpha_pos_table = {0.00,1.00}
-
----$value:アルファマーカー数
-local alpha_marker_num = 2
-
---separator:その他
 ---$track:ぼかし幅
 ---min=0
 ---max=100
@@ -95,6 +84,25 @@ local color_space = 0
 ---短経路=0
 ---長経路=1
 local interp_dir = 0
+
+--separator:アルファ設定
+---$value:アルファ値
+local alpha_val_table = {1.00,1.00}
+
+---$value:アルファ位置
+local alpha_pos_table = {0.00,1.00}
+
+---$value:アルファ中間点
+local alpha_mid_table = {0.50}
+
+---$value:アルファマーカー数
+local alpha_marker_num = 2
+
+---$track:アルファぼかし幅
+---min=0
+---max=100
+---step=1
+local alpha_blur_width = 100
 
 --group
 
@@ -176,7 +184,7 @@ end
 
 local PAD = 0.0
 local MARKER_MIN_COUNT = 2
-local MARKER_MAX_COUNT = 30
+local MARKER_MAX_COUNT = ${MARKER_MAX_COUNT}
 local GRADIENT_MAX_COUNT = MARKER_MAX_COUNT - 1
 
 local COLOR_RGB = 0xffffff
@@ -185,6 +193,7 @@ local COLOR_POS = 0
 local COLOR_MID = 0.5
 local ALPHA_VAL = 1
 local ALPHA_POS = 0
+local ALPHA_MID = 0.5
 
 local COLOR_RGB_TABLE = {0x000000,0xffffff}
 local COLOR_A_TABLE = {0.00,0.00}
@@ -192,6 +201,7 @@ local COLOR_POS_TABLE = {0.00,1.00}
 local COLOR_MID_TABLE = {0.50}
 local ALPHA_VAL_TABLE = {1.00,1.00}
 local ALPHA_POS_TABLE = {0.00,1.00}
+local ALPHA_MID_TABLE = {0.50}
 
 color_rgb_table = is_number_table(color_rgb_table) or COLOR_RGB_TABLE
 color_a_table = is_number_table(color_a_table) or COLOR_A_TABLE
@@ -199,6 +209,7 @@ color_pos_table = is_number_table(color_pos_table) or COLOR_POS_TABLE
 color_mid_table = is_number_table(color_mid_table) or COLOR_MID_TABLE
 alpha_val_table = is_number_table(alpha_val_table) or ALPHA_VAL_TABLE
 alpha_pos_table = is_number_table(alpha_pos_table) or ALPHA_POS_TABLE
+alpha_mid_table = is_number_table(alpha_mid_table) or ALPHA_MID_TABLE
 marker_num  = tonumber(marker_num) or MARKER_MIN_COUNT
 alpha_marker_num = tonumber(alpha_marker_num) or MARKER_MIN_COUNT
 
@@ -241,66 +252,69 @@ color_pos_table = extend_back(color_pos_table, MARKER_MAX_COUNT - #color_pos_tab
 color_mid_table = extend_back(color_mid_table, MARKER_MAX_COUNT - #color_mid_table, COLOR_MID)
 alpha_val_table = extend_back(alpha_val_table, MARKER_MAX_COUNT - #alpha_val_table, ALPHA_VAL)
 alpha_pos_table = extend_back(alpha_pos_table, MARKER_MAX_COUNT - #alpha_pos_table, ALPHA_POS)
+alpha_mid_table = extend_back(alpha_mid_table, MARKER_MAX_COUNT - #alpha_mid_table, ALPHA_MID)
 
-local start_col = {}; local start_pos = {};
-local stop_col = {}; local stop_pos = {};
-local mid = {};
+local start_col = {}
+local stop_col = {}
 
 for i = 1, MARKER_MAX_COUNT do
-    -- 区間の開始
     local start_rgb = norm_color(color_rgb_table[i])
     start_col[#start_col + 1] = start_rgb[1]
     start_col[#start_col + 1] = start_rgb[2]
     start_col[#start_col + 1] = start_rgb[3]
     start_col[#start_col + 1] = 1 - color_a_table[i]
-    start_pos[#start_pos + 1] = color_pos_table[i]
-    mid[#mid + 1] = color_mid_table[i]  -- 中間点は区間の開始位置に対応させる
 
-    -- 区間の終了
     local next_i = i + 1
-    if next_i > MARKER_MAX_COUNT then next_i = MARKER_MAX_COUNT end
-
+    if next_i > MARKER_MAX_COUNT then next_i = i end
     local stop_rgb = norm_color(color_rgb_table[next_i])
     stop_col[#stop_col + 1] = stop_rgb[1]
     stop_col[#stop_col + 1] = stop_rgb[2]
     stop_col[#stop_col + 1] = stop_rgb[3]
     stop_col[#stop_col + 1] = 1 - color_a_table[next_i]
-    stop_pos[#stop_pos + 1] = color_pos_table[next_i]
 end
 
 local pos_and_mid = {}
 for i = 1, GRADIENT_MAX_COUNT do
-    pos_and_mid[#pos_and_mid + 1] = start_pos[i]
-    pos_and_mid[#pos_and_mid + 1] = stop_pos[i]
-    pos_and_mid[#pos_and_mid + 1] = mid[i]
+    pos_and_mid[#pos_and_mid + 1] = color_pos_table[i]
+    pos_and_mid[#pos_and_mid + 1] = color_pos_table[i + 1]
+    pos_and_mid[#pos_and_mid + 1] = color_mid_table[i]
     pos_and_mid[#pos_and_mid + 1] = PAD
 end
 
-local alpha_pos_and_value = {}
+local alpha_pos_and_mid = {}
 for i = 1, GRADIENT_MAX_COUNT do
-    alpha_pos_and_value[#alpha_pos_and_value + 1] = alpha_pos_table[i]
-    alpha_pos_and_value[#alpha_pos_and_value + 1] = alpha_pos_table[i + 1]
-    alpha_pos_and_value[#alpha_pos_and_value + 1] = alpha_val_table[i]
-    alpha_pos_and_value[#alpha_pos_and_value + 1] = alpha_val_table[i + 1]
+    alpha_pos_and_mid[#alpha_pos_and_mid + 1] = alpha_pos_table[i]
+    alpha_pos_and_mid[#alpha_pos_and_mid + 1] = alpha_pos_table[i + 1]
+    alpha_pos_and_mid[#alpha_pos_and_mid + 1] = alpha_mid_table[i]
+    alpha_pos_and_mid[#alpha_pos_and_mid + 1] = PAD
+end
+
+local alpha_val = {}
+for i = 1, GRADIENT_MAX_COUNT do
+    alpha_val[#alpha_val + 1] = alpha_val_table[i]
+    alpha_val[#alpha_val + 1] = alpha_val_table[i + 1]
+    alpha_val[#alpha_val + 1] = PAD
+    alpha_val[#alpha_val + 1] = PAD
 end
 
 local constants = merge(
-    {color_space, interp_dir, blur_width / 100, marker_num},
+    {color_space, interp_dir, blur_width / 100, marker_num - 1},
     start_col,
     stop_col,
     pos_and_mid,
-    {alpha_marker_num, PAD, PAD, PAD},
-    alpha_pos_and_value
+    {alpha_marker_num - 1, alpha_blur_width / 100, PAD, PAD},
+    alpha_pos_and_mid,
+    alpha_val
 )
-
 -- packed は float4 単位で並ぶテーブル
 
--- [0]=色空間 [1]=補間経路 [2]=ぼかし幅 [3]=マーカー数  : グラデーション情報（x1）
+-- [0]=色空間 [1]=補間経路 [2]=ぼかし幅 [3]=色の区間数  : グラデーション情報（x1）
 -- [0]=r [1]=g [2]=b [3]=a                           : 開始色（xマーカー数）
 -- [0]=r [1]=g [2]=b [3]=a                           : 終了色（xマーカー数）
 -- [0]=開始位置 [1]=終了位置 [2]=中間点 [3]=パディング  : 区間情報（x区間数）
--- [0]=アルファマーカー数 [1-3]=パディング              : アルファマーカー情報（x1）
--- [0]=開始位置 [1]=終了位置 [2]=開始値 [3]=終了値      : アルファマーカー（x区間数）
+-- [0]=アルファの区間数 [1]=ぼかし幅 [2-3]=パディング   : アルファマーカー情報（x1）
+-- [0]=開始位置 [1]=終了位置 [2]=中間点 [3]=パディング  : アルファマーカーの区間情報（x区間数）
+-- [0]=開始値 [1]=終了値 [2-3]=パディング              : アルファ値（x区間数）
 
 local cache_name = "orig_img_"..tostring(obj.id)
 

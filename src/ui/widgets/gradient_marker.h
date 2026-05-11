@@ -79,6 +79,8 @@ using MarkerData = std::variant<GradientMarkerData, AlphaMarkerData>;
 
 class GradientMarkerManager {
 private:
+    uint32_t m_marker_max_count = 30;
+
     struct Config {
         uint32_t marker_width{20};
         uint32_t marker_height{20};
@@ -94,22 +96,21 @@ private:
         ImVec2 alpha_marker_p0{}, alpha_marker_p1{};
     } m_regions;
 
-    static constexpr uint32_t ALPHA_MARKER_ID_OFFSET = 0; // カラーマーカーとIDが被らないようにするためのオフセット値
     struct State {
         int32_t selected_marker_id{0};
-        int32_t selected_alpha_marker_id{ALPHA_MARKER_ID_OFFSET};
+        int32_t selected_alpha_marker_id{0};
 
         int32_t selected_midpoint_id{0};
         int32_t selected_alpha_midpoint_id{0};
 
-        int32_t clicked_marker_id{-4};    // Region::OutSide
-        int32_t clicked_alpha_marker_id{-4}; // Region::OutSide
+        int32_t clicked_marker_id{-4};  // Region::OutSide
+        int32_t clicked_alpha_marker_id{-4};
 
-        int32_t clicked_midpoint_id{-4};  // Region::OutSide
+        int32_t clicked_midpoint_id{-4};
         int32_t clicked_alpha_midpoint_id{-4};
 
         int32_t marker_id_counter{2};
-        int32_t alpha_marker_id_counter{ALPHA_MARKER_ID_OFFSET + 2};
+        int32_t alpha_marker_id_counter{2};
         bool is_marker_added{false};
         bool is_alpha_marker_added{false};
         ImVec4 picker_cur_color{1.0f, 1.0f, 1.0f, 1.0f};
@@ -124,8 +125,8 @@ private:
 
 
     std::vector<AlphaMarkerData> m_alpha_markers = {
-        {.id = ALPHA_MARKER_ID_OFFSET + 0, .pos = 0.0f, .midpoint = {.ratio = 0.5f, .pos = 0.5}, .value = 1.0f},
-        {.id = ALPHA_MARKER_ID_OFFSET + 1, .pos = 1.0f, .midpoint = {.ratio = 0.5f, .pos = 0.5}, .value = 1.0f}
+        {.id = 0, .pos = 0.0f, .midpoint = {.ratio = 0.5f, .pos = 0.5}, .value = 1.0f},
+        {.id = 1, .pos = 1.0f, .midpoint = {.ratio = 0.5f, .pos = 0.5}, .value = 1.0f}
     };
 
     enum class Region : int32_t {
@@ -205,6 +206,7 @@ public:
     //
     // セッター
     //
+    void setMarkerMaxCount(const uint32_t max_count) noexcept { m_marker_max_count = max_count; }
     void setMarkerWidth(const uint32_t width) noexcept
     {
         m_config.marker_width    = width;
@@ -246,8 +248,8 @@ public:
                                {.id = 0, .pos = 0.0f, .color = ImVec4(0.0f, 0.0f, 0.0f, 1.0f), .midpoint = {.ratio = 0.5f, .pos = 0.5}},
                                {.id = 1, .pos = 1.0f, .color = ImVec4(1.0f, 1.0f, 1.0f, 1.0f), .midpoint = {.ratio = 0.5f, .pos = FLT_MIN}}});
     void setDefaultAlphaMarkers(const std::vector<AlphaMarkerData>& alpha_marker_data = {
-                               {.id = ALPHA_MARKER_ID_OFFSET + 0, .pos = 0.0f, .midpoint = {.ratio = 0.5f, .pos = 0.5}, .value = 1.0f},
-                               {.id = ALPHA_MARKER_ID_OFFSET + 1, .pos = 1.0f, .midpoint = {.ratio = 0.5f, .pos = FLT_MIN}, .value = 1.0f}});
+                               {.id = 0, .pos = 0.0f, .midpoint = {.ratio = 0.5f, .pos = 0.5}, .value = 1.0f},
+                               {.id = 1, .pos = 1.0f, .midpoint = {.ratio = 0.5f, .pos = FLT_MIN}, .value = 1.0f}});
 
     void moveMarker(const int32_t id, const float new_pos);
     void moveAlphaMarker(const int32_t id, const float new_pos);
@@ -291,8 +293,8 @@ public:
     void updateMidpointsPos();
     void updateAlphaMidpointsPos();
     void updateMarkerId();
-    void updateMarker(const ImVec2& mouse_pos, const ImVec4& new_marker_color = ImVec4(1.0f, 1.0f, 1.0f, 1.0f), const uint32_t max_marker_count = 10);
-    void updateAlphaMarker(const ImVec2& mouse_pos, const float new_value = 1.0f, const uint32_t max_alpha_marker_count = 10);
+    void updateMarker(const ImVec2& mouse_pos, const ImVec4& new_marker_color = ImVec4(1.0f, 1.0f, 1.0f, 1.0f));
+    void updateAlphaMarker(const ImVec2& mouse_pos, const float new_value = 1.0f);
     void updateMidpoint(const ImVec2& mouse_pos);
     void updateAlphaMidpoint(const ImVec2& mouse_pos);
 
