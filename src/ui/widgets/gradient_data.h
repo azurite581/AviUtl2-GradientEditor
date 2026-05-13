@@ -31,6 +31,9 @@ public:
         cleanup();
     }
 
+    MarkerManager m_color_markers{};
+    MarkerManager m_alpha_markers{};
+
     GradientMarkerManager m_marker_manager;
     int32_t m_color_space{0};
     int32_t m_interp_dir{0};
@@ -55,6 +58,8 @@ public:
                m_alpha_blur_width == other.m_alpha_blur_width;
     }
 
+    [[nodiscard]] auto getColorMarkers() noexcept { return &m_color_markers; }
+    [[nodiscard]] auto getAlphaMarkers() noexcept { return &m_alpha_markers; }
     [[nodiscard]] GradientMarkerManager* getMarkerManager() noexcept { return &m_marker_manager; }
     [[nodiscard]] int32_t getColorSpace() const noexcept { return m_color_space; }
     [[nodiscard]] int32_t getInterpDir() const noexcept { return m_interp_dir; }

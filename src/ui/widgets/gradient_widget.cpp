@@ -67,6 +67,8 @@ GradientData* drawGradientEditor(
     auto* gradient_data   = it->second.get();
     auto* gradient_marker = it->second.get()->getMarkerManager();
 
+    auto* color_markers = it->second.get()->getColorMarkers();
+
     // データを置換する場合
     if (replace_data) {
         gradient_data->getMarkerManager()->setDefaultMarkers(data.m_marker_manager.getMarkers());
@@ -161,6 +163,7 @@ GradientData* drawGradientEditor(
     ImVec2 p1             = ImGui::GetItemRectMax();
     ImDrawList* draw_list = ImGui::GetWindowDrawList();
     gradient_marker->setGradientRegion(p0, p1);
+    color_markers->setGradientRegion(p0, p1);
 
     // ボーダー
     if (ImGui::GetStyle().FrameBorderSize == 1.0f) {
@@ -171,26 +174,31 @@ GradientData* drawGradientEditor(
 
     // マーカーの描画
     if (!(flags & GradientEditorFlags_NoMarker)) {
-        ImVec2 marker_region_size = ImVec2(dsize.x, static_cast<float>(gradient_marker->getMarkerRegionHeight()));
+        ImVec2 marker_region_size = ImVec2(dsize.x, color_markers->getMarkerRegionHeight());
         if (!(flags & GradientEditorFlags_NotAlignSideToMarker)) {
             ImVec2 cursor = ImGui::GetCursorScreenPos();
             ImGui::SetCursorScreenPos(ImVec2(cursor.x + marker_half_width, cursor.y));
             marker_region_size.x = ImMax(1.0f, marker_region_size.x - gradient_marker->getMarkerWidth());
         }
 
-        ImGui::InvisibleButton("markers", marker_region_size);
+        ImGui::InvisibleButton("markers_draw_region", marker_region_size);
         p0 = ImGui::GetItemRectMin();
         p1 = ImGui::GetItemRectMax();
+        ImGui::DebugDrawItemRect();
 
-        gradient_marker->setMarkerRegion(p0, p1);
-        gradient_marker->drawMarkers();
+        // gradient_marker->setMarkerRegion(p0, p1);
+        // gradient_marker->drawMarkers();
 
-        // 中間点をグラデーションの下部に描画する場合はここで描画
-        // マーカーと中間点が重なっていた場合に中間点を優先するため、マーカーの更新は中間点の更新より後に行う
-        if ((flags & GradientEditorFlags_AlphaMarker) || (!(flags & GradientEditorFlags_NoMidpoint) && (flags & GradientEditorFlags_MidpointBelowGradient))) {
-            gradient_marker->setMidpointRegion(p0, p1);
-            gradient_marker->drawMidpoints();
-        }
+        // // 中間点をグラデーションの下部に描画する場合はここで描画
+        // // マーカーと中間点が重なっていた場合に中間点を優先するため、マーカーの更新は中間点の更新より後に行う
+        // if ((flags & GradientEditorFlags_AlphaMarker) || (!(flags & GradientEditorFlags_NoMidpoint) && (flags & GradientEditorFlags_MidpointBelowGradient))) {
+        //     gradient_marker->setMidpointRegion(p0, p1);
+        //     gradient_marker->drawMidpoints();
+        // }
+
+        color_markers->setMarkerRegion(p0, p1);
+        color_markers->drawMarkers();
+        color_markers->drawMidpoints();
     }
 
     ImVec2 mouse_pos = ImGui::GetIO().MousePos;
@@ -223,6 +231,8 @@ GradientData* drawGradientEditor(
     gradient_marker->updateAlphaMidpoint(mouse_pos);
     gradient_marker->updateMarker(mouse_pos, new_marker_color);
     gradient_marker->updateAlphaMarker(mouse_pos, 1.0f);
+
+    color_markers->updateMarkerAndMidpointPosition(mouse_pos);
 
     ImGui::PushID(gradient_marker);
     gradient_marker->showColorPickerPopup();
