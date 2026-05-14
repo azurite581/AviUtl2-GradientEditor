@@ -354,6 +354,46 @@ void MainView::renderGradientEditor()
         replace_data = m_history_window.m_history_data.back().data;
     }
 
+
+    // カラーピッカーポップアップ
+    auto colorPickerPopup = [&](const char* label, ImVec4& current_color, ImVec4& previous_color) -> bool {
+        bool changed  = false;
+        ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(10, 2));
+        ImGui::PushStyleVarX(ImGuiStyleVar_ItemInnerSpacing, 2);
+
+        if (ImGui::BeginPopup(label)) {
+            // メインのカラーピッカー
+            changed |= ImGui::ColorPicker4("##marker_color_picker", (float*)&current_color, ImGuiColorEditFlags_NoSidePreview | ImGuiColorEditFlags_NoSmallPreview | ImGuiColorEditFlags_AlphaBar);
+            ImGui::SameLine();
+
+            ImGui::BeginGroup();
+            {
+                ImGui::Text(m_config_wrapper->tr(L"現在の色").c_str());
+                ImGuiColorEditFlags color_button_flags = ImGuiColorEditFlags_NoPicker | ImGuiColorEditFlags_AlphaPreviewHalf;
+                ImVec2 color_button_size               = ImVec2(ImGui::GetContentRegionAvail().x, ImGui::GetContentRegionAvail().x * 0.6f);
+                ImGui::ColorButton("##current_color", current_color, color_button_flags, color_button_size);
+
+                ImGui::Text(m_config_wrapper->tr(L"以前の色").c_str());
+                if (ImGui::ColorButton("##previous_color", previous_color, color_button_flags, color_button_size)) {
+                    current_color = previous_color;
+                }
+
+                ImVec2 avail = ImGui::GetContentRegionAvail();
+                ImGui::Dummy(ImVec2(avail.x, avail.y - ImGui::GetFrameHeightWithSpacing()));
+                if (ImGui::Button(m_config_wrapper->tr(L"閉じる").c_str(), ImVec2(avail.x, ImGui::GetFrameHeight()))) {
+                    ImGui::CloseCurrentPopup();
+                }
+            }
+            ImGui::EndGroup();
+
+            ImGui::EndPopup();
+        }
+
+        ImGui::PopStyleVar(2);
+
+        return changed;
+    };
+
     //
     // スクリプト選択
     //
@@ -543,7 +583,7 @@ void MainView::renderGradientEditor()
     }
 
     bool should_replace = m_preset_window.isPresetClicked() || m_history_window.isHistoryClicked() || (!m_is_init && !m_history_window.m_history_data.empty());
-    m_data              = CustomUI::drawGradientEditor(
+    m_data = CustomUI::drawGradientEditor(
         "gradient",
         ImVec2(std::clamp(ImGui::GetContentRegionAvail().x, 1.0f, 4096.0f), frame_height * scale::relative::GRADIENT_HEIGHT),
         replace_data,
@@ -557,6 +597,32 @@ void MainView::renderGradientEditor()
 
     // 更新
     m_script_bridge.update(*m_data);
+
+    // カラーピッカーポップアップ
+    static ImVec4 current_color{1.0f, 1.0f, 1.0f, 1.0f};
+    static ImVec4 previous_color{1.0f, 1.0f, 1.0f, 1.0f};
+    if (m_data->getColorMarkers()->isDoubleClickedMarker(ImGui::GetIO().MousePos)) {
+        previous_color = current_color;
+        current_color = m_data->getColorMarkers()->getSelectedMarkerValue();
+        ImGui::OpenPopup("color_marker_");
+    }
+    if (colorPickerPopup("color_marker_", current_color, previous_color)) {
+        m_data->getColorMarkers()->setSelectedMarkerValue(current_color);
+    }
+
+    // アルファスライダーポップアップ
+    static float current_alpha{1.0f};
+    if (m_data->getAlphaMarkers()->isDoubleClickedMarker(ImGui::GetIO().MousePos)) {
+        current_alpha = m_data->getAlphaMarkers()->getSelectedMarkerValue().w;
+        ImGui::OpenPopup("alpha_slider_popup2");
+    }
+    if (ImGui::BeginPopup("alpha_slider_popup2")) {
+        if (ImGui::DragFloat("##alpha_value", &current_alpha, 0.01f, 0.0f, 1.0f, "%.2f")) {
+            m_data->getAlphaMarkers()->setSelectedMarkerValue(ImVec4(0, 0, 0, current_alpha));
+        }
+        ImGui::EndPopup();
+    }
+
 
     //
     // 各種ツールボタン
@@ -590,18 +656,18 @@ void MainView::renderGradientEditor()
 
     // カラーマーカーの操作
     if (is_reset_all) {
-        m_data->getMarkerManager()->setDefaultMarkers();
+        m_data->getColorMarkers()->resetMarkers(m_data->m_default_color_markers);
         m_data->setColorSpace(0);
         m_data->setInterpDir(0);
         m_data->setColorBlurWidth(1.0f);
     }
-    if (select_back_marker) m_data->getMarkerManager()->selectBackMarker();
-    if (select_next_marker) m_data->getMarkerManager()->selectNextMarker();
-    if (is_distribute_marker) m_data->getMarkerManager()->distributeMarkersEvenly();
-    if (is_distribute_marker_and_midpoint) m_data->getMarkerManager()->distributeMarkersAndMipointsEvenly();
-    if (is_reset_midpoint) m_data->getMarkerManager()->resetMidpoints();
-    if (is_reverse) m_data->getMarkerManager()->reverseMarkers();
-    if (is_delete_marker) m_data->getMarkerManager()->deleteSelectedMarker();
+    if (select_back_marker) m_data->getColorMarkers()->selectBackMarker();
+    if (select_next_marker) m_data->getColorMarkers()->selectNextMarker();
+    if (is_distribute_marker) m_data->getColorMarkers()->distributeMarkersEvenly();
+    if (is_distribute_marker_and_midpoint) m_data->getColorMarkers()->distributeMarkersAndMipointsEvenly();
+    if (is_reset_midpoint) m_data->getColorMarkers()->resetMidpoints();
+    if (is_reverse) m_data->getColorMarkers()->reverseMarkers();
+    if (is_delete_marker) m_data->getColorMarkers()->deleteSelectedMarker();
 
     // アルファマーカーの操作
     if (is_reset_alpha_marker) {

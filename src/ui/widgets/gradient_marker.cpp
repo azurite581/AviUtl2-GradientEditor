@@ -1,8 +1,14 @@
 #include "gradient_marker.h"
 #include <cstdint>
 #include <iostream>
+#include <string>
 #include <utility>
 #include <vector>
+
+#define WIN32_LEAN_AND_MEAN
+#define NOMINMAX
+#include <windows.h>
+
 #include "imgui.h"
 
 void MarkerData::drawMarker(
@@ -146,16 +152,20 @@ std::pair<MarkerManager::Clicked, int64_t> MarkerManager::getMarkerIdUnderMouse(
     if ((m_regions.marker_p0.x - marker_size.x * 0.5 <= mouse_pos.x && mouse_pos.x < m_regions.marker_p1.x + marker_size.x * 0.5) &&
     (m_regions.marker_p0.y <= mouse_pos.y && mouse_pos.y < m_regions.marker_p1.y)) {
 
-        for (const auto& marker : m_markers) {
+        for (int32_t i = 0; const auto& marker : m_markers) {
+            // 中間点を優先して判定
+            if (i < static_cast<int32_t>(std::ssize(m_markers)) - 1) {
+                if (mouse_pos.x >= marker.midpoint_p0.x && mouse_pos.x <= marker.midpoint_p1.x &&
+                    mouse_pos.y >= marker.midpoint_p0.y && mouse_pos.y <= marker.midpoint_p1.y) {
+                    return {Clicked::Midpoint, marker.id};
+                }
+            }
             if (mouse_pos.x >= marker.marker_p0.x && mouse_pos.x <= marker.marker_p1.x &&
                 mouse_pos.y >= marker.marker_p0.y && mouse_pos.y <= marker.marker_p1.y) {
                 // マーカーの上ならそのマーカーのIDを返す
                 return {Clicked::Marker, marker.id};
-            } else if (mouse_pos.x >= marker.midpoint_p0.x && mouse_pos.x <= marker.midpoint_p1.x &&
-                mouse_pos.y >= marker.midpoint_p0.y && mouse_pos.y <= marker.midpoint_p1.y) {
-                // 中間点の上
-                return {Clicked::Midpoint, marker.id};
             }
+            ++i;
         }
 
         return {Clicked::MarkerRegion, std::to_underlying(Clicked::Marker)};
@@ -176,6 +186,90 @@ ImVec2 MarkerManager::getMousePosOnGradient(const ImVec2& mouse_pos) const
 //
 // 操作
 //
+void MarkerManager::reverseMarkers()
+{
+    auto right_midpoint_idx = getMarkerIndexById(m_state.selected_midpoint_id) + 1;
+    auto right_midpoint_id  = m_state.selected_midpoint_id;
+
+    std::vector<float> old_midpoints(static_cast<uint32_t>(std::ssize(m_markers) - 1));
+    // 位置を逆順にしつつ、逆順にする前の中間点の比率を取得
+    for (const auto& [i, marker] : m_markers | std::views::enumerate) {
+        marker.pos = std::clamp(1.0f - marker.pos, 0.0f, 1.0f);
+        if (i < static_cast<uint32_t>(std::ssize(m_markers)) - 1) {
+            old_midpoints[i] = marker.midpoint.ratio;
+        }
+        if (i == right_midpoint_idx) {
+            right_midpoint_id = marker.id;
+        }
+    }
+
+    std::ranges::reverse(old_midpoints.begin(), old_midpoints.end());
+
+    sortMarkersByPos();
+
+    // 中間点を逆順にする
+    for (const auto& [i, marker] : m_markers | std::views::enumerate) {
+        if (i < static_cast<uint32_t>(std::ssize(m_markers)) - 1) {
+            setMidpointRatio(marker.id, std::clamp(1.0f - old_midpoints[i], 0.0f, 1.0f));
+        }
+    }
+    m_state.selected_midpoint_id = right_midpoint_id;
+
+    updateMidpointsPos();
+}
+
+void MarkerManager::resetMidpoints()
+{
+    for (const auto& [i, marker] : m_markers | std::views::enumerate) {
+        if (i < static_cast<uint32_t>(std::ssize(m_markers)) - 1) {
+            setMidpointRatio(marker.id, 0.5f);
+        }
+    }
+}
+
+// マーカー位置昇順にソートするヘルパー
+void MarkerManager::sortMarkersByPos()
+{
+    std::sort(m_markers.begin(), m_markers.end(),
+            [](const MarkerData& a, const MarkerData& b) {
+                return a.pos < b.pos;
+            });
+}
+
+// IDを基準にマーカーを昇順ソートする
+void MarkerManager::sortMarkersById()
+{
+    std::sort(m_markers.begin(), m_markers.end(),
+                [](const MarkerData& a, const MarkerData& b) {
+                    return a.id < b.id;
+                });
+}
+
+void MarkerManager::moveMarker(const int64_t id, const float new_pos)
+{
+    setMarkerPosision(id, new_pos);
+    sortMarkersByPos();
+    updateMidpointsPos();
+}
+
+void MarkerManager::moveMidpoint(const int64_t id, const float new_pos)
+{
+    auto idx = getMarkerIndexById(id);
+    if (idx < 0 || std::ssize(m_markers) - 1 <= idx) return;
+
+    float left_pos  = m_markers[idx].pos;
+    float right_pos = m_markers[idx + 1].pos;
+    float range     = right_pos - left_pos;
+
+    if (range <= 0.0001f) return;
+
+    float ratio = (new_pos - left_pos) / range;
+    m_markers[idx].midpoint.ratio = std::clamp(ratio, 0.0f, 1.0f);
+    m_markers[idx].midpoint.pos = new_pos;
+
+    updateMidpointsPos();
+}
+
 void MarkerManager::addMarker(const int64_t id, const float marker_pos, const ImVec4& value, const float midpoint_ratio)
 {
     MarkerData new_marker;
@@ -186,18 +280,120 @@ void MarkerManager::addMarker(const int64_t id, const float marker_pos, const Im
 
     m_markers.push_back(new_marker);
 
-    sortMarkers();
+    sortMarkersByPos();
     updateMidpointsPos();  // 中間点の位置（midpoint.pos）は、追加後に前後のマーカー位置から計算する
+
+    OutputDebugStringA("==================\n");
+    for (int32_t i = 0; const auto& m : m_markers) {
+        OutputDebugStringA(std::format("i={}, pos={}, id={}\n", i, m.pos, m.id).c_str());
+        ++i;
+    }
 }
 
+void MarkerManager::selectNextMarker()
+{
+    if (std::ssize(m_markers) < 2) return;
+
+    auto idx = getMarkerIndexById(m_state.selected_marker_id);
+    if (idx == -1) return;
+
+    ++idx;
+
+    if (idx < std::ssize(m_markers)) {
+        m_state.selected_marker_id = m_markers[idx].id;
+    } else {
+        m_state.selected_marker_id = m_markers.front().id;
+    }
+}
+
+void MarkerManager::selectBackMarker()
+{
+    if (std::ssize(m_markers) < 2) return;
+
+    auto idx = getMarkerIndexById(m_state.selected_marker_id);
+    if (idx == -1) return;
+
+    --idx;
+
+    if (idx >= 0) {
+        m_state.selected_marker_id = m_markers[idx].id;
+    } else {
+        m_state.selected_marker_id = m_markers.back().id;
+    }
+}
+
+void MarkerManager::deleteMarker(const int64_t id)
+{
+    if (std::ssize(m_markers) <= 2) return;
+
+    auto idx = getMarkerIndexById(id);
+    if (idx == -1) return;
+
+    // 削除
+    m_markers.erase(m_markers.begin() + idx);
+
+    updateMidpointsPos();
+    reassignMarkerID();
+
+    // 次に選択する ID を更新 (削除した位置にある要素、または末尾ならその前)
+    if (idx < std::ssize(m_markers)) {
+        m_state.selected_marker_id = m_markers[idx].id;
+    } else {
+        m_state.selected_marker_id = m_markers.back().id;
+    }
+
+    // 選択中の中間点 ID が不正になった場合
+    if (getMarkerIndexById(m_state.selected_midpoint_id) == -1 || getMarkerIndexById(m_state.selected_midpoint_id) >= std::ssize(m_markers) - 1) {
+        m_state.selected_midpoint_id = m_markers[0].id;
+    }
+}
+
+void MarkerManager::deleteSelectedMarker()
+{
+    deleteMarker(m_state.selected_marker_id);
+}
+
+void MarkerManager::distributeMarkersEvenly()
+{
+    for (const auto& [i, marker] : m_markers | std::views::enumerate) {
+        moveMarker(marker.id, i / static_cast<float>(std::ssize(m_markers) - 1));
+    }
+}
+
+void MarkerManager::distributeMarkersAndMipointsEvenly()
+{
+    distributeMarkersEvenly();
+    for (const auto& [i, marker] : m_markers | std::views::enumerate) {
+        if (i < static_cast<float>(std::ssize(m_markers) - 1)) {
+            moveMidpoint(marker.id, (i + 1) / static_cast<float>(std::ssize(m_markers)));
+        }
+    }
+}
+
+bool MarkerManager::isDoubleClickedMarker(const ImVec2& mouse_pos)
+{
+    if (ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left)) {
+        auto [clicked, id] = getMarkerIdUnderMouse(mouse_pos);
+        OutputDebugStringA(std::format("selected_id={}, id={}", m_state.selected_marker_id, id).c_str());
+        if (clicked == Clicked::Marker) {
+            return true;
+        }
+    }
+    return false;
+}
+
+//
+// 更新
+//
 void MarkerManager::updateMarkerAndMidpointPosition(const ImVec2& mouse_pos)
 {
-    if (!m_io_enable || m_is_open_popup) return;
-    if (m_state.clicked_midpoint_id >= 0) return;
+    if (!m_io_enable || ImGui::IsPopupOpen(nullptr, ImGuiPopupFlags_AnyPopup)) return;
 
     // クリックされた位置にあるマーカー/中間点のIDを取得
     if (ImGui::IsMouseClicked(ImGuiMouseButton_Left)) {
         auto [clicked, id] = getMarkerIdUnderMouse(mouse_pos);
+        OutputDebugStringA("==========================\n");
+        OutputDebugStringA(std::format("clicked={}, id={}\n", std::to_underlying(clicked), id).c_str());
         m_state.clicked = clicked;
         if (m_state.clicked == Clicked::Marker) {
             m_state.selected_marker_id = id;
@@ -232,6 +428,32 @@ void MarkerManager::updateMarkerAndMidpointPosition(const ImVec2& mouse_pos)
     return;
 }
 
+// 比率に基づいて中間点の絶対座標を再計算する
+void MarkerManager::updateMidpointsPos()
+{
+    for (int32_t i = 0; i < static_cast<int32_t>(std::ssize(m_markers)) - 1; ++i) {
+        float left_pos  = m_markers[i].pos;
+        float right_pos = m_markers[i + 1].pos;
+        float ratio     = m_markers[i].midpoint.ratio;
+
+        // 左隣のマーカーとの距離に基づいて位置を更新
+        m_markers[i].midpoint.pos = left_pos + (right_pos - left_pos) * ratio;
+    }
+}
+
+// IDを再度割り当てる
+void MarkerManager::reassignMarkerID()
+{
+    sortMarkersById();  // IDを基準に昇順ソート
+
+    for (const auto& [i, marker] : m_markers | std::views::enumerate) {
+        marker.id = static_cast<int64_t>(i);
+    }
+    m_state.marker_id_counter = static_cast<int64_t>(std::ssize(m_markers));
+
+    sortMarkersByPos();  // 位置を基準に昇順ソートして元の並びに戻す
+}
+
 //
 // 描画
 //
@@ -264,10 +486,11 @@ void MarkerManager::calcMidpointsDrawPos()
 
 void MarkerManager::drawMarkers()
 {
-    // 各マーカーの描画位置を計算
-    calcMarkersDrawPos();
+    calcMarkersDrawPos();  // 描画位置を計算して marker_p0, marker_p1 に格納
 
     const char* label = "draw_markers";
+
+    ImGui::PushID(this);
 
     int32_t selected_marker_idx = -1;
     for (const auto& [i, marker] : m_markers | std::views::enumerate) {
@@ -284,11 +507,14 @@ void MarkerManager::drawMarkers()
         selected_marker.drawMarker(label, selected_marker.id, selected_marker.marker_p0, selected_marker.marker_p1, selected_marker.value, m_is_upward);
         selected_marker.highlightMarker(selected_marker.marker_p0, selected_marker.marker_p1, ImVec4(1.0f, 1.0f, 1.0f, 1.0f), m_is_upward);
     }
+
+    ImGui::PopID();
 }
 
 void MarkerManager::drawMidpoints()
 {
-    calcMidpointsDrawPos();
+    updateMidpointsPos();  // midpoint.ratio から midpoint.pos を計算して格納
+    calcMidpointsDrawPos();  // 描画座標を計算して midpoint_p0, midopint_p1 に格納
 
     int32_t selected_midpoint_idx = -1;
     for (const auto& [i, marker] : m_markers | std::views::take(std::ssize(m_markers) - 1) | std::views::enumerate) {

@@ -76,10 +76,15 @@ struct AlphaMarkerData {
     }
 };
 
-
-
 struct MarkerData {
-    virtual ~MarkerData()  = default;
+    MarkerData() {}
+    MarkerData(const int64_t id_, const float pos_, const ImVec4& value_, const float midpoint_ratio)
+        : id{id_},
+        pos{pos_},
+        value{value_},
+        midpoint{midpoint_ratio, 0.0f}
+    {
+    }
 
     int64_t id{0};
     float pos{0.0f};
@@ -150,10 +155,7 @@ private:
     struct State {
         Clicked clicked = Clicked::OutSide;
         int64_t selected_marker_id{0};
-        int64_t clicked_marker_id{std::to_underlying(Region::OutSide)};
         int64_t selected_midpoint_id{0};
-        int64_t clicked_midpoint_id{std::to_underlying(Region::OutSide)};
-
         int64_t marker_id_counter{2};
     };
 
@@ -162,14 +164,13 @@ private:
 
     bool m_io_enable{true};
     bool m_is_upward{true};
-    bool m_is_open_popup{false};
 
     uint32_t m_marker_max_count{30};
 
     std::vector<MarkerData> m_markers;
 
     float m_default_midpoint_ratio = 0.5f;
-    ImVec4 m_default_value = ImVec4(1.0f, 1.0f, 1.0f, 1.0f);
+    ImVec4 m_default_value{1.0f, 1.0f, 1.0f, 1.0f};
 
     ImVec2 marker_arrow_size {20.0f, 10.0f};
     ImVec2 marker_size{20.f, 20.f};
@@ -178,6 +179,7 @@ private:
 public:
     MarkerManager()
     {
+        // 初期値をセット
         MarkerData marker_data_0;
         marker_data_0.id = 0;
         marker_data_0.pos = 0.0f;
@@ -288,24 +290,31 @@ public:
 
     [[nodiscard]] MarkerData getSelectedMarkerData() const
     {
-        return m_markers[m_state.selected_marker_id];
+        auto idx = getMarkerIndexById(m_state.selected_marker_id);
+        if (idx == -1) {};
+        return m_markers[idx];
     }
 
     [[nodiscard]] ImVec4 getSelectedMarkerValue() const
     {
-        return m_markers[m_state.selected_marker_id].value;
+        auto idx = getMarkerIndexById(m_state.selected_marker_id);
+        if (idx == -1) {};
+        return m_markers[idx].value;
     }
 
     [[nodiscard]] float getSelectedMarkerPosition() const
     {
-        return m_markers[m_state.selected_marker_id].pos;
+        auto idx = getMarkerIndexById(m_state.selected_marker_id);
+        if (idx == -1) {};
+        return m_markers[idx].pos;
     }
 
     [[nodiscard]] float getSelectedMidpointRatio() const
     {
-        return m_markers[m_state.selected_marker_id].midpoint.ratio;
+        auto idx = getMarkerIndexById(m_state.selected_marker_id);
+        if (idx == -1) {};
+        return m_markers[idx].midpoint.ratio;
     }
-
 
     // マウス下のマーカー/中間点を取得
     [[nodiscard]] std::pair<Clicked, int64_t> getMarkerIdUnderMouse(const ImVec2& mouse_pos) const;
@@ -375,69 +384,54 @@ public:
 
     void setSelectedMarkerValue(const ImVec4& value)
     {
-        m_markers[m_state.selected_marker_id].value = value;
+        auto idx = getMarkerIndexById(m_state.selected_marker_id);
+        if (idx == -1) return;
+        m_markers[idx].value = value;
     }
 
     void setSelectedMarkerPosition(const float pos)
     {
-        m_markers[m_state.selected_marker_id].pos = std::clamp(pos, 0.0f, 1.0f);
+        auto idx = getMarkerIndexById(m_state.selected_marker_id);
+        if (idx == -1) return;
+        m_markers[idx].pos = std::clamp(pos, 0.0f, 1.0f);
     }
 
     void setSelectedMidpointRatio(const float ratio)
     {
-        m_markers[m_state.selected_marker_id].midpoint.ratio = std::clamp(ratio, 0.0f, 1.0f);
+        auto idx = getMarkerIndexById(m_state.selected_marker_id);
+        if (idx == -1) return;
+        m_markers[idx].midpoint.ratio = std::clamp(ratio, 0.0f, 1.0f);
     }
 
     void setIOEnable(const bool enable) noexcept { m_io_enable = enable; }
+    void setMarkerUpward(const bool upward) noexcept { m_is_upward = upward; }
     void setMarkerMaxCount(const int64_t max_count) noexcept { m_marker_max_count = max_count; }
 
     //
     // 操作
     //
     void changeMarkerNum(const int64_t marker_num);
-    void changeMarkerPosition(const int64_t id, const float new_pos);
-    void changeMidpointPosition(const int64_t id, const float new_pos);
-    void changeMidpointRatio(const int64_t id, const float new_ratio);
+    void resetMarkers(const std::vector<MarkerData>& markers)
+    {
+        auto it = std::ranges::max_element(markers, {}, &MarkerData::id);
+        if (it != markers.end()) {
+            int64_t max_id = it->id;
+
+            m_markers = markers;
+            m_state.selected_marker_id = markers.front().id;
+            m_state.selected_midpoint_id = markers.front().id;
+            m_state.marker_id_counter = max_id + 1;
+        }
+    }
 
     void reverseMarkers();
     void resetMidpoints();
 
+    void sortMarkersByPos();
     void sortMarkersById();
-    // マーカー位置昇順にソートするヘルパー
-    void sortMarkers()
-    {
-        std::sort(m_markers.begin(), m_markers.end(),
-                [](const MarkerData& a, const MarkerData& b) {
-                    return a.pos < b.pos;
-                });
-    }
 
-    // マーカーの位置をセットするとともに中間点の位置も更新する
-    void moveMarker(const int64_t id, const float new_pos)
-    {
-        setMarkerPosision(id, new_pos);
-        sortMarkers();
-        updateMidpointsPos();
-    }
-
-    void moveMidpoint(const int32_t id, const float new_pos)
-    {
-        int idx = getMarkerIndexById(id);
-        if (idx < 0 || std::ssize(m_markers) - 1 <= idx) return;
-
-        float left_pos  = m_markers[idx].pos;
-        float right_pos = m_markers[idx + 1].pos;
-        float range     = right_pos - left_pos;
-
-        if (range <= 0.0001f) return;
-
-        float ratio = (new_pos - left_pos) / range;
-        m_markers[idx].midpoint.ratio = std::clamp(ratio, 0.0f, 1.0f);
-        m_markers[idx].midpoint.pos = new_pos;
-
-        updateMidpointsPos();
-    }
-
+    void moveMarker(const int64_t id, const float new_pos);
+    void moveMidpoint(const int64_t id, const float new_pos);
     void addMarker(const int64_t id, const float marker_pos, const ImVec4& value, const float midpoint_ratio);
 
     void deleteMarker(const int64_t id);
@@ -448,24 +442,14 @@ public:
     void selectNextMarker();
     void selectBackMarker();
 
+    bool isDoubleClickedMarker(const ImVec2& mouse_pos);
+
     //
     // 更新
     //
     void updateMarkerAndMidpointPosition(const ImVec2& mouse_pos);
-    void updateMidpoints(const ImVec2& mouse_pos);
-
-    // 比率に基づいて中間点の絶対座標を再計算する
-    void updateMidpointsPos()
-    {
-        for (int32_t i = 0; i < static_cast<int32_t>(std::ssize(m_markers)) - 1; ++i) {
-            float left_pos  = m_markers[i].pos;
-            float right_pos = m_markers[i + 1].pos;
-            float ratio     = m_markers[i].midpoint.ratio;
-
-            // 左隣のマーカーとの距離に基づいて位置を更新
-            m_markers[i].midpoint.pos = left_pos + (right_pos - left_pos) * ratio;
-        }
-    }
+    void updateMidpointsPos();
+    void reassignMarkerID();
 
     //
     // 描画

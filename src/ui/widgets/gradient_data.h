@@ -31,6 +31,16 @@ public:
         cleanup();
     }
 
+    std::vector<MarkerData> m_default_color_markers = {
+        MarkerData(0, 0.0f, {0.0f, 0.0f, 0.0f, 1.0f}, 0.5f),
+        MarkerData(1, 1.0f, {1.0f, 1.0f, 1.0f, 1.0f}, 0.5f),
+    };
+
+    std::vector<MarkerData> m_default_alpha_markers = {
+        MarkerData(0, 0.0f, {0.0f, 0.0f, 0.0f, 1.0f}, 0.5f),
+        MarkerData(1, 1.0f, {0.0f, 0.0f, 0.0f, 1.0f}, 0.5f),
+    };
+
     MarkerManager m_color_markers{};
     MarkerManager m_alpha_markers{};
 

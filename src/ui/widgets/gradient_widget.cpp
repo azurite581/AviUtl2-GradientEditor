@@ -50,8 +50,7 @@ GradientData* drawGradientEditor(
 
     auto it = g_editor_gradients.find(label);
 
-    // 指定されたラベルをキーとするグラデーションデータが存在しなかった場合、
-    // 新規作成してマップに追加
+    // 指定されたラベルをキーとするグラデーションデータが存在しなかった場合は新規作成してマップに追加
     if (it == g_editor_gradients.end()) {
         auto gradient_data = std::make_unique<GradientData>();
         gradient_data->init(g_d3d_device, static_cast<int32_t>(display_size.x), static_cast<int32_t>(display_size.y));
@@ -68,11 +67,14 @@ GradientData* drawGradientEditor(
     auto* gradient_marker = it->second.get()->getMarkerManager();
 
     auto* color_markers = it->second.get()->getColorMarkers();
+    auto* alpha_markers = it->second.get()->getAlphaMarkers();
 
     // データを置換する場合
     if (replace_data) {
         gradient_data->getMarkerManager()->setDefaultMarkers(data.m_marker_manager.getMarkers());
         gradient_data->getMarkerManager()->setDefaultAlphaMarkers(data.m_marker_manager.getAlphaMarkers());
+
+        gradient_data->getColorMarkers()->setMarkers(data.m_color_markers.getMarkers());
         gradient_data->setColorBlurWidth(data.m_blur_width);
         gradient_data->setAlphaBlurWidth(data.m_alpha_blur_width);
         gradient_data->setColorSpace(data.m_color_space);
@@ -132,7 +134,7 @@ GradientData* drawGradientEditor(
     if (!(flags & GradientEditorFlags_NoMarker)) ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(ImGui::GetStyle().ItemSpacing.x, 0.0f));
 
     if (flags & GradientEditorFlags_AlphaMarker) {
-        ImVec2 marker_region_size = ImVec2(display_size.x, static_cast<float>(gradient_marker->getMarkerRegionHeight()));
+        ImVec2 marker_region_size = ImVec2(display_size.x, alpha_markers->getMarkerRegionHeight());
         if (!(flags & GradientEditorFlags_NotAlignSideToMarker)) {
             ImVec2 cursor = ImGui::GetCursorScreenPos();
             ImGui::SetCursorScreenPos(ImVec2(cursor.x + marker_half_width, cursor.y));
@@ -142,11 +144,15 @@ GradientData* drawGradientEditor(
         ImVec2 p0 = ImGui::GetItemRectMin();
         ImVec2 p1 = ImGui::GetItemRectMax();
 
-        gradient_marker->setAlphaMarkerRegion(p0, p1);
-        gradient_marker->drawAlphaMarkers();
+        // gradient_marker->setAlphaMarkerRegion(p0, p1);
+        // gradient_marker->drawAlphaMarkers();
 
-        gradient_marker->setAlphaMidpointRegion(p0, p1);
-        gradient_marker->drawAlphaMidpoints();
+        // gradient_marker->setAlphaMidpointRegion(p0, p1);
+        // gradient_marker->drawAlphaMidpoints();
+        alpha_markers->setMarkerRegion(p0, p1);
+        alpha_markers->setMarkerUpward(false);  // 下向きにする
+        alpha_markers->drawMarkers();
+        alpha_markers->drawMidpoints();
     }
 
     ImVec2 gradient_region_size = dsize;
@@ -163,7 +169,10 @@ GradientData* drawGradientEditor(
     ImVec2 p1             = ImGui::GetItemRectMax();
     ImDrawList* draw_list = ImGui::GetWindowDrawList();
     gradient_marker->setGradientRegion(p0, p1);
+
+    // グラデーションの描画領域を基準にマーカーの座標を計算するため、必須
     color_markers->setGradientRegion(p0, p1);
+    alpha_markers->setGradientRegion(p0, p1);
 
     // ボーダー
     if (ImGui::GetStyle().FrameBorderSize == 1.0f) {
@@ -227,15 +236,13 @@ GradientData* drawGradientEditor(
     ImGui::Dummy({0, 0});
 
     // 中間点をクリックしているかに基づいてマーカーの更新を行うかどうかを判断するため、マーカーの更新は中間点の更新より後に行う必要がある
-    gradient_marker->updateMidpoint(mouse_pos);
     gradient_marker->updateAlphaMidpoint(mouse_pos);
-    gradient_marker->updateMarker(mouse_pos, new_marker_color);
     gradient_marker->updateAlphaMarker(mouse_pos, 1.0f);
 
     color_markers->updateMarkerAndMidpointPosition(mouse_pos);
+    alpha_markers->updateMarkerAndMidpointPosition(mouse_pos);
 
     ImGui::PushID(gradient_marker);
-    gradient_marker->showColorPickerPopup();
     gradient_marker->showAlphaSliderPopup();
     ImGui::PopID();
 
