@@ -653,7 +653,6 @@ void PresetWindow::renderPresetList(GradientConfigManager& manager, Preset& cfg,
 
     // プリセットのデータを1つずつ取り出して描画
     m_is_clicked_preset = false;
-    bool is_any_clicked = false;
     for (const auto& [i, preset] : cfg.presets | std::views::enumerate) {
         ImGui::PushID(static_cast<int32_t>(i));
 
@@ -664,19 +663,18 @@ void PresetWindow::renderPresetList(GradientConfigManager& manager, Preset& cfg,
             //
             // プリセットを描画
             //
-
             // ボタンのフレームをボーダーサイズにする
             ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(ImGui::GetStyle().FrameBorderSize, ImGui::GetStyle().FrameBorderSize));
             // プリセット同士の間隔は 0 にする
             ImGui::PushStyleVarY(ImGuiStyleVar_ItemSpacing, 0.0f);
 
-            is_any_clicked = CustomUI::drawGradientButton(preset.name, gradient_size, gradient);
-            if (is_any_clicked) {
+            if (CustomUI::drawGradientButton(preset.name, gradient_size, gradient)) {
                 m_is_clicked_preset     = true;
                 m_selected_preset_index = static_cast<int32_t>(i);  // 選択中のインデックスを更新
                 m_selected_gradient     = gradient;                 // 選択中のグラデーションを更新
                 m_preset_name           = preset.name;              // プリセット名を更新
             }
+
             ImGui::PopStyleVar(2);
 
             if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNone)) {
@@ -902,7 +900,6 @@ void PresetWindow::renderPresetList(GradientConfigManager& manager, Preset& cfg,
 
         ImGui::PopID();
     }
-    //ImGui::PopStyleVar(2);
 
     // 削除確認ダイアログ
     ImVec2 center = ImGui::GetMainViewport()->GetCenter();

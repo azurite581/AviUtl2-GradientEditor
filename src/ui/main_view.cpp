@@ -354,7 +354,6 @@ void MainView::renderGradientEditor()
         replace_data = m_history_window.m_history_data.back().data;
     }
 
-
     // カラーピッカーポップアップ
     auto colorPickerPopup = [&](const char* label, ImVec4& current_color, ImVec4& previous_color) -> bool {
         bool changed  = false;
@@ -371,10 +370,11 @@ void MainView::renderGradientEditor()
                 ImGui::Text(m_config_wrapper->tr(L"現在の色").c_str());
                 ImGuiColorEditFlags color_button_flags = ImGuiColorEditFlags_NoPicker | ImGuiColorEditFlags_AlphaPreviewHalf;
                 ImVec2 color_button_size               = ImVec2(ImGui::GetContentRegionAvail().x, ImGui::GetContentRegionAvail().x * 0.6f);
-                ImGui::ColorButton("##current_color", current_color, color_button_flags, color_button_size);
+                changed |= ImGui::ColorButton("##current_color", current_color, color_button_flags, color_button_size);
 
                 ImGui::Text(m_config_wrapper->tr(L"以前の色").c_str());
                 if (ImGui::ColorButton("##previous_color", previous_color, color_button_flags, color_button_size)) {
+                    changed |= true;
                     current_color = previous_color;
                 }
 
@@ -571,12 +571,16 @@ void MainView::renderGradientEditor()
     // 描画設定
     static CustomUI::GradientEditorConfig config;
     config.max_marker_count = MAX_MARKER_COUNT;
-    config.marker_width     = frame_height * scale::relative::GRADIENT_MARKER_WIDTH;
+    config.marker_size     = {frame_height * scale::relative::GRADIENT_MARKER_WIDTH, frame_height * scale::relative::GRADIENT_MARKER_HEIGHT};
+    config.midpoint_size     = {frame_height * scale::relative::GRADIENT_MIDPOINT_WIDTH, frame_height * scale::relative::GRADIENT_MIDPOINT_WIDTH};
     config.io_enable        = !ImGui::IsPopupOpen(nullptr, ImGuiPopupFlags_AnyPopupId);  // ポップアップが開いているときはマーカーの操作を受け付けない
 
     // プリセット、履歴がクリックされたときはそのグラデーションを使用する
     if (m_preset_window.isPresetClicked()) {
-        if (m_data != nullptr) m_history_window.pushHistory(*m_data);
+        if (m_data != nullptr) {
+            m_history_window.pushHistory(*m_data);
+            m_logger_wrapper->log("push to history\n");
+        }
         replace_data = m_preset_window.getSelectedGradientData();
     } else if (m_history_window.isHistoryClicked()) {
         replace_data = m_history_window.getSelectedGradient();
@@ -618,11 +622,11 @@ void MainView::renderGradientEditor()
     }
     if (ImGui::BeginPopup("alpha_slider_popup2")) {
         if (ImGui::DragFloat("##alpha_value", &current_alpha, 0.01f, 0.0f, 1.0f, "%.2f")) {
-            m_data->getAlphaMarkers()->setSelectedMarkerValue(ImVec4(0, 0, 0, current_alpha));
+            float alpha = std::clamp(current_alpha, 0.0f, 1.0f);
+            m_data->getAlphaMarkers()->setSelectedMarkerValue(ImVec4(0, 0, 0, alpha));
         }
         ImGui::EndPopup();
     }
-
 
     //
     // 各種ツールボタン
@@ -656,10 +660,19 @@ void MainView::renderGradientEditor()
 
     // カラーマーカーの操作
     if (is_reset_all) {
+        if (m_data != nullptr) {
+            m_history_window.pushHistory(*m_data); // リセット前の状態を保存
+        }
+
         m_data->getColorMarkers()->resetMarkers(m_data->m_default_color_markers);
         m_data->setColorSpace(0);
         m_data->setInterpDir(0);
         m_data->setColorBlurWidth(1.0f);
+
+        // 履歴を設定ファイルに書き出す
+        if (m_data != nullptr) {
+            m_history_window.writeHistoryToConfig(m_config_manager, m_history_config);
+        }
     }
     if (select_back_marker) m_data->getColorMarkers()->selectBackMarker();
     if (select_next_marker) m_data->getColorMarkers()->selectNextMarker();
@@ -671,16 +684,24 @@ void MainView::renderGradientEditor()
 
     // アルファマーカーの操作
     if (is_reset_alpha_marker) {
-        m_data->getMarkerManager()->setDefaultAlphaMarkers();
+        if (m_data != nullptr) {
+            m_history_window.pushHistory(*m_data); // リセット前の状態を保存
+        }
+
+        m_data->getAlphaMarkers()->resetMarkers(m_data->m_default_alpha_markers);
         m_data->setAlphaBlurWidth(1.0f);
+
+        if (m_data != nullptr) {
+            m_history_window.writeHistoryToConfig(m_config_manager, m_history_config);
+        }
     }
-    if (select_back_alpha_marker) m_data->getMarkerManager()->selectBackAlphaMarker();
-    if (select_next_alpha_marker) m_data->getMarkerManager()->selectNextAlphaMarker();
-    if (is_distribute_alpha_marker) m_data->getMarkerManager()->distributeAlphaMarkersEvenly();
-    if (is_distribute_alpha_marker_and_alpha_midpoint) m_data->getMarkerManager()->distributeAlphaMarkersAndAlphaMipointsEvenly();
-    if (is_reset_alpha_midpoint) m_data->getMarkerManager()->resetAlphaMidpoints();
-    if (is_reverse_alpha_marker) m_data->getMarkerManager()->reverseAlphaMarkers();
-    if (is_delete_alpha_marker) m_data->getMarkerManager()->deleteSelectedAlphaMarker();
+    if (select_back_alpha_marker) m_data->getAlphaMarkers()->selectBackMarker();
+    if (select_next_alpha_marker) m_data->getAlphaMarkers()->selectNextMarker();
+    if (is_distribute_alpha_marker) m_data->getAlphaMarkers()->distributeMarkersEvenly();
+    if (is_distribute_alpha_marker_and_alpha_midpoint) m_data->getAlphaMarkers()->distributeMarkersAndMipointsEvenly();
+    if (is_reset_alpha_midpoint) m_data->getAlphaMarkers()->resetMidpoints();
+    if (is_reverse_alpha_marker) m_data->getAlphaMarkers()->reverseMarkers();
+    if (is_delete_alpha_marker) m_data->getAlphaMarkers()->deleteSelectedMarker();
 
     // プリセットがクリックされた場合、現在のグラデーションがプリセットのものに置き換わるため、
     // その時のグラデーションのデータを差分検知のために保存しておく
@@ -792,30 +813,36 @@ void MainView::renderColorPropertyEditor(GradientData* data)
         bool click_btn = ImGui::ColorButton("##marker_color_button", new_col, ImGuiColorEditFlags_NoTooltip);
 
         // カラーエディターかカラーボタンがクリックされた場合
-        if (click_edit || click_btn) {
-            data->getMarkerManager()->setBackupPickerColor(data->getMarkerManager()->getColorPickerColor());
-            data->getMarkerManager()->setMarkerColorPickerColor(new_col);
-            if (click_btn) {
-                static const char* marker_color_picker_popup = "marker_color_picker";
-                ImGui::PushID(data->getMarkerManager());
-                ImGui::OpenPopup(marker_color_picker_popup);
-                ImGui::PopID();
-            }
-        }
+        // if (click_edit || click_btn) {
+        //     data->getColorMarkers()->setBackupPickerColor(data->getMarkerManager()->getColorPickerColor());
+        //     data->getColorMarkers()->setMarkerColorPickerColor(new_col);
+        //     if (click_btn) {
+        //         static const char* marker_color_picker_popup = "marker_color_picker";
+        //         ImGui::PushID(data->getMarkerManager());
+        //         ImGui::OpenPopup(marker_color_picker_popup);
+        //         ImGui::PopID();
+        //     }
+        // }
 
-        if (click_edit || click_btn) data->getMarkerManager()->setSelectedMarkerColor(data->getMarkerManager()->getColorPickerColor());
+        // if (click_edit || click_btn) data->getColorMarkers()->setSelectedMarkerValue(data->getColorMarkers()->getColorPickerColor());
 
         ImGui::SetNextItemWidth(width);
         float pos = curr.selected_marker_pos * 100.0f;
-        if (ImGui::DragFloat("##marker_pos", &pos, 0.01f, 0.0f, 100.0f, "%.2f")) data->getMarkerManager()->setSelectedMarkerPos(pos / 100.0f);
+        if (ImGui::DragFloat("##marker_pos", &pos, 0.01f, 0.0f, 100.0f, "%.2f")) {
+            data->getColorMarkers()->setSelectedMarkerPosition(pos / 100.0f);
+        }
 
         ImGui::SetNextItemWidth(width);
         float mid = curr.selected_midpoint_ratio * 100.0f;
-        if (ImGui::DragFloat("##midpoint_ratio", &mid, 0.01f, 0.0f, 100.0f, "%.2f")) data->getMarkerManager()->setSelectedMidpointRatio(mid / 100.0f);
+        if (ImGui::DragFloat("##midpoint_ratio", &mid, 0.01f, 0.0f, 100.0f, "%.2f")) {
+            data->getColorMarkers()->setSelectedMidpointRatio(mid / 100.0f);
+        }
 
         ImGui::SetNextItemWidth(width);
         float blur = curr.blur_width * 100.0f;
-        if (ImGui::DragFloat("##blur_width", &blur, 0.1f, 0.0f, 100.0f, "%.0f")) data->setColorBlurWidth(blur / 100.0f);
+        if (ImGui::DragFloat("##blur_width", &blur, 0.1f, 0.0f, 100.0f, "%.0f")) {
+            data->setColorBlurWidth(blur / 100.0f);
+        }
 
         ImGui::SetNextItemWidth(width);
         if (ImGui::BeginCombo("##color_space", COLOR_SPACE_NAMES[curr.color_space_index])) {
@@ -874,19 +901,19 @@ void MainView::renderAlphaPropertyEditor(GradientData* data)
         ImGui::SetNextItemWidth(width);
         float value = curr.selected_alpha_marker_value * 100.0f;
         if (ImGui::DragFloat("##alpha_marker_value", &value, 0.01f, 0.0f, 100.0f, "%.2f")) {
-            data->getMarkerManager()->setSelectedAlphaMarkerValue(value / 100.0f);
+            data->getAlphaMarkers()->setSelectedMarkerValue(ImVec4(0, 0, 0, value / 100.0f));
         }
 
         ImGui::SetNextItemWidth(width);
         float pos = curr.selected_alpha_marker_pos * 100.0f;
         if (ImGui::DragFloat("##alpha_marker_pos", &pos, 0.01f, 0.0f, 100.0f, "%.2f")) {
-            data->getMarkerManager()->setSelectedAlphaMarkerPos(pos / 100.0f);
+            data->getAlphaMarkers()->setSelectedMarkerPosition(pos / 100.0f);
         }
 
         ImGui::SetNextItemWidth(width);
         float midpoint = curr.selected_alpha_midpoint_ratio * 100.0f;
         if (ImGui::DragFloat("##alpha_marker_midpoint", &midpoint, 0.01f, 0.0f, 100.0f, "%.2f")) {
-            data->getMarkerManager()->setSelectedAlphaMidpointRatio(midpoint / 100.0f);
+            data->getAlphaMarkers()->setSelectedMidpointRatio(midpoint / 100.0f);
         }
 
         ImGui::SetNextItemWidth(width);

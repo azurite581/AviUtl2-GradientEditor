@@ -15,6 +15,9 @@ namespace relative {
 constexpr float GRADIENT_HEIGHT         = 1.5f;
 constexpr float GRADIENT_MARGIN_Y       = 0.25f;
 constexpr float GRADIENT_MARKER_WIDTH   = 0.5f;
+constexpr float GRADIENT_MARKER_HEIGHT  = 0.5f;
+constexpr float GRADIENT_MIDPOINT_WIDTH   = 0.5f;
+constexpr float GRADIENT_MIDPOINT_HEIGHT  = 0.5f;
 constexpr float ITEM_NAME_BUTTON_WIDTH  = 5.0f;
 constexpr float EFFECT_INDEX_SPIN_WIDTH = 4.0f;
 }  // namespace relative

@@ -1,4 +1,5 @@
 #include "gradient_widget.h"
+#include "imgui.h"
 #include "imgui_internal.h"
 
 namespace CustomUI {
@@ -54,8 +55,8 @@ GradientData* drawGradientEditor(
     if (it == g_editor_gradients.end()) {
         auto gradient_data = std::make_unique<GradientData>();
         gradient_data->init(g_d3d_device, static_cast<int32_t>(display_size.x), static_cast<int32_t>(display_size.y));
-        gradient_data->getMarkerManager()->setDefaultMarkers(data.m_marker_manager.getMarkers());
-        gradient_data->getMarkerManager()->setDefaultAlphaMarkers(data.m_marker_manager.getAlphaMarkers());
+        gradient_data->m_color_markers.resetMarkers(gradient_data->m_default_color_markers);
+        gradient_data->m_alpha_markers.resetMarkers(gradient_data->m_default_alpha_markers);
         gradient_data->setColorBlurWidth(data.m_blur_width);
         gradient_data->setAlphaBlurWidth(data.m_alpha_blur_width);
         gradient_data->setColorSpace(data.m_color_space);
@@ -63,18 +64,26 @@ GradientData* drawGradientEditor(
         it = g_editor_gradients.emplace(label, std::move(gradient_data)).first;
     }
 
-    auto* gradient_data   = it->second.get();
-    auto* gradient_marker = it->second.get()->getMarkerManager();
-
+    auto* gradient_data  = it->second.get();
     auto* color_markers = it->second.get()->getColorMarkers();
     auto* alpha_markers = it->second.get()->getAlphaMarkers();
 
+    color_markers->setIOEnable(config.io_enable);
+    color_markers->setMarkerMaxCount(config.max_marker_count);
+    //color_markers->setMarkerSize(config.marker_size);
+    //color_markers->setMidpointSize(config.midpoint_size);
+
+    alpha_markers->setIOEnable(config.io_enable);
+    alpha_markers->setMarkerMaxCount(config.max_marker_count);
+    //alpha_markers->setMarkerSize(config.marker_size);
+    //alpha_markers->setMidpointSize(config.midpoint_size);
+
+    float marker_half_width = config.marker_size.x * 0.5f;
+
     // データを置換する場合
     if (replace_data) {
-        gradient_data->getMarkerManager()->setDefaultMarkers(data.m_marker_manager.getMarkers());
-        gradient_data->getMarkerManager()->setDefaultAlphaMarkers(data.m_marker_manager.getAlphaMarkers());
-
-        gradient_data->getColorMarkers()->setMarkers(data.m_color_markers.getMarkers());
+        gradient_data->getColorMarkers()->resetMarkers(data.m_color_markers.getMarkers());
+        gradient_data->getAlphaMarkers()->resetMarkers(data.m_alpha_markers.getMarkers());
         gradient_data->setColorBlurWidth(data.m_blur_width);
         gradient_data->setAlphaBlurWidth(data.m_alpha_blur_width);
         gradient_data->setColorSpace(data.m_color_space);
@@ -106,49 +115,20 @@ GradientData* drawGradientEditor(
         gradient_data->getTextureWidth(), gradient_data->getTextureHeight(),
         gradient_data->getRtv(), gradient_data->getSrv());
 
-    float marker_half_width = gradient_marker->getMarkerWidth() * 0.5f;
-
-    // コンフィグの設定
-    gradient_marker->setMarkerMaxCount(config.max_marker_count);
-    gradient_marker->setIOEnable(config.io_enable);
-    gradient_marker->setMarkerWidth(static_cast<uint32_t>(config.marker_width));
-
-    // 中間点をグラデーションの上に描画
-    if (!(flags & GradientEditorFlags_NoMidpoint) && !((flags & GradientEditorFlags_MidpointBelowGradient)) && !(flags & GradientEditorFlags_AlphaMarker)) {
-        ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(ImGui::GetStyle().ItemSpacing.x, 0.0f));
-        ImVec2 midpoint_region_size = ImVec2(dsize.x, static_cast<float>(gradient_marker->getMidpointHeight()));
-        if (!(flags & GradientEditorFlags_NotAlignSideToMarker)) {
-            ImVec2 cursor = ImGui::GetCursorScreenPos();
-            ImGui::SetCursorScreenPos(ImVec2(cursor.x + marker_half_width, cursor.y));
-            midpoint_region_size.x -= gradient_marker->getMarkerWidth();
-        }
-        ImGui::InvisibleButton("midpoints", midpoint_region_size);
-        ImVec2 p0 = ImGui::GetItemRectMin();
-        ImVec2 p1 = ImGui::GetItemRectMax();
-        gradient_marker->setMidpointRegion(p0, p1);
-        gradient_marker->drawMidpoints();
-
-        ImGui::PopStyleVar();
-    }
-
     if (!(flags & GradientEditorFlags_NoMarker)) ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(ImGui::GetStyle().ItemSpacing.x, 0.0f));
 
     if (flags & GradientEditorFlags_AlphaMarker) {
         ImVec2 marker_region_size = ImVec2(display_size.x, alpha_markers->getMarkerRegionHeight());
-        if (!(flags & GradientEditorFlags_NotAlignSideToMarker)) {
-            ImVec2 cursor = ImGui::GetCursorScreenPos();
-            ImGui::SetCursorScreenPos(ImVec2(cursor.x + marker_half_width, cursor.y));
-            marker_region_size.x -= gradient_marker->getMarkerWidth();
-        }
-        ImGui::InvisibleButton("alpha_markers", marker_region_size);
+
+        // 両端に位置するマーカーのはみ出しサイズを考慮
+        ImVec2 cursor = ImGui::GetCursorScreenPos();
+        ImGui::SetCursorScreenPos(ImVec2(cursor.x + marker_half_width, cursor.y));
+        marker_region_size.x -= marker_half_width;
+
+        ImGui::InvisibleButton("alpha_markers_draw_region", marker_region_size);
         ImVec2 p0 = ImGui::GetItemRectMin();
         ImVec2 p1 = ImGui::GetItemRectMax();
 
-        // gradient_marker->setAlphaMarkerRegion(p0, p1);
-        // gradient_marker->drawAlphaMarkers();
-
-        // gradient_marker->setAlphaMidpointRegion(p0, p1);
-        // gradient_marker->drawAlphaMidpoints();
         alpha_markers->setMarkerRegion(p0, p1);
         alpha_markers->setMarkerUpward(false);  // 下向きにする
         alpha_markers->drawMarkers();
@@ -156,19 +136,15 @@ GradientData* drawGradientEditor(
     }
 
     ImVec2 gradient_region_size = dsize;
-
-    if (!(flags & GradientEditorFlags_NotAlignSideToMarker)) {
-        ImVec2 cursor = ImGui::GetCursorScreenPos();
-        ImGui::SetCursorScreenPos(ImVec2(cursor.x + marker_half_width, cursor.y));
-        gradient_region_size.x = ImMax(1.0f, gradient_region_size.x - gradient_marker->getMarkerWidth());
-    }
+    ImVec2 cursor = ImGui::GetCursorScreenPos();
+    ImGui::SetCursorScreenPos(ImVec2(cursor.x + marker_half_width, cursor.y));
+    gradient_region_size.x -= marker_half_width;
 
     // グラデーション本体
     ImGui::Image((ImTextureID)(intptr_t)gradient_data->getOutputSrv(), gradient_region_size);
     ImVec2 p0             = ImGui::GetItemRectMin();
     ImVec2 p1             = ImGui::GetItemRectMax();
     ImDrawList* draw_list = ImGui::GetWindowDrawList();
-    gradient_marker->setGradientRegion(p0, p1);
 
     // グラデーションの描画領域を基準にマーカーの座標を計算するため、必須
     color_markers->setGradientRegion(p0, p1);
@@ -184,26 +160,14 @@ GradientData* drawGradientEditor(
     // マーカーの描画
     if (!(flags & GradientEditorFlags_NoMarker)) {
         ImVec2 marker_region_size = ImVec2(dsize.x, color_markers->getMarkerRegionHeight());
-        if (!(flags & GradientEditorFlags_NotAlignSideToMarker)) {
-            ImVec2 cursor = ImGui::GetCursorScreenPos();
-            ImGui::SetCursorScreenPos(ImVec2(cursor.x + marker_half_width, cursor.y));
-            marker_region_size.x = ImMax(1.0f, marker_region_size.x - gradient_marker->getMarkerWidth());
-        }
+
+        ImVec2 cursor = ImGui::GetCursorScreenPos();
+        ImGui::SetCursorScreenPos(ImVec2(cursor.x + marker_half_width, cursor.y));
+        marker_region_size.x -= marker_half_width;
 
         ImGui::InvisibleButton("markers_draw_region", marker_region_size);
         p0 = ImGui::GetItemRectMin();
         p1 = ImGui::GetItemRectMax();
-        ImGui::DebugDrawItemRect();
-
-        // gradient_marker->setMarkerRegion(p0, p1);
-        // gradient_marker->drawMarkers();
-
-        // // 中間点をグラデーションの下部に描画する場合はここで描画
-        // // マーカーと中間点が重なっていた場合に中間点を優先するため、マーカーの更新は中間点の更新より後に行う
-        // if ((flags & GradientEditorFlags_AlphaMarker) || (!(flags & GradientEditorFlags_NoMidpoint) && (flags & GradientEditorFlags_MidpointBelowGradient))) {
-        //     gradient_marker->setMidpointRegion(p0, p1);
-        //     gradient_marker->drawMidpoints();
-        // }
 
         color_markers->setMarkerRegion(p0, p1);
         color_markers->drawMarkers();
@@ -212,39 +176,30 @@ GradientData* drawGradientEditor(
 
     ImVec2 mouse_pos = ImGui::GetIO().MousePos;
 
-    // マーカーをダブルクリックしたときにカラーピッカーを表示する
-    gradient_marker->onDoubleClickedMarker(mouse_pos);
-    gradient_marker->onDoubleClickedAlphaMarker(mouse_pos);
-
     // 新しく挿入されるマーカーの色
     ImVec4 new_marker_color = ImVec4(1.0f, 1.0f, 1.0f, 1.0f);
+    ImVec4 color_marker_new_value{1.0f, 1.0f, 1.0f, 1.0f}, alpha_marker_new_value{0.0f, 0.0f, 0.0f, 1.0f};
     if (flags & GradientEditorFlags_newMarkerColorFromClick) {
         // 動的な表示サイズの変更に対応するため、表示サイズではなくテクスチャサイズ上での位置を取得する
         // テクスチャサイズは最初に与えられた表示サイズになる。以降はそのテクスチャを拡縮して表示する
-        ImVec2 mouse_pos_on_texture = [&mouse_pos, &gradient_data, &gradient_marker, &dsize]() {
+        ImVec2 mouse_pos_on_texture = [&mouse_pos, &gradient_data, &p0, &dsize]() {
             float t = gradient_data->getTextureWidth() / dsize.x;
             ImVec2 mouse_pos_on_texture;
-            mouse_pos_on_texture.x = (mouse_pos.x - gradient_marker->getGradientRegionP0().x) * t;
-            mouse_pos_on_texture.y = (mouse_pos.y - gradient_marker->getGradientRegionP0().y) * t;
+            mouse_pos_on_texture.x = (mouse_pos.x - p0.x) * t;
+            mouse_pos_on_texture.y = (mouse_pos.y - p0.y) * t;
             return mouse_pos_on_texture;
         }();
         std::vector<float> texture_color = gradient_data->getTextureColor(g_d3d_device, g_d3d_device_context, static_cast<int32_t>(mouse_pos_on_texture.x), static_cast<int32_t>(mouse_pos_on_texture.y));
         new_marker_color                 = ImVec4(texture_color[0], texture_color[1], texture_color[2], texture_color[3]);
     } else {
-        new_marker_color = gradient_marker->getSelectedMarkerColor();
+        color_marker_new_value = color_markers->getSelectedMarkerValue();
     }
     ImGui::Dummy({0, 0});
 
-    // 中間点をクリックしているかに基づいてマーカーの更新を行うかどうかを判断するため、マーカーの更新は中間点の更新より後に行う必要がある
-    gradient_marker->updateAlphaMidpoint(mouse_pos);
-    gradient_marker->updateAlphaMarker(mouse_pos, 1.0f);
-
+    color_markers->setNewMarkerValue(color_marker_new_value);
+    alpha_markers->setNewMarkerValue(alpha_marker_new_value);
     color_markers->updateMarkerAndMidpointPosition(mouse_pos);
     alpha_markers->updateMarkerAndMidpointPosition(mouse_pos);
-
-    ImGui::PushID(gradient_marker);
-    gradient_marker->showAlphaSliderPopup();
-    ImGui::PopID();
 
     return gradient_data;
 }
@@ -266,8 +221,8 @@ ID3D11ShaderResourceView* getGradientSrv(
     if (it == gradient_datas.end()) {
         auto gradient_data = std::make_unique<GradientData>();
         gradient_data->init(g_d3d_device, static_cast<int32_t>(display_size.x), static_cast<int32_t>(display_size.y));
-        gradient_data->getMarkerManager()->setDefaultMarkers(data.m_marker_manager.getMarkers());
-        gradient_data->getMarkerManager()->setDefaultAlphaMarkers(data.m_marker_manager.getAlphaMarkers());
+        gradient_data->m_color_markers.resetMarkers(gradient_data->m_default_color_markers);
+        gradient_data->m_alpha_markers.resetMarkers(gradient_data->m_default_alpha_markers);
         gradient_data->setColorBlurWidth(data.m_blur_width);
         gradient_data->setAlphaBlurWidth(data.m_alpha_blur_width);
         gradient_data->setColorSpace(data.m_color_space);
@@ -275,8 +230,8 @@ ID3D11ShaderResourceView* getGradientSrv(
         it = gradient_datas.emplace(label, std::move(gradient_data)).first;
     } else {
         // 存在する場合はデータを上書き
-        gradient_datas[label].get()->getMarkerManager()->setDefaultMarkers(data.m_marker_manager.getMarkers());
-        gradient_datas[label].get()->getMarkerManager()->setDefaultAlphaMarkers(data.m_marker_manager.getAlphaMarkers());
+        gradient_datas[label].get()->getColorMarkers()->resetMarkers(data.m_color_markers.getMarkers());
+        gradient_datas[label].get()->getAlphaMarkers()->resetMarkers(data.m_alpha_markers.getMarkers());
         gradient_datas[label].get()->setColorBlurWidth(data.m_blur_width);
         gradient_datas[label].get()->setAlphaBlurWidth(data.m_alpha_blur_width);
         gradient_datas[label].get()->setColorSpace(data.m_color_space);

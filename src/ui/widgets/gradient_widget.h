@@ -18,10 +18,8 @@ enum GradientEditorFlags_ {
     GradientEditorFlags_None                    = 0,       // フラグなし
     GradientEditorFlags_NoMidpoint              = 1 << 1,  // 中間点非表示
     GradientEditorFlags_NoMarker                = 1 << 2,  // マーカー非表示
-    GradientEditorFlags_NotAlignSideToMarker    = 1 << 3,  // グラデーションの両端（幅）をマーカーに合わせない
-    GradientEditorFlags_newMarkerColorFromClick = 1 << 4,  // 新規マーカーの色をクリック位置の色にする
-    GradientEditorFlags_MidpointBelowGradient   = 1 << 5,   // 中間点の位置をグラデーションの下にする（デフォルトは上）
-    GradientEditorFlags_AlphaMarker             = 1 << 6,
+    GradientEditorFlags_newMarkerColorFromClick = 1 << 3,  // 新規マーカーの色をクリック位置の色にする
+    GradientEditorFlags_AlphaMarker             = 1 << 4,
 };
 using GradientEditorFlags = int32_t;
 
@@ -43,7 +41,8 @@ bool drawGradientButton(
 // 描画前にユーザーが設定できるオプション
 struct GradientEditorConfig {
     uint32_t max_marker_count = 30;     // 最大マーカー数。最大マーカー数を超えると新規マーカー追加不可
-    float marker_width        = 20.0f;  // マーカーの幅
+    ImVec2 marker_size{20.0f, 2.0f};
+    ImVec2 midpoint_size{ 20.0f, 20.0f };
     bool io_enable = true;              // マウス入力を受け付けるかどうか
 };
 

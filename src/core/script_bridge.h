@@ -102,18 +102,19 @@ public:
 
     void setValues(GradientData& data)
     {
-        m_curr_values.marker_count            = static_cast<uint32_t>(std::ssize(data.getMarkerManager()->getMarkers()));
-        m_curr_values.selected_color          = data.getMarkerManager()->getSelectedMarkerColor();
-        m_curr_values.selected_marker_pos     = data.getMarkerManager()->getSelectedMarkerPos();
-        m_curr_values.selected_midpoint_ratio = data.getMarkerManager()->getSelectedMidpointRatio();
-        m_curr_values.selected_alpha_midpoint_ratio = data.getMarkerManager()->getSelectedAlphaMidpointRatio();
+        m_curr_values.marker_count            = static_cast<uint32_t>(std::ssize(data.getColorMarkers()->getMarkers()));
+        m_curr_values.selected_color          = data.getColorMarkers()->getSelectedMarkerValue();
+        m_curr_values.selected_marker_pos     = data.getColorMarkers()->getSelectedMarkerPosition();
+        m_curr_values.selected_midpoint_ratio = data.getColorMarkers()->getSelectedMidpointRatio();
+        m_curr_values.selected_alpha_midpoint_ratio = data.getColorMarkers()->getSelectedMidpointRatio();
         m_curr_values.blur_width              = data.getBlurWidth();
         m_curr_values.alpha_blur_width        = data.getAlphaBlurWidth();
         m_curr_values.color_space_index       = data.getColorSpace();
         m_curr_values.interp_dir_index        = data.getInterpDir();
-        m_curr_values.alpha_marker_count      = static_cast<uint32_t>(std::ssize(data.getMarkerManager()->getAlphaMarkers()));
-        m_curr_values.selected_alpha_marker_pos = data.getMarkerManager()->getSelectedAlphaMarkerPos();
-        m_curr_values.selected_alpha_marker_value = data.getMarkerManager()->getSelectedAlphaMarkerValue();
+
+        m_curr_values.alpha_marker_count      = static_cast<uint32_t>(std::ssize(data.getAlphaMarkers()->getMarkers()));
+        m_curr_values.selected_alpha_marker_pos = data.getAlphaMarkers()->getSelectedMarkerPosition();
+        m_curr_values.selected_alpha_marker_value = data.getAlphaMarkers()->getSelectedMarkerValue().w;
     }
     Values getValues() const noexcept { return m_curr_values; }
 

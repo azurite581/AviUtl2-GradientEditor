@@ -44,7 +44,6 @@ public:
     MarkerManager m_color_markers{};
     MarkerManager m_alpha_markers{};
 
-    GradientMarkerManager m_marker_manager;
     int32_t m_color_space{0};
     int32_t m_interp_dir{0};
     float m_blur_width{1.0f};
@@ -52,7 +51,6 @@ public:
 
     std::partial_ordering operator<=>(const GradientData& other) const
     {
-        if (auto cmp = m_marker_manager <=> other.m_marker_manager; cmp != 0) return cmp;
         if (auto cmp = m_color_space <=> other.m_color_space; cmp != 0) return cmp;
         if (auto cmp = m_interp_dir <=> other.m_interp_dir; cmp != 0) return cmp;
         if (auto cmp = m_blur_width <=> other.m_blur_width; cmp != 0) return cmp;
@@ -61,16 +59,30 @@ public:
 
     bool operator==(const GradientData& other) const
     {
-        return m_marker_manager == other.m_marker_manager &&
-               m_color_space == other.m_color_space &&
-               m_interp_dir == other.m_interp_dir &&
-               m_blur_width == other.m_blur_width &&
-               m_alpha_blur_width == other.m_alpha_blur_width;
+        if (m_color_space != other.m_color_space) return false;
+        if (m_interp_dir != other.m_interp_dir) return false;
+        if (m_blur_width != other.m_blur_width) return false;
+        if (m_alpha_blur_width != other.m_alpha_blur_width) return false;
+
+        auto a_color_markers = m_color_markers.getMarkers();
+        auto b_color_markers = other.m_color_markers.getMarkers();
+        if (std::ssize(a_color_markers) != std::ssize(b_color_markers)) return false;
+        for (size_t i = 0; i < a_color_markers.size(); ++i) {
+            if (!(a_color_markers[i] == b_color_markers[i])) return false;
+        }
+
+        auto a_alpha_markers = m_alpha_markers.getMarkers();
+        auto b_alpha_markers = other.m_alpha_markers.getMarkers();
+        if (std::ssize(a_alpha_markers) != std::ssize(b_alpha_markers)) return false;
+        for (size_t i = 0; i < a_alpha_markers.size(); ++i) {
+            if (!(a_alpha_markers[i] == b_alpha_markers[i])) return false;
+        }
+
+        return true;
     }
 
     [[nodiscard]] auto getColorMarkers() noexcept { return &m_color_markers; }
     [[nodiscard]] auto getAlphaMarkers() noexcept { return &m_alpha_markers; }
-    [[nodiscard]] GradientMarkerManager* getMarkerManager() noexcept { return &m_marker_manager; }
     [[nodiscard]] int32_t getColorSpace() const noexcept { return m_color_space; }
     [[nodiscard]] int32_t getInterpDir() const noexcept { return m_interp_dir; }
     [[nodiscard]] float getBlurWidth() const noexcept { return m_blur_width; }

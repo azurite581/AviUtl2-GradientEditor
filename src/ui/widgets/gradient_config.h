@@ -392,6 +392,8 @@ inline void from_json(const nlohmann::ordered_json& j, History& c)
         c.version   = "0.5.0";  // 書き込み時は v0.5.0 の形式にする
     } else if (c.version == "0.5.0") {
         c.histories = j.value("histories", c.histories);
+    } else {
+        c.version   = "0.5.0";
     }
 }
 
@@ -495,6 +497,7 @@ public:
 
     void setPresetFilePath(const std::filesystem::path& path) { m_preset_path = path; }
     void setHistoryFilePath(const std::filesystem::path& path) { m_history_path = path; }
+    [[nodiscard]] std::filesystem::path getHistoryFilePath() const noexcept { return m_history_path; }
 
     ConfigLoadResult<Preset> loadPresetConfig() const
     {
@@ -511,31 +514,29 @@ public:
         GradientData gradient{};
 
         // カラーマーカー
-        std::vector<GradientMarkerData> color_markers;
+        std::vector<MarkerData> color_markers;
         for (uint32_t i = 0; i < static_cast<uint32_t>(std::ssize(preset.color_markers)); ++i) {
-            GradientMarkerData marker_data;
-            marker_data.color          = color_conv::u32Rgba2Vec4Rgba<ImVec4>(str_conv::charsToInt(preset.color_markers[i].color.substr(2, 8), 0xffffffff, 16));
-            marker_data.pos            = preset.color_markers[i].position;
-            marker_data.midpoint.ratio = preset.color_markers[i].midpoint;
+            ImVec4 value = color_conv::u32Rgba2Vec4Rgba<ImVec4>(
+                str_conv::charsToInt(preset.color_markers[i].color.substr(2, 8), 0xffffffff, 16));
+            MarkerData marker_data(static_cast<int64_t>(i), preset.color_markers[i].position, value, preset.color_markers[i].midpoint);
             color_markers.push_back(marker_data);
         }
 
         // アルファマーカー
-        std::vector<AlphaMarkerData> alpha_markers;
+        std::vector<MarkerData> alpha_markers;
         for (uint32_t i = 0; i < static_cast<uint32_t>(std::ssize(preset.alpha_markers)); ++i) {
-            AlphaMarkerData alpha_marker_data;
-            alpha_marker_data.value          = preset.alpha_markers[i].value;
-            alpha_marker_data.pos            = preset.alpha_markers[i].position;
-            alpha_marker_data.midpoint.ratio = preset.alpha_markers[i].midpoint;
-            alpha_markers.push_back(alpha_marker_data);
+            ImVec4 value = ImVec4(0, 0, 0, preset.alpha_markers[i].value);
+            MarkerData marker_data(static_cast<int64_t>(i), preset.alpha_markers[i].position, value, preset.alpha_markers[i].midpoint);
+            alpha_markers.push_back(marker_data);
         }
 
-        gradient.m_marker_manager.setDefaultMarkers(color_markers);
-        gradient.m_marker_manager.setDefaultAlphaMarkers(alpha_markers);
+        gradient.m_color_markers.setMarkers(color_markers);
         gradient.m_blur_width       = preset.color_blur_width;
-        gradient.m_alpha_blur_width = preset.alpha_blur_width;
         gradient.m_color_space      = preset.color_space;
         gradient.m_interp_dir       = preset.interpolation_path;
+
+        gradient.m_alpha_markers.setMarkers(alpha_markers);
+        gradient.m_alpha_blur_width = preset.alpha_blur_width;
 
         return gradient;
     }
@@ -545,11 +546,11 @@ public:
         GradientPreset preset;
 
         // カラーマーカー
-        int32_t color_marker_num = static_cast<int32_t>(std::ssize(gradient.m_marker_manager.getMarkerPos()));
+        int32_t color_marker_num = static_cast<int32_t>(std::ssize(gradient.m_color_markers.getMarkers()));
         std::vector<ColorMarker> color_markers(color_marker_num);
-        std::vector<ImVec4> color_marker_colors = gradient.m_marker_manager.getMarkerColors();
-        auto color_marker_positions             = gradient.m_marker_manager.getMarkerPos();
-        auto color_marker_midpoints             = gradient.m_marker_manager.getMidpointRatios();
+        std::vector<ImVec4> color_marker_colors = gradient.m_color_markers.getMarkerValues();
+        auto color_marker_positions = gradient.m_color_markers.getMarkerPositions();
+        auto color_marker_midpoints = gradient.m_color_markers.getMidpointRatios();
         for (int32_t i = 0; i < color_marker_num; ++i) {
             uint32_t rgba             = color_conv::vec4normRgba2u32Rgba<ImVec4>(color_marker_colors[i]);
             color_markers[i].color    = std::format("0x{:08X}", rgba);
@@ -562,13 +563,13 @@ public:
         }
 
         // アルファマーカー
-        int32_t alpha_marker_num = static_cast<int32_t>(std::ssize(gradient.m_marker_manager.getAlphaMarkerPos()));
+        int32_t alpha_marker_num = static_cast<int32_t>(std::ssize(gradient.m_alpha_markers.getMarkers()));
         std::vector<AlphaMarker> alpha_markers(alpha_marker_num);
-        auto alpha_marker_values     = gradient.m_marker_manager.getAlphaMarkerValues();
-        auto alpha_marker_positionts = gradient.m_marker_manager.getAlphaMarkerPos();
-        auto alpha_marker_midpoints  = gradient.m_marker_manager.getAlphaMidpointRatios();
+        auto alpha_marker_values     = gradient.m_alpha_markers.getMarkerValues();
+        auto alpha_marker_positionts = gradient.m_alpha_markers.getMarkerPositions();
+        auto alpha_marker_midpoints  = gradient.m_alpha_markers.getMidpointRatios();
         for (int32_t i = 0; i < alpha_marker_num; ++i) {
-            alpha_markers[i].value    = alpha_marker_values[i];
+            alpha_markers[i].value    = alpha_marker_values[i].w;
             alpha_markers[i].position = alpha_marker_positionts[i];
             if (i < alpha_marker_num - 1) {
                 alpha_markers[i].midpoint = alpha_marker_midpoints[i];
@@ -578,11 +579,12 @@ public:
         }
 
         preset.color_markers      = color_markers;
-        preset.alpha_markers      = alpha_markers;
         preset.color_blur_width   = gradient.getBlurWidth();
-        preset.alpha_blur_width   = gradient.getAlphaBlurWidth();
         preset.color_space        = gradient.getColorSpace();
         preset.interpolation_path = gradient.getInterpDir();
+
+        preset.alpha_markers      = alpha_markers;
+        preset.alpha_blur_width   = gradient.getAlphaBlurWidth();
 
         return preset;
     }
@@ -784,32 +786,30 @@ public:
     {
         GradientData gradient{};
 
-        // カラーマーカー
-        std::vector<GradientMarkerData> color_markers;
+        std::vector<MarkerData> color_markers;
         for (uint32_t i = 0; i < static_cast<uint32_t>(std::ssize(history.color_markers)); ++i) {
-            GradientMarkerData marker_data;
-            marker_data.color          = color_conv::u32Rgba2Vec4Rgba<ImVec4>(str_conv::charsToInt(history.color_markers[i].color.substr(2, 8), 0xffffffff, 16));
-            marker_data.pos            = history.color_markers[i].position;
-            marker_data.midpoint.ratio = history.color_markers[i].midpoint;
+            ImVec4 value = color_conv::u32Rgba2Vec4Rgba<ImVec4>(
+                str_conv::charsToInt(history.color_markers[i].color.substr(2, 8), 0xffffffff, 16));
+            MarkerData marker_data(static_cast<int64_t>(i), history.color_markers[i].position, value, history.color_markers[i].midpoint);
             color_markers.push_back(marker_data);
         }
 
         // アルファマーカー
-        std::vector<AlphaMarkerData> alpha_markers;
+        std::vector<MarkerData> alpha_markers;
         for (uint32_t i = 0; i < static_cast<uint32_t>(std::ssize(history.alpha_markers)); ++i) {
-            AlphaMarkerData alpha_marker_data;
-            alpha_marker_data.value          = history.alpha_markers[i].value;
-            alpha_marker_data.pos            = history.alpha_markers[i].position;
-            alpha_marker_data.midpoint.ratio = history.alpha_markers[i].midpoint;
-            alpha_markers.push_back(alpha_marker_data);
+            ImVec4 value = ImVec4(0, 0, 0, history.alpha_markers[i].value);
+            MarkerData marker_data(static_cast<int64_t>(i), history.alpha_markers[i].position, value, history.alpha_markers[i].midpoint);
+            alpha_markers.push_back(marker_data);
         }
 
-        gradient.m_marker_manager.setDefaultMarkers(color_markers);
-        gradient.m_marker_manager.setDefaultAlphaMarkers(alpha_markers);
+        gradient.m_color_markers.setMarkers(color_markers);
         gradient.m_blur_width       = history.color_blur_width;
-        gradient.m_alpha_blur_width = history.alpha_blur_width;
         gradient.m_color_space      = history.color_space;
         gradient.m_interp_dir       = history.interpolation_path;
+
+        gradient.m_alpha_markers.setMarkers(alpha_markers);
+        gradient.m_alpha_blur_width = history.alpha_blur_width;
+
         return gradient;
     }
 
@@ -818,11 +818,12 @@ public:
         GradientHistory history;
 
         // カラーマーカー
-        int32_t color_marker_num = static_cast<int32_t>(std::ssize(gradient.m_marker_manager.getMarkerPos()));
+        int32_t color_marker_num = static_cast<int32_t>(std::ssize(gradient.m_color_markers.getMarkers()));
         std::vector<ColorMarker> color_markers(color_marker_num);
-        std::vector<ImVec4> color_marker_colors = gradient.m_marker_manager.getMarkerColors();
-        auto color_marker_positions             = gradient.m_marker_manager.getMarkerPos();
-        auto color_marker_midpoints             = gradient.m_marker_manager.getMidpointRatios();
+        auto color_marker_colors = gradient.m_color_markers.getMarkerValues();
+        auto color_marker_positions             = gradient.m_color_markers.getMarkerPositions();
+        auto color_marker_midpoints             = gradient.m_color_markers.getMidpointRatios();
+
         for (int32_t i = 0; i < color_marker_num; ++i) {
             uint32_t rgba             = color_conv::vec4normRgba2u32Rgba<ImVec4>(color_marker_colors[i]);
             color_markers[i].color    = std::format("0x{:08X}", rgba);
@@ -835,13 +836,14 @@ public:
         }
 
         // アルファマーカー
-        int32_t alpha_marker_num = static_cast<int32_t>(std::ssize(gradient.m_marker_manager.getAlphaMarkerPos()));
+        int32_t alpha_marker_num = static_cast<int32_t>(std::ssize(gradient.m_alpha_markers.getMarkers()));
         std::vector<AlphaMarker> alpha_markers(alpha_marker_num);
-        auto alpha_marker_values     = gradient.m_marker_manager.getAlphaMarkerValues();
-        auto alpha_marker_positionts = gradient.m_marker_manager.getAlphaMarkerPos();
-        auto alpha_marker_midpoints  = gradient.m_marker_manager.getAlphaMidpointRatios();
+        auto alpha_marker_values    = gradient.m_alpha_markers.getMarkerValues();
+        auto alpha_marker_positionts = gradient.m_alpha_markers.getMarkerPositions();
+        auto alpha_marker_midpoints  = gradient.m_alpha_markers.getMidpointRatios();
+
         for (int32_t i = 0; i < alpha_marker_num; ++i) {
-            alpha_markers[i].value    = alpha_marker_values[i];
+            alpha_markers[i].value    = alpha_marker_values[i].w;
             alpha_markers[i].position = alpha_marker_positionts[i];
             if (i < alpha_marker_num - 1) {
                 alpha_markers[i].midpoint = alpha_marker_midpoints[i];
@@ -851,11 +853,13 @@ public:
         }
 
         history.color_markers      = color_markers;
-        history.alpha_markers      = alpha_markers;
         history.color_blur_width   = gradient.getBlurWidth();
-        history.alpha_blur_width   = gradient.getAlphaBlurWidth();
         history.color_space        = gradient.getColorSpace();
         history.interpolation_path = gradient.getInterpDir();
+
+        history.alpha_markers      = alpha_markers;
+        history.alpha_blur_width   = gradient.getAlphaBlurWidth();
+
         return history;
     }
 

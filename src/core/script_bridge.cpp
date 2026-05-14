@@ -22,9 +22,9 @@ void ScriptBridge::loadGradientFromScript(EDIT_SECTION* edit,
 
     // マーカー数
     uint32_t marker_count = plugin2_utils::getObjectItemValue(edit, object_handle, effect_name.c_str(), effect_index, L"マーカー数", 2u, target_move_index);
-    data.getMarkerManager()->changeMarkerCount(marker_count);
+    data.getColorMarkers()->changeMarkerCount(marker_count);
 
-    auto markers = data.getMarkerManager()->getMarkers();
+    auto markers = data.getColorMarkers()->getMarkers();
 
     std::string pos_array_str = edit->get_object_item_value(object_handle, effect_name_with_idx.c_str(), L"位置");
     auto pos_result = alias_parser::splitStr<float>(pos_array_str, ",");
@@ -32,7 +32,7 @@ void ScriptBridge::loadGradientFromScript(EDIT_SECTION* edit,
         m_logger_wrapper->error("Failed to parse 位置: {}", pos_result.error());
     } else {
         for (uint32_t i = 0; i < markers.size(); ++i) {
-            data.getMarkerManager()->setMarkerPos(markers[i].id, pos_result.value()[i]);
+            data.getColorMarkers()->setMarkerPosition(markers[i].id, pos_result.value()[i]);
         }
     }
 
@@ -42,7 +42,7 @@ void ScriptBridge::loadGradientFromScript(EDIT_SECTION* edit,
         m_logger_wrapper->error("Failed to parse 中間点: {}", mid_result.error());
     } else {
         for (uint32_t i = 0; i < markers.size() - 1; ++i) {
-            data.getMarkerManager()->setMidpointRatio(markers[i].id, mid_result.value()[i]);
+            data.getColorMarkers()->setMidpointRatio(markers[i].id, mid_result.value()[i]);
         }
     }
 
@@ -64,7 +64,7 @@ void ScriptBridge::loadGradientFromScript(EDIT_SECTION* edit,
             marker_color.y = ((hex_rgb >> 8) & 0xFF) / 255.0f;
             marker_color.z = ((hex_rgb >> 0) & 0xFF) / 255.0f;
             marker_color.w = 1.0f - alpha;
-            data.getMarkerManager()->setMarkerColor(markers[i].id, marker_color);
+            data.getColorMarkers()->setMarkerValue(markers[i].id, marker_color);
         }
     }
 
@@ -73,7 +73,7 @@ void ScriptBridge::loadGradientFromScript(EDIT_SECTION* edit,
     data.setColorBlurWidth(blur_width / 100.0f);
 
     uint32_t alpha_marker_count = plugin2_utils::getObjectItemValue(edit, object_handle, effect_name.c_str(), effect_index, L"アルファマーカー数", 2u, target_move_index);
-    data.getMarkerManager()->changeAlphaMarkerCount(alpha_marker_count);
+    data.getAlphaMarkers()->changeMarkerCount(alpha_marker_count);
 
     std::string alpha_value_array_str = edit->get_object_item_value(object_handle, effect_name_with_idx.c_str(), L"アルファ値");
     auto alpha_value_result = alias_parser::splitStr<float>(alpha_value_array_str, ",");
@@ -81,7 +81,7 @@ void ScriptBridge::loadGradientFromScript(EDIT_SECTION* edit,
         m_logger_wrapper->error("Failed to parse アルファ値: {}", alpha_value_result.error());
     } else {
         for (uint32_t i = 0; i < markers.size(); ++i) {
-            data.getMarkerManager()->setAlphaMarkerPos(markers[i].id, alpha_value_result.value()[i]);
+            data.getAlphaMarkers()->setMarkerPosition(markers[i].id, alpha_value_result.value()[i]);
         }
     }
 
@@ -91,7 +91,7 @@ void ScriptBridge::loadGradientFromScript(EDIT_SECTION* edit,
         m_logger_wrapper->error("Failed to parse アルファ位置: {}", alpha_pos_result.error());
     } else {
         for (uint32_t i = 0; i < markers.size(); ++i) {
-            data.getMarkerManager()->setAlphaMarkerPos(markers[i].id, alpha_pos_result.value()[i]);
+            data.getAlphaMarkers()->setMarkerPosition(markers[i].id, alpha_pos_result.value()[i]);
         }
     }
 
@@ -101,7 +101,7 @@ void ScriptBridge::loadGradientFromScript(EDIT_SECTION* edit,
         m_logger_wrapper->error("Failed to parse アルファ中間点: {}", alpha_mid_result.error());
     } else {
         for (uint32_t i = 0; i < markers.size(); ++i) {
-            data.getMarkerManager()->setAlphaMidpointRatio(markers[i].id, alpha_mid_result.value()[i]);
+            data.getAlphaMarkers()->setMidpointRatio(markers[i].id, alpha_mid_result.value()[i]);
         }
     }
 
@@ -128,17 +128,18 @@ void ScriptBridge::loadGradientFromScript(EDIT_SECTION* edit,
     }
 
     // 比較用の変数に現在の値を保存
-    m_curr_values.marker_count            = static_cast<uint32_t>(std::ssize(data.getMarkerManager()->getMarkers()));
-    m_curr_values.selected_color          = data.getMarkerManager()->getSelectedMarkerColor();
-    m_curr_values.selected_marker_pos     = data.getMarkerManager()->getSelectedMarkerPos();
-    m_curr_values.selected_midpoint_ratio = data.getMarkerManager()->getSelectedMidpointRatio();
-    m_curr_values.selected_alpha_midpoint_ratio = data.getMarkerManager()->getSelectedAlphaMidpointRatio();
+    m_curr_values.marker_count            = static_cast<uint32_t>(std::ssize(data.getColorMarkers()->getMarkers()));
+    m_curr_values.selected_color          = data.getColorMarkers()->getSelectedMarkerValue();
+    m_curr_values.selected_marker_pos     = data.getColorMarkers()->getSelectedMarkerPosition();
+    m_curr_values.selected_midpoint_ratio = data.getColorMarkers()->getSelectedMidpointRatio();
     m_curr_values.blur_width              = data.getBlurWidth();
     m_curr_values.color_space_index       = data.getColorSpace();
     m_curr_values.interp_dir_index        = data.getInterpDir();
-    m_curr_values.alpha_marker_count      = static_cast<uint32_t>(std::ssize(data.getMarkerManager()->getAlphaMarkers()));
-    m_curr_values.selected_alpha_marker_pos = data.getMarkerManager()->getSelectedAlphaMarkerPos();
-    m_curr_values.selected_alpha_marker_value = data.getMarkerManager()->getSelectedAlphaMarkerValue();
+
+    m_curr_values.alpha_marker_count      = static_cast<uint32_t>(std::ssize(data.getAlphaMarkers()->getMarkers()));
+    m_curr_values.selected_alpha_marker_pos = data.getAlphaMarkers()->getSelectedMarkerPosition();
+    m_curr_values.selected_alpha_marker_value = data.getAlphaMarkers()->getSelectedMarkerPosition();
+    m_curr_values.selected_alpha_midpoint_ratio = data.getAlphaMarkers()->getSelectedMidpointRatio();
 }
 
 void ScriptBridge::applyGradientToScript(EDIT_SECTION* edit,
@@ -152,18 +153,18 @@ void ScriptBridge::applyGradientToScript(EDIT_SECTION* edit,
 
     const std::wstring effect_name_with_idx = std::format(L"{}:{}", effect_name, effect_index);
 
-    auto markers          = data.getMarkerManager()->getMarkers();
+    auto markers          = data.getColorMarkers()->getMarkers();
     uint32_t marker_count = static_cast<uint32_t>(markers.size());
 
     std::string col_array_str, alpha_array_str, pos_array_str, mid_array_str;
     for (uint32_t i = 0; i < marker_count; ++i) {
-        uint32_t r          = static_cast<uint32_t>(markers[i].color.x * 255.0f + 0.5f);
-        uint32_t g          = static_cast<uint32_t>(markers[i].color.y * 255.0f + 0.5f);
-        uint32_t b          = static_cast<uint32_t>(markers[i].color.z * 255.0f + 0.5f);
+        uint32_t r          = static_cast<uint32_t>(markers[i].value.x * 255.0f + 0.5f);
+        uint32_t g          = static_cast<uint32_t>(markers[i].value.y * 255.0f + 0.5f);
+        uint32_t b          = static_cast<uint32_t>(markers[i].value.z * 255.0f + 0.5f);
         uint32_t marker_rgb = (r << 16) | (g << 8) | b;
 
         col_array_str += std::format("0x{:06x}", marker_rgb);
-        alpha_array_str += std::format("{:.2f}", 1.0f - (markers[i].color.w));
+        alpha_array_str += std::format("{:.2f}", 1.0f - (markers[i].value.w));
         pos_array_str += std::format("{:.2f}", markers[i].pos);
 
         if (i != marker_count - 1) {
@@ -188,13 +189,13 @@ void ScriptBridge::applyGradientToScript(EDIT_SECTION* edit,
     // マーカー数
     plugin2_utils::setObjectItemValue(edit, object_handle, effect_name.c_str(), effect_index, L"マーカー数", marker_count, 2u, target_move_index);
 
-    auto alpha_markers = data.getMarkerManager()->getAlphaMarkers();
+    auto alpha_markers = data.getAlphaMarkers()->getMarkers();
     uint32_t alpha_marker_count = static_cast<uint32_t>(alpha_markers.size());
     edit->set_object_item_value(object_handle, effect_name_with_idx.c_str(), L"アルファマーカー数", std::to_string(alpha_marker_count).c_str());
 
     std::string alpha_pos_array_str, alpha_value_array_str, alpha_mid_array_str;
     for (uint32_t i = 0; i < alpha_marker_count; ++i) {
-        alpha_value_array_str += std::format("{:.2f}", alpha_markers[i].value);
+        alpha_value_array_str += std::format("{:.2f}", alpha_markers[i].value.w);
         alpha_pos_array_str += std::format("{:.2f}", alpha_markers[i].pos);
         if (i != alpha_marker_count - 1) {
             alpha_mid_array_str += std::format("{:.2f}", alpha_markers[i].midpoint.ratio);

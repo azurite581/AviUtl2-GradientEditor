@@ -89,26 +89,26 @@ void HistoryWindow::render(GradientConfigManager& manager, History& cfg)
         }
 
         int32_t history_num = static_cast<int32_t>(std::ssize(m_history_data));
+
         if (history_num >= 1) {
             ImVec2 button_size   = ImVec2(ImGui::GetContentRegionAvail().x, ImGui::GetFrameHeight() * PRESET_GRADIENT_HEIGHT);
             button_size.x = ImMax(1.0f, button_size.x);
             button_size.y = ImMax(1.0f, button_size.y);
-            bool is_clicked      = false;
             m_is_history_clicked = false;
+
+            // 履歴をレンダリング
             for (int32_t i = history_num - 1; i >= 0; --i) {
                 auto history_data = m_history_data[i];
 
                 ImGui::PushStyleVarY(ImGuiStyleVar_ItemSpacing, 0.0f);
                 ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(ImGui::GetStyle().FrameBorderSize, ImGui::GetStyle().FrameBorderSize));
 
-                is_clicked = CustomUI::drawGradientButton(history_data.name, button_size, history_data.data);
-
-                ImGui::PopStyleVar(2);
-
-                if (is_clicked) {
+                if (CustomUI::drawGradientButton(history_data.name, button_size, history_data.data)) {
                     m_is_history_clicked = true;
                     m_selected_gradient  = history_data.data;
                 }
+
+                ImGui::PopStyleVar(2);
 
                 if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNone)) {
                     ImGui::SetTooltip(history_data.name.c_str());
@@ -123,6 +123,7 @@ void HistoryWindow::writeHistoryToConfig(GradientConfigManager& manager, History
 {
     cfg.histories.clear();
 
+    // 履歴をコンフィグにセット
     for (auto history : m_history_data) {
         auto gradient_history = manager.gradient2history(history.data);
         gradient_history.name = history.name;
@@ -131,7 +132,7 @@ void HistoryWindow::writeHistoryToConfig(GradientConfigManager& manager, History
 
     // 書き込み
     auto result = manager.writeHistory(cfg);
-    if (result.is_success) {
+    if (!result.is_success) {
         m_logger_wrapper->error("{}", result.error);
     }
 }
