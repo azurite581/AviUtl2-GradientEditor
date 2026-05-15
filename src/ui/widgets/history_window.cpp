@@ -17,6 +17,8 @@ void HistoryWindow::pushHistory(const GradientData& gradient_data)
 
     if (!m_history_data.empty()) {
         auto latest_history = m_history_data.back();
+        // グラデーションデータが最後にプッシュされた履歴と同じかどうか比較し、異なれば追加する
+        // そのため GradientData クラスで同値比較演算子（==, !=）を定義しておくこと
         if (latest_history.data != gradient_data) {
             m_history_data.push_back({tz, gradient_data});
             if (static_cast<int32_t>(std::ssize(m_history_data)) > HISTORY_MAX_COUNT) {
@@ -111,7 +113,7 @@ void HistoryWindow::render(GradientConfigManager& manager, History& cfg)
                 ImGui::PopStyleVar(2);
 
                 if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNone)) {
-                    ImGui::SetTooltip(history_data.name.c_str());
+                    ImGui::SetTooltip("%s", history_data.name.c_str());
                 }
             }
         }

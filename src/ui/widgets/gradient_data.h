@@ -49,14 +49,7 @@ public:
     float m_blur_width{1.0f};
     float m_alpha_blur_width{1.0f};
 
-    std::partial_ordering operator<=>(const GradientData& other) const
-    {
-        if (auto cmp = m_color_space <=> other.m_color_space; cmp != 0) return cmp;
-        if (auto cmp = m_interp_dir <=> other.m_interp_dir; cmp != 0) return cmp;
-        if (auto cmp = m_blur_width <=> other.m_blur_width; cmp != 0) return cmp;
-        return m_alpha_blur_width <=> other.m_alpha_blur_width;
-    }
-
+    // != は == から導出される
     bool operator==(const GradientData& other) const
     {
         if (m_color_space != other.m_color_space) return false;

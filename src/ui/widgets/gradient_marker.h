@@ -18,16 +18,7 @@ struct Midpoint {
     float ratio{0.5f};
     float pos{0.0f};
 
-    std::partial_ordering operator<=>(const Midpoint& other) const
-    {
-        if (auto cmp = ratio <=> other.ratio; cmp != 0) return cmp;
-        return pos <=> other.pos;
-    }
-
-    bool operator==(const Midpoint& other) const
-    {
-        return ratio == other.ratio && pos == other.pos;
-    }
+    auto operator<=>(const Midpoint&) const = default;
 };
 
 struct MarkerData {
@@ -84,20 +75,15 @@ struct MarkerData {
         const ImVec4& highlight_color
     ) const;
 
-    static inline bool float_eq(float a, float b, float eps = 1e-6f) noexcept
-    {
-        return std::fabs(a - b) <= eps;
-    }
-
     bool operator==(const MarkerData& o) const noexcept
     {
         if (id != o.id) return false;
-        if (!float_eq(pos, o.pos)) return false;
-        if (!float_eq(midpoint.ratio, o.midpoint.ratio)) return false;
-        if (!float_eq(value.x, o.value.x)) return false;
-        if (!float_eq(value.y, o.value.y)) return false;
-        if (!float_eq(value.z, o.value.z)) return false;
-        if (!float_eq(value.w, o.value.w)) return false;
+        if (pos != o.pos) return false;
+        if (midpoint != o.midpoint) return false;
+        if (value.x != o.value.x) return false;
+        if (value.y != o.value.y) return false;
+        if (value.z != o.value.z) return false;
+        if (value.w != o.value.w) return false;
         return true;
     }
 };

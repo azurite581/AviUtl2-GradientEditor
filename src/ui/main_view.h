@@ -21,12 +21,15 @@ private:
         bool history_window = true;
     };
 
+    bool colorPickerPopup(const char* label, ImVec4& current_color, ImVec4& previous_color);
     void renderGradientEditor();
     void renderColorPropertyEditor(GradientData* data);
     void renderAlphaPropertyEditor(GradientData* data);
 
     LoggerWrapperInterface* m_logger_wrapper;
     ConfigWrapperInterface* m_config_wrapper;
+
+    static constexpr const char* COLOR_PICKER_POPUP_ID = "color_picker_popup";
 
     GradientData* m_data = nullptr;
     ScriptBridge m_script_bridge;
@@ -51,6 +54,9 @@ private:
     ImU32 m_object_video_color_start = 0;
     ImU32 m_object_video_color_stop  = 0;
     ImU32 m_frame_cursor_color       = 0;
+
+    ImVec4 m_popup_current_color{1.0f, 1.0f, 1.0f, 1.0f};
+    ImVec4 m_popup_previous_color{1.0f, 1.0f, 1.0f, 1.0f};
 
     static constexpr int32_t NEW_OBJECT_LENGTH = 81;
     static constexpr const char* NEW_MULTI_GRADIENT_ALIAS_TEMPLATE = R"(

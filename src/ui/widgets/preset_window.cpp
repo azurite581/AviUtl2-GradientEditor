@@ -109,7 +109,7 @@ void PresetWindow::render(GradientConfigManager& manager, Preset& cfg)
     ImGui::PushStyleVarY(ImGuiStyleVar_ItemSpacing, ImGui::GetFrameHeight() * ITEM_SPACING_SCALE_Y);
 
     if (ImGui::BeginPopup("preset_category_editor")) {
-        ImGui::Text(m_config_wrapper->tr(L"カテゴリーを編集").c_str());
+        ImGui::TextUnformatted(m_config_wrapper->tr(L"カテゴリーを編集").c_str());
         ImGui::SameLine();
         imgui_utils::helpMarker(ICON_MS_HELP, m_config_wrapper->tr(L"カテゴリーをドラッグで並び替え、右クリックからメニューを表示して編集できます").c_str());
         ImGui::Separator();
@@ -171,7 +171,7 @@ void PresetWindow::render(GradientConfigManager& manager, Preset& cfg)
 
                     // カテゴリ名変更
                     ImGui::AlignTextToFramePadding();
-                    ImGui::Text(m_config_wrapper->tr(L"名前を変更").c_str());
+                    ImGui::TextUnformatted(m_config_wrapper->tr(L"名前を変更").c_str());
                     ImGui::SameLine();
                     static ImGuiInputTextFlags input_flags = ImGuiInputTextFlags_None;
                     input_flags |= ImGuiInputTextFlags_CharsNoBlank;   // スペース、タブなし
@@ -218,7 +218,7 @@ void PresetWindow::render(GradientConfigManager& manager, Preset& cfg)
                     }
 
                     if (ImGui::BeginMenu(m_config_wrapper->tr(L"プリセットをまとめて移動").c_str())) {
-                        ImGui::Text(m_config_wrapper->tr(L"移動先").c_str());
+                        ImGui::TextUnformatted(m_config_wrapper->tr(L"移動先").c_str());
                         ImGui::Separator();
                         for (const auto& c : m_categories) {
                             if (c == m_old_category_name) continue;
@@ -427,7 +427,7 @@ void PresetWindow::render(GradientConfigManager& manager, Preset& cfg)
                 input_preset_name    = original_preset_name;
             }
 
-            ImGui::Text(m_config_wrapper->tr(L"元の名前").c_str());
+            ImGui::TextUnformatted(m_config_wrapper->tr(L"元の名前").c_str());
             ImGui::SameLine();
             ImGui::Text(": \"%s\"", original_preset_name.c_str());
 
@@ -678,7 +678,7 @@ void PresetWindow::renderPresetList(GradientConfigManager& manager, Preset& cfg,
             ImGui::PopStyleVar(2);
 
             if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNone)) {
-                ImGui::SetTooltip(preset.name.c_str());
+                ImGui::SetTooltip("%s", preset.name.c_str());
             }
 
             // 右クリックメニュー
@@ -694,7 +694,7 @@ void PresetWindow::renderPresetList(GradientConfigManager& manager, Preset& cfg,
 
                 // プリセット名を変更
                 ImGui::AlignTextToFramePadding();
-                ImGui::Text(m_config_wrapper->tr(L"名前を変更").c_str());
+                ImGui::TextUnformatted(m_config_wrapper->tr(L"名前を変更").c_str());
                 ImGui::SameLine();
                 static ImGuiInputTextFlags input_flags = ImGuiInputTextFlags_None;
                 input_flags |= ImGuiInputTextFlags_CharsNoBlank;
@@ -782,7 +782,7 @@ void PresetWindow::renderPresetList(GradientConfigManager& manager, Preset& cfg,
             float input_placeholder_width = ImGui::CalcTextSize(input_placeholder.c_str()).x;
             ImGui::SetNextWindowSize({input_placeholder_width + ImGui::GetStyle().FramePadding.x * 2.0f + ImGui::GetStyle().WindowPadding.x * 2.0f, 0});
             if (ImGui::BeginPopup("preset_category_selector")) {
-                ImGui::Text(m_config_wrapper->tr(L"カテゴリーを変更").c_str());
+                ImGui::TextUnformatted(m_config_wrapper->tr(L"カテゴリーを変更").c_str());
                 ImGui::SameLine();
                 imgui_utils::helpMarker(ICON_MS_HELP, m_config_wrapper->tr(L"カテゴリーをクリックしてプリセットを移動します").c_str());
                 ImGui::Separator();
@@ -827,7 +827,7 @@ void PresetWindow::renderPresetList(GradientConfigManager& manager, Preset& cfg,
                         ImGui::SetCursorPosX(
                             ImGui::GetCursorPosX() +
                             ImMax(0.0f, ImGui::GetContentRegionAvail().x - ImGui::CalcTextSize(m_config_wrapper->tr(L"移動").c_str()).x - ImGui::GetStyle().WindowPadding.x));
-                        ImGui::Text(m_config_wrapper->tr(L"移動").c_str());
+                        ImGui::TextUnformatted(m_config_wrapper->tr(L"移動").c_str());
                         static std::string category_name{};
                     }
                 }
@@ -863,7 +863,7 @@ void PresetWindow::renderPresetList(GradientConfigManager& manager, Preset& cfg,
                     ImGui::SetCursorPosX(
                         ImGui::GetCursorPosX() +
                         ImMax(0.0f, ImGui::GetContentRegionAvail().x - ImGui::CalcTextSize(m_config_wrapper->tr(L"移動").c_str()).x - ImGui::GetStyle().WindowPadding.x));
-                    ImGui::Text(m_config_wrapper->tr(L"移動").c_str());
+                    ImGui::TextUnformatted(m_config_wrapper->tr(L"移動").c_str());
                 }
                 ImGui::PopItemFlag();
                 ImGui::EndPopup();

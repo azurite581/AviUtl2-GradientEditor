@@ -86,6 +86,45 @@ MainView::MainView(LoggerWrapperInterface* logger_wrapper, ConfigWrapperInterfac
     m_frame_cursor_color       = color_conv::u32Rgba2u32Abgr(color_conv::u32Rgb2u32Rgba(gradient_editor::g_app_state.config_handle->get_color_code(gradient_editor::g_app_state.config_handle, "FrameCursor"), 0xFF));
 }
 
+bool MainView::colorPickerPopup(const char* label, ImVec4& current_color, ImVec4& previous_color)
+{
+    bool changed  = false;
+    ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(10, 2));
+    ImGui::PushStyleVarX(ImGuiStyleVar_ItemInnerSpacing, 2);
+
+    if (ImGui::BeginPopup(label)) {
+        changed |= ImGui::ColorPicker4("##marker_color_picker", (float*)&current_color, ImGuiColorEditFlags_NoSidePreview | ImGuiColorEditFlags_NoSmallPreview | ImGuiColorEditFlags_AlphaBar);
+        ImGui::SameLine();
+
+        ImGui::BeginGroup();
+        {
+            ImGui::TextUnformatted(m_config_wrapper->tr(L"現在の色").c_str());
+            ImGuiColorEditFlags color_button_flags = ImGuiColorEditFlags_NoPicker | ImGuiColorEditFlags_AlphaPreviewHalf;
+            ImVec2 color_button_size               = ImVec2(ImGui::GetContentRegionAvail().x, ImGui::GetContentRegionAvail().x * 0.6f);
+            changed |= ImGui::ColorButton("##current_color", current_color, color_button_flags, color_button_size);
+
+            ImGui::TextUnformatted(m_config_wrapper->tr(L"以前の色").c_str());
+            if (ImGui::ColorButton("##previous_color", previous_color, color_button_flags, color_button_size)) {
+                changed |= true;
+                current_color = previous_color;
+            }
+
+            ImVec2 avail = ImGui::GetContentRegionAvail();
+            ImGui::Dummy(ImVec2(avail.x, avail.y - ImGui::GetFrameHeightWithSpacing()));
+            if (ImGui::Button(m_config_wrapper->tr(L"閉じる").c_str(), ImVec2(avail.x, ImGui::GetFrameHeight()))) {
+                ImGui::CloseCurrentPopup();
+            }
+        }
+        ImGui::EndGroup();
+
+        ImGui::EndPopup();
+    }
+
+    ImGui::PopStyleVar(2);
+
+    return changed;
+}
+
 void MainView::render()
 {
     // ドッキングスペースの設定
@@ -285,7 +324,7 @@ void MainView::render()
 
         static constexpr float ITEM_SPACING_SCALE_Y = 0.25f;
         ImGui::AlignTextToFramePadding();
-        ImGui::TextUnformatted("UIのサイズ");
+        ImGui::TextUnformatted(m_config_wrapper->tr(L"UIのサイズ").c_str());
         ImGui::SameLine();
         static float font_scale_main = old_font_scale_main;
         if (ImGui::DragFloat("##ui_size", &font_scale_main, 0.02f, 0.5f, 4.0f, "%.2f")) {
@@ -354,46 +393,6 @@ void MainView::renderGradientEditor()
         replace_data = m_history_window.m_history_data.back().data;
     }
 
-    // カラーピッカーポップアップ
-    auto colorPickerPopup = [&](const char* label, ImVec4& current_color, ImVec4& previous_color) -> bool {
-        bool changed  = false;
-        ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(10, 2));
-        ImGui::PushStyleVarX(ImGuiStyleVar_ItemInnerSpacing, 2);
-
-        if (ImGui::BeginPopup(label)) {
-            // メインのカラーピッカー
-            changed |= ImGui::ColorPicker4("##marker_color_picker", (float*)&current_color, ImGuiColorEditFlags_NoSidePreview | ImGuiColorEditFlags_NoSmallPreview | ImGuiColorEditFlags_AlphaBar);
-            ImGui::SameLine();
-
-            ImGui::BeginGroup();
-            {
-                ImGui::Text(m_config_wrapper->tr(L"現在の色").c_str());
-                ImGuiColorEditFlags color_button_flags = ImGuiColorEditFlags_NoPicker | ImGuiColorEditFlags_AlphaPreviewHalf;
-                ImVec2 color_button_size               = ImVec2(ImGui::GetContentRegionAvail().x, ImGui::GetContentRegionAvail().x * 0.6f);
-                changed |= ImGui::ColorButton("##current_color", current_color, color_button_flags, color_button_size);
-
-                ImGui::Text(m_config_wrapper->tr(L"以前の色").c_str());
-                if (ImGui::ColorButton("##previous_color", previous_color, color_button_flags, color_button_size)) {
-                    changed |= true;
-                    current_color = previous_color;
-                }
-
-                ImVec2 avail = ImGui::GetContentRegionAvail();
-                ImGui::Dummy(ImVec2(avail.x, avail.y - ImGui::GetFrameHeightWithSpacing()));
-                if (ImGui::Button(m_config_wrapper->tr(L"閉じる").c_str(), ImVec2(avail.x, ImGui::GetFrameHeight()))) {
-                    ImGui::CloseCurrentPopup();
-                }
-            }
-            ImGui::EndGroup();
-
-            ImGui::EndPopup();
-        }
-
-        ImGui::PopStyleVar(2);
-
-        return changed;
-    };
-
     //
     // スクリプト選択
     //
@@ -405,7 +404,7 @@ void MainView::renderGradientEditor()
 
     bool is_changed_section_effect = false;
     ImGui::AlignTextToFramePadding();
-    ImGui::Text(m_config_wrapper->tr(L"対象").c_str());
+    ImGui::TextUnformatted(m_config_wrapper->tr(L"対象").c_str());
     ImGui::SameLine();
     if (ImGui::BeginCombo("##スクリプト", effect_names_vec[m_effect_name_index].c_str(), ImGuiComboFlags_WidthFitPreview)) {
         for (uint32_t i = 0; i < effect_names_vec.size(); ++i) {
@@ -417,7 +416,7 @@ void MainView::renderGradientEditor()
         ImGui::EndCombo();
     }
     std::wstring effect_full_name = std::wstring(EFFECT_NAMES[m_effect_name_index]) + EFFECT_GROUP_NAME;
-    if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNormal)) ImGui::SetTooltip(m_config_wrapper->tr(L"編集対象のスクリプト名").c_str());
+    if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNormal)) ImGui::SetTooltip("%s", m_config_wrapper->tr(L"編集対象のスクリプト名").c_str());
 
     bool is_changed_effect_index = false;
     ImGui::SameLine();
@@ -431,7 +430,7 @@ void MainView::renderGradientEditor()
         m_effect_index = std::clamp(m_effect_index, 0, count == 0 ? 0 : count - 1);
     }
     ImGui::PopItemWidth();
-    if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNormal)) ImGui::SetTooltip(m_config_wrapper->tr(L"編集対象のスクリプトのインデックス").c_str());
+    if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNormal)) ImGui::SetTooltip("%s", m_config_wrapper->tr(L"編集対象のスクリプトのインデックス").c_str());
 
     //
     // 各種データ操作ボタン
@@ -463,13 +462,13 @@ void MainView::renderGradientEditor()
         if (m_apply) off_to_on = true;
     }
 
-    if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNormal)) ImGui::SetTooltip(m_config_wrapper->tr(L"スクリプトへ値を反映").c_str());
+    if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNormal)) ImGui::SetTooltip("%s", m_config_wrapper->tr(L"スクリプトへ値を反映").c_str());
     if (m_apply) m_load = false;
 
     // スクリプトから読み込む
     ImGui::SameLine(0, 0);
     m_load = ImGui::Button(m_config_wrapper->tr(L"読込").c_str());
-    if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNormal)) ImGui::SetTooltip(m_config_wrapper->tr(L"スクリプトから値を読み込む").c_str());
+    if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNormal)) ImGui::SetTooltip("%s", m_config_wrapper->tr(L"スクリプトから値を読み込む").c_str());
 
     // 再読み込み
     ImGui::SameLine();
@@ -479,14 +478,14 @@ void MainView::renderGradientEditor()
             if (auto obj = edit->get_focus_object()) m_layer_frame = edit->get_object_layer_frame(obj);
         });
     }
-    if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNormal)) ImGui::SetTooltip(m_config_wrapper->tr(L"選択オブジェクトの再読み込み").c_str());
+    if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNormal)) ImGui::SetTooltip("%s", m_config_wrapper->tr(L"選択オブジェクトの再読み込み").c_str());
 
     ImGui::SameLine();
     ImGui::AlignTextToFramePadding();
     ImGui::Text((m_config_wrapper->tr(L"レイヤー") + "=%d, " + m_config_wrapper->tr(L"フレーム") + "=[%d - %d]").c_str(), m_layer_frame.layer + 1, m_layer_frame.start + 1, m_layer_frame.end + 1);
 
     bool is_reset_alpha_marker = imgui_utils::squareIconButton(ICON_MS_SYNC, "##alpha_marker_reset");
-    if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNormal)) ImGui::SetTooltip(m_config_wrapper->tr(L"アルファマーカーをリセット").c_str());
+    if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNormal)) ImGui::SetTooltip("%s", m_config_wrapper->tr(L"アルファマーカーをリセット").c_str());
     ImGui::SameLine();
 
     float alpha_tool_buttons_width = frame_height * 7 + ImGui::GetStyle().ItemSpacing.x * 5;
@@ -497,19 +496,19 @@ void MainView::renderGradientEditor()
     bool select_next_alpha_marker = imgui_utils::squareIconButton(ICON_MS_PLAY_ARROW, "##select_next_alpha_marker");
     ImGui::SameLine();
     bool is_distribute_alpha_marker = imgui_utils::squareIconButton(ICON_MS_ARROW_RANGE, "##alpha_marker_distribute");
-    if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNormal)) ImGui::SetTooltip(m_config_wrapper->tr(L"アルファマーカーを等間隔に配置").c_str());
+    if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNormal)) ImGui::SetTooltip("%s", m_config_wrapper->tr(L"アルファマーカーを等間隔に配置").c_str());
     ImGui::SameLine();
     bool is_distribute_alpha_marker_and_alpha_midpoint = imgui_utils::squareIconButton(ICON_MS_FORMAT_LETTER_SPACING, "##alpha_distribut_bothe");
-    if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNormal)) ImGui::SetTooltip(m_config_wrapper->tr(L"マーカーと中間点を等間隔に配置").c_str());
+    if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNormal)) ImGui::SetTooltip("%s", m_config_wrapper->tr(L"マーカーと中間点を等間隔に配置").c_str());
     ImGui::SameLine();
     bool is_reset_alpha_midpoint = imgui_utils::squareIconButton(ICON_MS_STAT_0, "##alpha_reset_midpoints");
-    if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNormal)) ImGui::SetTooltip(m_config_wrapper->tr(L"すべての中間点を中央に再配置").c_str());
+    if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNormal)) ImGui::SetTooltip("%s", m_config_wrapper->tr(L"すべての中間点を中央に再配置").c_str());
     ImGui::SameLine();
     bool is_reverse_alpha_marker = imgui_utils::squareIconButton(ICON_MS_SWITCH_LEFT, "##alpha_marker_reverse");
-    if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNormal)) ImGui::SetTooltip(m_config_wrapper->tr(L"アルファマーカーを反転").c_str());
+    if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNormal)) ImGui::SetTooltip("%s", m_config_wrapper->tr(L"アルファマーカーを反転").c_str());
     ImGui::SameLine();
     bool is_delete_alpha_marker = imgui_utils::squareIconButton(ICON_MS_DELETE, "##alpha_marker_delete");
-    if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNormal)) ImGui::SetTooltip(m_config_wrapper->tr(L"選択中のアルファマーカーを削除").c_str());
+    if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNormal)) ImGui::SetTooltip("%s", m_config_wrapper->tr(L"選択中のアルファマーカーを削除").c_str());
 
     if (off_to_on || (m_apply && is_refresh)) {
         plugin2_utils::call_edit_lambda(gradient_editor::g_app_state.edit_handle->call_edit_section_param, [&](EDIT_SECTION* edit) {
@@ -518,7 +517,7 @@ void MainView::renderGradientEditor()
 
             m_layer_frame = edit->get_object_layer_frame(focus_obj);
 
-            // 反映が ON だが対象のエフェクトが付いていない場合
+            // 反映は ON だが対象のエフェクトが付いていない場合
             auto effect_count = edit->count_object_effect(focus_obj, effect_full_name.c_str());
             if (effect_count == 0 && m_apply) {
                 auto alias   = edit->get_object_alias(focus_obj);
@@ -571,15 +570,13 @@ void MainView::renderGradientEditor()
     // 描画設定
     static CustomUI::GradientEditorConfig config;
     config.max_marker_count = MAX_MARKER_COUNT;
-    config.marker_size     = {frame_height * scale::relative::GRADIENT_MARKER_WIDTH, frame_height * scale::relative::GRADIENT_MARKER_HEIGHT};
-    config.midpoint_size     = {frame_height * scale::relative::GRADIENT_MIDPOINT_WIDTH, frame_height * scale::relative::GRADIENT_MIDPOINT_WIDTH};
-    config.io_enable        = !ImGui::IsPopupOpen(nullptr, ImGuiPopupFlags_AnyPopupId);  // ポップアップが開いているときはマーカーの操作を受け付けない
+    config.marker_size = {frame_height * scale::relative::GRADIENT_MARKER_WIDTH, frame_height * scale::relative::GRADIENT_MARKER_HEIGHT};
+    config.midpoint_size = {frame_height * scale::relative::GRADIENT_MIDPOINT_WIDTH, frame_height * scale::relative::GRADIENT_MIDPOINT_WIDTH};
 
     // プリセット、履歴がクリックされたときはそのグラデーションを使用する
     if (m_preset_window.isPresetClicked()) {
         if (m_data != nullptr) {
             m_history_window.pushHistory(*m_data);
-            m_logger_wrapper->log("push to history\n");
         }
         replace_data = m_preset_window.getSelectedGradientData();
     } else if (m_history_window.isHistoryClicked()) {
@@ -603,15 +600,13 @@ void MainView::renderGradientEditor()
     m_script_bridge.update(*m_data);
 
     // カラーピッカーポップアップ
-    static ImVec4 current_color{1.0f, 1.0f, 1.0f, 1.0f};
-    static ImVec4 previous_color{1.0f, 1.0f, 1.0f, 1.0f};
     if (m_data->getColorMarkers()->isDoubleClickedMarker(ImGui::GetIO().MousePos)) {
-        previous_color = current_color;
-        current_color = m_data->getColorMarkers()->getSelectedMarkerValue();
-        ImGui::OpenPopup("color_marker_");
+        m_popup_previous_color = m_popup_current_color;
+        m_popup_current_color = m_data->getColorMarkers()->getSelectedMarkerValue();
+        ImGui::OpenPopup(COLOR_PICKER_POPUP_ID);
     }
-    if (colorPickerPopup("color_marker_", current_color, previous_color)) {
-        m_data->getColorMarkers()->setSelectedMarkerValue(current_color);
+    if (colorPickerPopup(COLOR_PICKER_POPUP_ID, m_popup_current_color, m_popup_previous_color)) {
+        m_data->getColorMarkers()->setSelectedMarkerValue(m_popup_current_color);
     }
 
     // アルファスライダーポップアップ
@@ -632,7 +627,7 @@ void MainView::renderGradientEditor()
     // 各種ツールボタン
     //
     bool is_reset_all = imgui_utils::squareIconButton(ICON_MS_SYNC, "##reset");
-    if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNormal)) ImGui::SetTooltip(m_config_wrapper->tr(L"リセット").c_str());
+    if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNormal)) ImGui::SetTooltip("%s", m_config_wrapper->tr(L"リセット").c_str());
     ImGui::SameLine();
 
     constexpr int32_t tool_icon_num = 7;
@@ -644,24 +639,24 @@ void MainView::renderGradientEditor()
     bool select_next_marker = imgui_utils::squareIconButton(ICON_MS_PLAY_ARROW, "##right");
     ImGui::SameLine();
     bool is_distribute_marker = imgui_utils::squareIconButton(ICON_MS_ARROW_RANGE, "##distribute");
-    if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNormal)) ImGui::SetTooltip(m_config_wrapper->tr(L"マーカーを等間隔に配置").c_str());
+    if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNormal)) ImGui::SetTooltip("%s", m_config_wrapper->tr(L"マーカーを等間隔に配置").c_str());
     ImGui::SameLine();
     bool is_distribute_marker_and_midpoint = imgui_utils::squareIconButton(ICON_MS_FORMAT_LETTER_SPACING, "##distribut_bothe");
-    if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNormal)) ImGui::SetTooltip(m_config_wrapper->tr(L"マーカーと中間点を等間隔に配置").c_str());
+    if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNormal)) ImGui::SetTooltip("%s", m_config_wrapper->tr(L"マーカーと中間点を等間隔に配置").c_str());
     ImGui::SameLine();
     bool is_reset_midpoint = imgui_utils::squareIconButton(ICON_MS_STAT_0, "##reset_midpoints");
-    if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNormal)) ImGui::SetTooltip(m_config_wrapper->tr(L"すべての中間点を中央に再配置").c_str());
+    if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNormal)) ImGui::SetTooltip("%s", m_config_wrapper->tr(L"すべての中間点を中央に再配置").c_str());
     ImGui::SameLine();
     bool is_reverse = imgui_utils::squareIconButton(ICON_MS_SWITCH_LEFT, "##reverse");
-    if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNormal)) ImGui::SetTooltip(m_config_wrapper->tr(L"マーカーを反転").c_str());
+    if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNormal)) ImGui::SetTooltip("%s", m_config_wrapper->tr(L"マーカーを反転").c_str());
     ImGui::SameLine();
     bool is_delete_marker = imgui_utils::squareIconButton(ICON_MS_DELETE, "##delete");
-    if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNormal)) ImGui::SetTooltip(m_config_wrapper->tr(L"選択中のマーカーを削除").c_str());
+    if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNormal)) ImGui::SetTooltip("%s", m_config_wrapper->tr(L"選択中のマーカーを削除").c_str());
 
     // カラーマーカーの操作
     if (is_reset_all) {
         if (m_data != nullptr) {
-            m_history_window.pushHistory(*m_data); // リセット前の状態を保存
+            m_history_window.pushHistory(*m_data);  // リセット前の状態を保存
         }
 
         m_data->getColorMarkers()->resetMarkers(m_data->m_default_color_markers);
@@ -685,7 +680,7 @@ void MainView::renderGradientEditor()
     // アルファマーカーの操作
     if (is_reset_alpha_marker) {
         if (m_data != nullptr) {
-            m_history_window.pushHistory(*m_data); // リセット前の状態を保存
+            m_history_window.pushHistory(*m_data);
         }
 
         m_data->getAlphaMarkers()->resetMarkers(m_data->m_default_alpha_markers);
@@ -812,19 +807,14 @@ void MainView::renderColorPropertyEditor(GradientData* data)
         ImGui::SameLine(0, ImGui::GetStyle().ItemInnerSpacing.x);
         bool click_btn = ImGui::ColorButton("##marker_color_button", new_col, ImGuiColorEditFlags_NoTooltip);
 
-        // カラーエディターかカラーボタンがクリックされた場合
-        // if (click_edit || click_btn) {
-        //     data->getColorMarkers()->setBackupPickerColor(data->getMarkerManager()->getColorPickerColor());
-        //     data->getColorMarkers()->setMarkerColorPickerColor(new_col);
-        //     if (click_btn) {
-        //         static const char* marker_color_picker_popup = "marker_color_picker";
-        //         ImGui::PushID(data->getMarkerManager());
-        //         ImGui::OpenPopup(marker_color_picker_popup);
-        //         ImGui::PopID();
-        //     }
-        // }
-
-        // if (click_edit || click_btn) data->getColorMarkers()->setSelectedMarkerValue(data->getColorMarkers()->getColorPickerColor());
+        if (click_edit) {
+            m_data->getColorMarkers()->setSelectedMarkerValue(new_col);
+        }
+        if (click_btn) {
+            m_popup_previous_color = m_popup_current_color;
+            m_popup_current_color = m_data->getColorMarkers()->getSelectedMarkerValue();
+            ImGui::OpenPopup(COLOR_PICKER_POPUP_ID);
+        }
 
         ImGui::SetNextItemWidth(width);
         float pos = curr.selected_marker_pos * 100.0f;
