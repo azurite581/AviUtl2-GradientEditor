@@ -2,7 +2,7 @@
 #include "imgui.h"
 #include "imgui_internal.h"
 
-namespace CustomUI {
+namespace custom_ui {
 
 Microsoft::WRL::ComPtr<ID3D11Device> g_d3d_device                = nullptr;
 Microsoft::WRL::ComPtr<ID3D11DeviceContext> g_d3d_device_context = nullptr;
@@ -68,17 +68,19 @@ GradientData* drawGradientEditor(
     auto* color_markers = it->second.get()->getColorMarkers();
     auto* alpha_markers = it->second.get()->getAlphaMarkers();
 
+    // コンフィグをセット
     color_markers->setIOEnable(config.io_enable);
     color_markers->setMarkerMaxCount(config.max_marker_count);
-    //color_markers->setMarkerSize(config.marker_size);
-    //color_markers->setMidpointSize(config.midpoint_size);
+    color_markers->setMarkerSize(config.marker_size);
+    color_markers->setMidpointSize(config.midpoint_size);
 
     alpha_markers->setIOEnable(config.io_enable);
     alpha_markers->setMarkerMaxCount(config.max_marker_count);
-    //alpha_markers->setMarkerSize(config.marker_size);
-    //alpha_markers->setMidpointSize(config.midpoint_size);
+    alpha_markers->setMarkerSize(config.marker_size);
+    alpha_markers->setMidpointSize(config.midpoint_size);
 
-    float marker_half_width = config.marker_size.x * 0.5f;
+    const float marker_half_width = config.marker_size.x * 0.5f;
+    const float window_padding_x = ImGui::GetStyle().WindowPadding.x;
 
     // データを置換する場合
     if (replace_data) {
@@ -123,7 +125,7 @@ GradientData* drawGradientEditor(
         // 両端に位置するマーカーのはみ出しサイズを考慮
         ImVec2 cursor = ImGui::GetCursorScreenPos();
         ImGui::SetCursorScreenPos(ImVec2(cursor.x + marker_half_width, cursor.y));
-        marker_region_size.x -= marker_half_width;
+        marker_region_size.x -= marker_half_width + window_padding_x;
 
         ImGui::InvisibleButton("alpha_markers_draw_region", marker_region_size);
         ImVec2 p0 = ImGui::GetItemRectMin();
@@ -138,7 +140,7 @@ GradientData* drawGradientEditor(
     ImVec2 gradient_region_size = dsize;
     ImVec2 cursor = ImGui::GetCursorScreenPos();
     ImGui::SetCursorScreenPos(ImVec2(cursor.x + marker_half_width, cursor.y));
-    gradient_region_size.x -= marker_half_width;
+    gradient_region_size.x -= marker_half_width + window_padding_x;
 
     // グラデーション本体
     ImGui::Image((ImTextureID)(intptr_t)gradient_data->getOutputSrv(), gradient_region_size);
@@ -163,7 +165,7 @@ GradientData* drawGradientEditor(
 
         ImVec2 cursor = ImGui::GetCursorScreenPos();
         ImGui::SetCursorScreenPos(ImVec2(cursor.x + marker_half_width, cursor.y));
-        marker_region_size.x -= marker_half_width;
+        marker_region_size.x -= marker_half_width + window_padding_x;
 
         ImGui::InvisibleButton("markers_draw_region", marker_region_size);
         p0 = ImGui::GetItemRectMin();
@@ -281,4 +283,4 @@ bool drawGradientButton(const std::string label, const ImVec2& display_size, con
     return ImGui::ImageButton(label.c_str(), (ImTextureID)(intptr_t)gradient_srv, gradient_size);
 }
 
-}  // namespace CustomUI
+}  // namespace custom_ui

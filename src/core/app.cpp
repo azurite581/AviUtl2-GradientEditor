@@ -169,7 +169,7 @@ void App::run(std::promise<HWND>&& hwnd_promise)
     //
     // グラデーションエディタ用の D3D を初期化
     //
-    CustomUI::initDX11(gradient_editor::g_app_state.d3d_manager.getDevice(), gradient_editor::g_app_state.d3d_manager.getDeviceContext());
+    custom_ui::initDX11(gradient_editor::g_app_state.d3d_manager.getDevice(), gradient_editor::g_app_state.d3d_manager.getDeviceContext());
 
     ::ShowWindow(hwnd, SW_SHOWDEFAULT);
     ::UpdateWindow(hwnd);
@@ -269,7 +269,7 @@ void App::cleanup()
 
     gradient_editor::g_app_state.render = nullptr;
     m_main_view.reset();
-    CustomUI::cleanup();
+    custom_ui::cleanup();
 
     ImGui_ImplDX11_Shutdown();
     ImGui_ImplWin32_Shutdown();

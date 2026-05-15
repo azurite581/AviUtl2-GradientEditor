@@ -12,7 +12,7 @@
 #include "gradient_data.h"
 #include "gradient_renderer.h"
 
-namespace CustomUI {
+namespace custom_ui {
 
 enum GradientEditorFlags_ {
     GradientEditorFlags_None                    = 0,       // フラグなし
@@ -41,7 +41,7 @@ bool drawGradientButton(
 // 描画前にユーザーが設定できるオプション
 struct GradientEditorConfig {
     uint32_t max_marker_count = 30;     // 最大マーカー数。最大マーカー数を超えると新規マーカー追加不可
-    ImVec2 marker_size{20.0f, 2.0f};
+    ImVec2 marker_size{20.0f, 20.0f};
     ImVec2 midpoint_size{ 20.0f, 20.0f };
     bool io_enable = true;              // マウス入力を受け付けるかどうか
 };
@@ -62,6 +62,6 @@ GradientData* drawGradientEditor(
     bool replace_data           = false,
     GradientEditorConfig config = GradientEditorConfig());
 
-}  // namespace CustomUI
+}  // namespace custom_ui
 
 #endif  // !GRADIENT_WIDGET_H

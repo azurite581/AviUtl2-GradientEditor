@@ -1,4 +1,5 @@
 #include "gradient_marker.h"
+
 #include <cstdint>
 #include <iostream>
 #include <string>
@@ -20,8 +21,7 @@ void MarkerData::drawMarker(
     const bool is_upward,
     const ImVec4& inner_border_color,
     const ImVec4& outer_border_color,
-    const ImVec4& arrow_color
-) const
+    const ImVec4& arrow_color) const
 {
     ImDrawList* draw_list = ImGui::GetWindowDrawList();
 
@@ -72,22 +72,21 @@ void MarkerData::drawMarker(
     draw_list->AddRect(p0, p1, ImGui::ColorConvertFloat4ToU32(outer_border_color), 0, 0, 1.0f);
 }
 
-void MarkerData::drawMidpoint(const ImVec2 rect_p0, const ImVec2 rect_p1, const ImVec4& color) const
+void MarkerData::drawMidpoint(const ImVec2 rect_p0, const ImVec2 rect_p1, const ImVec4& color, const float thickness) const
 {
     ImDrawList* draw_list = ImGui::GetWindowDrawList();
 
     ImVec2 center = ImVec2(rect_p0.x + (rect_p1.x - rect_p0.x) * 0.5f, rect_p0.y + (rect_p1.y - rect_p0.y) * 0.5f);
-    draw_list->AddNgon(center, midpoint_size.x * 0.5f, ImGui::ColorConvertFloat4ToU32(color), 4, 2.0f);
+    draw_list->AddNgon(center, midpoint_size.x * 0.5f, ImGui::ColorConvertFloat4ToU32(color), 4, thickness);
 }
 
 void MarkerData::highlightMarker(
-        const ImVec2 rect_p0,
-        const ImVec2 rect_p1,
-        const ImVec4& highlight_color,
-        const bool is_upward,
-        const float thickness,
-        const float offset
-    ) const
+    const ImVec2 rect_p0,
+    const ImVec2 rect_p1,
+    const ImVec4& highlight_color,
+    const bool is_upward,
+    const float thickness,
+    const float offset) const
 {
     ImDrawList* draw_list = ImGui::GetWindowDrawList();
 
@@ -105,10 +104,9 @@ void MarkerData::highlightMarker(
 }
 
 void MarkerData::highlightMidpoint(
-        const ImVec2 rect_p0,
-        const ImVec2 rect_p1,
-        const ImVec4& highlight_color
-    ) const
+    const ImVec2 rect_p0,
+    const ImVec2 rect_p1,
+    const ImVec4& highlight_color) const
 {
     ImDrawList* draw_list = ImGui::GetWindowDrawList();
 
@@ -123,7 +121,7 @@ void MarkerData::highlightMidpoint(
 int64_t MarkerManager::getMarkerIndexById(const int64_t id) const
 {
     auto it = std::find_if(m_markers.begin(), m_markers.end(),
-                            [id](const MarkerData& m) { return m.id == id; });
+                           [id](const MarkerData& m) { return m.id == id; });
 
     if (it != m_markers.end()) {
         return static_cast<int64_t>(std::distance(m_markers.begin(), it));
@@ -142,16 +140,14 @@ int64_t MarkerManager::getMarkerIdByIndex(const int64_t index) const
     return m_markers[index].id;
 }
 
-
 //
 // マウス下のマーカー/中間点を取得
 //
 std::pair<MarkerManager::Clicked, int64_t> MarkerManager::getMarkerIdUnderMouse(const ImVec2& mouse_pos) const
 {
     // マーカー描画領域内かどうか（両端に位置するマーカーのはみ出し部分も考慮する）
-    if ((m_regions.marker_p0.x - marker_size.x * 0.5 <= mouse_pos.x && mouse_pos.x < m_regions.marker_p1.x + marker_size.x * 0.5) &&
-    (m_regions.marker_p0.y <= mouse_pos.y && mouse_pos.y < m_regions.marker_p1.y)) {
-
+    if ((m_regions.marker_p0.x - m_size.marker_size.x * 0.5 <= mouse_pos.x && mouse_pos.x < m_regions.marker_p1.x + m_size.marker_size.x * 0.5) &&
+        (m_regions.marker_p0.y <= mouse_pos.y && mouse_pos.y < m_regions.marker_p1.y)) {
         for (int32_t i = 0; const auto& marker : m_markers) {
             // 中間点を優先して判定
             if (i < static_cast<int32_t>(std::ssize(m_markers)) - 1) {
@@ -231,18 +227,18 @@ void MarkerManager::resetMidpoints()
 void MarkerManager::sortMarkersByPos()
 {
     std::sort(m_markers.begin(), m_markers.end(),
-            [](const MarkerData& a, const MarkerData& b) {
-                return a.pos < b.pos;
-            });
+              [](const MarkerData& a, const MarkerData& b) {
+                  return a.pos < b.pos;
+              });
 }
 
 // IDを基準にマーカーを昇順ソートする
 void MarkerManager::sortMarkersById()
 {
     std::sort(m_markers.begin(), m_markers.end(),
-                [](const MarkerData& a, const MarkerData& b) {
-                    return a.id < b.id;
-                });
+              [](const MarkerData& a, const MarkerData& b) {
+                  return a.id < b.id;
+              });
 }
 
 void MarkerManager::moveMarker(const int64_t id, const float new_pos)
@@ -263,9 +259,9 @@ void MarkerManager::moveMidpoint(const int64_t id, const float new_pos)
 
     if (range <= 0.0001f) return;
 
-    float ratio = (new_pos - left_pos) / range;
+    float ratio                   = (new_pos - left_pos) / range;
     m_markers[idx].midpoint.ratio = std::clamp(ratio, 0.0f, 1.0f);
-    m_markers[idx].midpoint.pos = new_pos;
+    m_markers[idx].midpoint.pos   = new_pos;
 
     updateMidpointsPos();
 }
@@ -282,12 +278,6 @@ void MarkerManager::addMarker(const int64_t id, const float marker_pos, const Im
 
     sortMarkersByPos();
     updateMidpointsPos();  // 中間点の位置（midpoint.pos）は、追加後に前後のマーカー位置から計算する
-
-    OutputDebugStringA("==================\n");
-    for (int32_t i = 0; const auto& m : m_markers) {
-        OutputDebugStringA(std::format("i={}, pos={}, id={}\n", i, m.pos, m.id).c_str());
-        ++i;
-    }
 }
 
 void MarkerManager::selectNextMarker()
@@ -374,7 +364,6 @@ bool MarkerManager::isDoubleClickedMarker(const ImVec2& mouse_pos)
 {
     if (ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left)) {
         auto [clicked, id] = getMarkerIdUnderMouse(mouse_pos);
-        OutputDebugStringA(std::format("selected_id={}, id={}", m_state.selected_marker_id, id).c_str());
         if (clicked == Clicked::Marker) {
             return true;
         }
@@ -418,9 +407,7 @@ void MarkerManager::updateMarkerAndMidpointPosition(const ImVec2& mouse_pos)
     // クリックされた位置にあるマーカー/中間点のIDを取得
     if (ImGui::IsMouseClicked(ImGuiMouseButton_Left)) {
         auto [clicked, id] = getMarkerIdUnderMouse(mouse_pos);
-        OutputDebugStringA("==========================\n");
-        OutputDebugStringA(std::format("clicked={}, id={}\n", std::to_underlying(clicked), id).c_str());
-        m_state.clicked = clicked;
+        m_state.clicked    = clicked;
         if (m_state.clicked == Clicked::Marker) {
             m_state.selected_marker_id = id;
         } else if (m_state.clicked == Clicked::Midpoint) {
@@ -438,15 +425,15 @@ void MarkerManager::updateMarkerAndMidpointPosition(const ImVec2& mouse_pos)
             moveMidpoint(m_state.selected_midpoint_id, marker_pos);
         }
     } else if (ImGui::IsMouseClicked(ImGuiMouseButton_Left) &&  // 左クリックされた
-        m_state.clicked == Clicked::MarkerRegion &&   // クリックされた位置がマーカー領域
-        std::ssize(m_markers) < m_marker_max_count  // 現在のマーカー数がマーカーの最大数未満
+               m_state.clicked == Clicked::MarkerRegion &&      // クリックされた位置がマーカー領域
+               std::ssize(m_markers) < m_marker_max_count       // 現在のマーカー数がマーカーの最大数未満
     ) {
         // クリック位置にマーカーを作成
         float marker_pos = getMarkerPosFromMousePos(mouse_pos);
         addMarker(m_state.marker_id_counter, marker_pos, m_new_marker_value, m_default_midpoint_ratio);
 
         m_state.selected_marker_id = m_state.marker_id_counter;  // 追加したマーカーを選択状態にする
-        m_state.clicked = Clicked::Marker;
+        m_state.clicked            = Clicked::Marker;
 
         ++m_state.marker_id_counter;
     }
@@ -494,17 +481,23 @@ std::pair<ImVec2, ImVec2> MarkerManager::calcDrawPos(const float marker_pos, con
 void MarkerManager::calcMarkersDrawPos()
 {
     for (auto& marker : m_markers) {
-        auto [p0, p1] = calcDrawPos(marker.pos, marker.marker_size.x);
+        auto [p0, p1]    = calcDrawPos(marker.pos, m_size.marker_size.x);
         marker.marker_p0 = p0;
         marker.marker_p1 = p1;
     }
 }
 
 // 各中間点の描画位置を計算してセットする
-void MarkerManager::calcMidpointsDrawPos()
+void MarkerManager::calcMidpointsDrawPos(const float thickness)
 {
+    // 中心位置をずらして領域の端に揃えるための係数
+    const float marker_region_height = m_regions.marker_p1.y - m_regions.marker_p0.y;
+    const float midpoint_height      = m_size.midpoint_size.y + thickness;
+    const float diff                 = marker_region_height - midpoint_height;
+
     for (auto& marker : m_markers) {
-        auto [p0, p1] = calcDrawPos(marker.midpoint.pos, marker.midpoint_size.x);
+        auto [p0, p1]      = calcDrawPos(marker.midpoint.pos, m_size.midpoint_size.x);
+        p0.y               = m_is_upward ? p0.y - diff : p0.y + diff;
         marker.midpoint_p0 = p0;
         marker.midpoint_p1 = p1;
     }
@@ -520,25 +513,47 @@ void MarkerManager::drawMarkers()
 
     int32_t selected_marker_idx = -1;
     for (const auto& [i, marker] : m_markers | std::views::enumerate) {
-        // マーカーのサイズをセット
-        marker.marker_size = marker_size;
-        marker.marker_arrow_size = {marker_size.x * 0.5f, marker_size.y * 0.5f};
+        // マーカーのサイズをセット（各マーカーのサイズではなく、MarkerManager が保持するサイズを使用する）
+        marker.marker_size       = m_size.marker_size;
+        marker.marker_arrow_size = m_size.marker_arrow_size;
 
         // 選択中のマーカーは最前面に描画するため、最後に描画する
         if (marker.id == m_state.selected_marker_id) {
             selected_marker_idx = static_cast<int32_t>(i);
             continue;
         }
-        marker.drawMarker(label, marker.id, marker.marker_p0, marker.marker_p1, marker.value, m_is_upward);
+        marker.drawMarker(
+            label,
+            marker.id,
+            marker.marker_p0,
+            marker.marker_p1,
+            marker.value,
+            m_is_upward,
+            m_color.marker_inner_border_color,
+            m_color.marker_outer_border_color,
+            m_color.marker_arrow_color);
     }
 
     if (selected_marker_idx >= 0) {
-        auto& selected_marker = m_markers.at(selected_marker_idx);
-        selected_marker.marker_size = marker_size;
-        selected_marker.marker_arrow_size = {marker_size.x * 0.5f, marker_size.y * 0.5f};
+        auto& selected_marker             = m_markers.at(selected_marker_idx);
+        selected_marker.marker_size       = m_size.marker_size;
+        selected_marker.marker_arrow_size = m_size.marker_arrow_size;
 
-        selected_marker.drawMarker(label, selected_marker.id, selected_marker.marker_p0, selected_marker.marker_p1, selected_marker.value, m_is_upward);
-        selected_marker.highlightMarker(selected_marker.marker_p0, selected_marker.marker_p1, ImVec4(1.0f, 1.0f, 1.0f, 1.0f), m_is_upward);
+        selected_marker.drawMarker(
+            label,
+            selected_marker.id,
+            selected_marker.marker_p0,
+            selected_marker.marker_p1,
+            selected_marker.value,
+            m_is_upward,
+            m_color.marker_inner_border_color,
+            m_color.marker_outer_border_color,
+            m_color.marker_arrow_color);
+        selected_marker.highlightMarker(
+            selected_marker.marker_p0,
+            selected_marker.marker_p1,
+            m_color.marker_outer_border_color,
+            m_is_upward);
     }
 
     ImGui::PopID();
@@ -546,28 +561,26 @@ void MarkerManager::drawMarkers()
 
 void MarkerManager::drawMidpoints()
 {
-    updateMidpointsPos();  // midpoint.ratio から midpoint.pos を計算して格納
-    calcMidpointsDrawPos();  // 描画座標を計算して midpoint_p0, midopint_p1 に格納
+    updateMidpointsPos();                             // midpoint.ratio から midpoint.pos を計算して格納
+    calcMidpointsDrawPos(m_size.midpoint_thickness);  // 描画座標を計算して midpoint_p0, midopint_p1 に格納
 
     int32_t selected_midpoint_idx = -1;
     for (const auto& [i, marker] : m_markers | std::views::take(std::ssize(m_markers) - 1) | std::views::enumerate) {
-        marker.midpoint_size = midpoint_size;
+        marker.midpoint_size = m_size.midpoint_size;
 
         // 選択中のマーカーは最前面に描画するため、最後に描画する
         if (marker.id == m_state.selected_midpoint_id) {
             selected_midpoint_idx = static_cast<int32_t>(i);
             continue;
         }
-        marker.drawMidpoint(marker.midpoint_p0, marker.midpoint_p1);
+        marker.drawMidpoint(marker.midpoint_p0, marker.midpoint_p1, m_color.midpoint_color, m_size.midpoint_thickness);
     }
 
     if (selected_midpoint_idx >= 0) {
-        auto& selected_marker = m_markers.at(selected_midpoint_idx);
-        selected_marker.midpoint_size = midpoint_size;
+        auto& selected_marker         = m_markers.at(selected_midpoint_idx);
+        selected_marker.midpoint_size = m_size.midpoint_size;
 
-        selected_marker.drawMidpoint(selected_marker.midpoint_p0, selected_marker.midpoint_p1);
-        selected_marker.highlightMidpoint(selected_marker.midpoint_p0, selected_marker.midpoint_p1, ImVec4(1.0f, 1.0f, 1.0f, 1.0f));
+        selected_marker.drawMidpoint(selected_marker.midpoint_p0, selected_marker.midpoint_p1, m_color.midpoint_color, m_size.midpoint_thickness);
+        selected_marker.highlightMidpoint(selected_marker.midpoint_p0, selected_marker.midpoint_p1, m_color.midpoint_color);
     }
 }
-
-

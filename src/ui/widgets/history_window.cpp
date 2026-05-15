@@ -105,7 +105,7 @@ void HistoryWindow::render(GradientConfigManager& manager, History& cfg)
                 ImGui::PushStyleVarY(ImGuiStyleVar_ItemSpacing, 0.0f);
                 ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(ImGui::GetStyle().FrameBorderSize, ImGui::GetStyle().FrameBorderSize));
 
-                if (CustomUI::drawGradientButton(history_data.name, button_size, history_data.data)) {
+                if (custom_ui::drawGradientButton(history_data.name, button_size, history_data.data)) {
                     m_is_history_clicked = true;
                     m_selected_gradient  = history_data.data;
                 }

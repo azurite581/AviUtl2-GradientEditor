@@ -568,7 +568,7 @@ void MainView::renderGradientEditor()
     ImGui::Dummy(ImVec2(0, frame_height * scale::relative::GRADIENT_MARGIN_Y));
 
     // 描画設定
-    static CustomUI::GradientEditorConfig config;
+    static custom_ui::GradientEditorConfig config;
     config.max_marker_count = MAX_MARKER_COUNT;
     config.marker_size = {frame_height * scale::relative::GRADIENT_MARKER_WIDTH, frame_height * scale::relative::GRADIENT_MARKER_HEIGHT};
     config.midpoint_size = {frame_height * scale::relative::GRADIENT_MIDPOINT_WIDTH, frame_height * scale::relative::GRADIENT_MIDPOINT_WIDTH};
@@ -584,12 +584,12 @@ void MainView::renderGradientEditor()
     }
 
     bool should_replace = m_preset_window.isPresetClicked() || m_history_window.isHistoryClicked() || (!m_is_init && !m_history_window.m_history_data.empty());
-    m_data = CustomUI::drawGradientEditor(
+    m_data = custom_ui::drawGradientEditor(
         "gradient",
         ImVec2(std::clamp(ImGui::GetContentRegionAvail().x, 1.0f, 4096.0f), frame_height * scale::relative::GRADIENT_HEIGHT),
         replace_data,
-        CustomUI::GradientEditorFlags_None |
-            CustomUI::GradientEditorFlags_AlphaMarker,
+        custom_ui::GradientEditorFlags_None |
+            custom_ui::GradientEditorFlags_AlphaMarker,
         should_replace,
         config);
 

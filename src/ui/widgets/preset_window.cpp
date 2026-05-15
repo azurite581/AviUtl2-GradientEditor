@@ -668,7 +668,7 @@ void PresetWindow::renderPresetList(GradientConfigManager& manager, Preset& cfg,
             // プリセット同士の間隔は 0 にする
             ImGui::PushStyleVarY(ImGuiStyleVar_ItemSpacing, 0.0f);
 
-            if (CustomUI::drawGradientButton(preset.name, gradient_size, gradient)) {
+            if (custom_ui::drawGradientButton(preset.name, gradient_size, gradient)) {
                 m_is_clicked_preset     = true;
                 m_selected_preset_index = static_cast<int32_t>(i);  // 選択中のインデックスを更新
                 m_selected_gradient     = gradient;                 // 選択中のグラデーションを更新

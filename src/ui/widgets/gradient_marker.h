@@ -2,17 +2,18 @@
 #define GRADIENT_MARKER_H
 
 #include <algorithm>
+#include <cmath>
 #include <compare>
 #include <cstdint>
 #include <functional>
 #include <iterator>
 #include <ranges>
 #include <utility>
-#include <vector>
 #include <variant>
+#include <vector>
 
 #include "imgui.h"
-#include <cmath>
+
 
 struct Midpoint {
     float ratio{0.5f};
@@ -25,9 +26,9 @@ struct MarkerData {
     MarkerData() {}
     MarkerData(const int64_t id_, const float pos_, const ImVec4& value_, const float midpoint_ratio)
         : id{id_},
-        pos{pos_},
-        value{value_},
-        midpoint{midpoint_ratio, 0.0f}
+          pos{pos_},
+          value{value_},
+          midpoint{midpoint_ratio, 0.0f}
     {
     }
 
@@ -39,7 +40,7 @@ struct MarkerData {
     ImVec2 marker_p0{}, marker_p1{};
     ImVec2 midpoint_p0{}, midpoint_p1{};
 
-    ImVec2 marker_arrow_size {20.0f, 10.0f};
+    ImVec2 marker_arrow_size{20.0f, 10.0f};
     ImVec2 marker_size{20.f, 20.f};
     ImVec2 midpoint_size{20.0f, 20.0f};
 
@@ -48,32 +49,29 @@ struct MarkerData {
         const int64_t id,
         const ImVec2 rect_p0, const ImVec2 rect_p1,
         const ImVec4& rect_color,
-        const bool is_upward = true,
+        const bool is_upward             = true,
         const ImVec4& inner_border_color = ImVec4(0.0f, 0.0f, 0.0f, 1.0f),
         const ImVec4& outer_border_color = ImVec4(1.0f, 1.0f, 1.0f, 1.0f),
-        const ImVec4& arrow_color = ImVec4(204.0f / 255.0f, 204.0f / 255.0f, 204.0f / 255.0f, 1.0f)
-    ) const;
+        const ImVec4& arrow_color        = ImVec4(204.0f / 255.0f, 204.0f / 255.0f, 204.0f / 255.0f, 1.0f)) const;
 
     void drawMidpoint(
         const ImVec2 rect_p0,
         const ImVec2 rect_p1,
-        const ImVec4& color = ImVec4(1.0f, 1.0f, 1.0f, 1.0f)
-    ) const;
+        const ImVec4& color   = ImVec4(1.0f, 1.0f, 1.0f, 1.0f),
+        const float thickness = 2.0f) const;
 
     void highlightMarker(
         const ImVec2 rect_p0,
         const ImVec2 rect_p1,
         const ImVec4& highlight_color,
-        const bool is_upward = true,
+        const bool is_upward  = true,
         const float thickness = 2.0f,
-        const float offset = 2.0f
-    ) const;
+        const float offset    = 2.0f) const;
 
     void highlightMidpoint(
         const ImVec2 rect_p0,
         const ImVec2 rect_p1,
-        const ImVec4& highlight_color
-    ) const;
+        const ImVec4& highlight_color) const;
 
     bool operator==(const MarkerData& o) const noexcept
     {
@@ -98,10 +96,10 @@ private:
     };
 
     enum class Clicked : int32_t {
-        Marker = -1,
-        Midpoint = -2,
+        Marker       = -1,
+        Midpoint     = -2,
         MarkerRegion = -3,
-        OutSide = -4
+        OutSide      = -4
     };
 
     struct Regions {
@@ -116,8 +114,24 @@ private:
         int64_t marker_id_counter{2};
     };
 
+    struct Size {
+        ImVec2 marker_arrow_size{20.0f, 10.0f};
+        ImVec2 marker_size{20.f, 20.f};
+        ImVec2 midpoint_size{20.0f, 20.0f};
+        float midpoint_thickness = 2.0f;
+    };
+
+    struct Color {
+        ImVec4 marker_inner_border_color{0.0f, 0.0f, 0.0f, 1.0f};
+        ImVec4 marker_outer_border_color{1.0f, 1.0f, 1.0f, 1.0f};
+        ImVec4 marker_arrow_color{204.0f / 255.0f, 204.0f / 255.0f, 204.0f / 255.0f, 1.0f};
+        ImVec4 midpoint_color{1.0f, 1.0f, 1.0f, 1.0f};
+    };
+
     Regions m_regions{};
     State m_state{};
+    Size m_size{};
+    Color m_color{};
 
     bool m_io_enable{true};
     bool m_is_upward{true};
@@ -128,10 +142,6 @@ private:
 
     float m_default_midpoint_ratio = 0.5f;
     ImVec4 m_default_value{1.0f, 1.0f, 1.0f, 1.0f};
-
-    ImVec2 marker_arrow_size {20.0f, 10.0f};
-    ImVec2 marker_size{20.f, 20.f};
-    ImVec2 midpoint_size{20.0f, 20.0f};
 
     ImVec4 m_new_marker_value{1.0f, 1.0f, 1.0f, 1.0f};  // 新しく追加するマーカーの色
 
@@ -145,17 +155,17 @@ public:
     {
         // 初期値をセット
         MarkerData marker_data_0;
-        marker_data_0.id = 0;
-        marker_data_0.pos = 0.0f;
+        marker_data_0.id             = 0;
+        marker_data_0.pos            = 0.0f;
         marker_data_0.midpoint.ratio = 0.5f;
-        marker_data_0.value = ImVec4(0, 0, 0, 1);
+        marker_data_0.value          = ImVec4(0, 0, 0, 1);
         m_markers.push_back(marker_data_0);
 
         MarkerData marker_data_1;
-        marker_data_1.id = 1;
-        marker_data_1.pos = 1.0f;
+        marker_data_1.id             = 1;
+        marker_data_1.pos            = 1.0f;
         marker_data_1.midpoint.ratio = 0.5f;
-        marker_data_1.value = ImVec4(1, 1, 1, 1);
+        marker_data_1.value          = ImVec4(1, 1, 1, 1);
         m_markers.push_back(marker_data_1);
     }
 
@@ -166,12 +176,7 @@ public:
 
     [[nodiscard]] float getMarkerRegionHeight() const noexcept
     {
-        float max_height = 0;
-        for (const auto& marker : m_markers) {
-            float height = marker.marker_arrow_size.y + marker.marker_size.y;
-            if (max_height < height) max_height = height;
-        }
-        return max_height;
+        return m_size.marker_arrow_size.y + m_size.marker_size.y;
     }
 
     // 各種描画領域を取得
@@ -294,7 +299,7 @@ public:
     [[nodiscard]] float getMarkerPosFromMousePos(const ImVec2& mouse_pos) const
     {
         ImVec2 mouse_pos_on_gradient = getMousePosOnGradient(mouse_pos);
-        float marker_pos = std::clamp(mouse_pos_on_gradient.x / (m_regions.gradient_p1.x - m_regions.gradient_p0.x), 0.0f, 1.0f);
+        float marker_pos             = std::clamp(mouse_pos_on_gradient.x / (m_regions.gradient_p1.x - m_regions.gradient_p0.x), 0.0f, 1.0f);
         return marker_pos;
     }
 
@@ -303,12 +308,20 @@ public:
     //
     void setMarkerSize(const ImVec2& size) noexcept
     {
-        marker_size = size;
+        m_size.marker_size = size;
+
+        m_size.marker_arrow_size.x = size.x;
+        m_size.marker_arrow_size.y = size.y * 0.5f;
     }
 
     void setMidpointSize(const ImVec2& size) noexcept
     {
-        midpoint_size = size;
+        m_size.midpoint_size = size;
+    }
+
+    void setMarkerArrowHeight(const float height) noexcept
+    {
+        m_size.marker_arrow_size.y = height;
     }
 
     // 描画領域
@@ -397,10 +410,10 @@ public:
         if (it != markers.end()) {
             int64_t max_id = it->id;
 
-            m_markers = markers;
-            m_state.selected_marker_id = markers.front().id;
+            m_markers                    = markers;
+            m_state.selected_marker_id   = markers.front().id;
             m_state.selected_midpoint_id = markers.front().id;
-            m_state.marker_id_counter = max_id + 1;
+            m_state.marker_id_counter    = max_id + 1;
         }
     }
 
@@ -437,7 +450,7 @@ public:
     //
     std::pair<ImVec2, ImVec2> calcDrawPos(const float marker_pos, const float marker_width) const;
     void calcMarkersDrawPos();
-    void calcMidpointsDrawPos();
+    void calcMidpointsDrawPos(const float thickness);
     void drawMarkers();
     void drawMidpoints();
 };
