@@ -89,8 +89,9 @@ Group2=1
 [Object.2]
 effect.name=MultiGradient@GradientEditor
 強さ=100.00
-中心X=0.0
-中心Y=0.0
+中心X=0.00
+中心Y=0.00
+Group=1
 角度=90.0
 幅=100
 背景透明度=0.00
@@ -105,12 +106,14 @@ effect.name=MultiGradient@GradientEditor
 位置=0.00,1.00
 中間点=0.50
 マーカー数=2
-アルファ値=1.00,1.00
-アルファ位置=0.00,1.00
-アルファマーカー数=2
 ぼかし幅=100
 色空間=sRGB
 補間経路=短経路
+アルファ値=1.00,1.00
+アルファ位置=0.00,1.00
+アルファ中間点=0.50
+アルファマーカー数=2
+アルファぼかし幅=100
 )";
 
     static constexpr const char* NEW_GRADIENT_MAP_ALIAS_TEMPLATE = R"(
@@ -153,12 +156,14 @@ effect.name=GradientMap@GradientEditor
 位置=0.00,1.00
 中間点=0.50
 マーカー数=2
-アルファ値=1.00,1.00
-アルファ位置=0.00,1.00
-アルファマーカー数=2
 ぼかし幅=100
 色空間=sRGB
 補間経路=短経路
+アルファ値=1.00,1.00
+アルファ位置=0.00,1.00
+アルファ中間点=0.50
+アルファマーカー数=2
+アルファぼかし幅=100
 )";
 
     static constexpr const char* NEW_OBJECT_ALIAS_TAMPLATES[2] = {NEW_MULTI_GRADIENT_ALIAS_TEMPLATE, NEW_GRADIENT_MAP_ALIAS_TEMPLATE};
@@ -167,8 +172,9 @@ effect.name=GradientMap@GradientEditor
 [Object.{}]
 effect.name=MultiGradient@GradientEditor
 強さ=100.00
-中心X=0.0
-中心Y=0.0
+中心X=0.00
+中心Y=0.00
+Group=1
 角度=90.0
 幅=100
 背景透明度=0.00
@@ -183,12 +189,14 @@ effect.name=MultiGradient@GradientEditor
 位置=0.00,1.00
 中間点=0.50
 マーカー数=2
-アルファ値=1.00,1.00
-アルファ位置=0.00,1.00
-アルファマーカー数=2
 ぼかし幅=100
 色空間=sRGB
 補間経路=短経路
+アルファ値=1.00,1.00
+アルファ位置=0.00,1.00
+アルファ中間点=0.50
+アルファマーカー数=2
+アルファぼかし幅=100
 )";
 
     static constexpr const char* GRADIENT_MAP_ALIAS_TEMPLATE = R"(
@@ -206,12 +214,14 @@ effect.name=GradientMap@GradientEditor
 位置=0.00,1.00
 中間点=0.50
 マーカー数=2
-アルファ値=1.00,1.00
-アルファ位置=0.00,1.00
-アルファマーカー数=2
 ぼかし幅=100
 色空間=sRGB
 補間経路=短経路
+アルファ値=1.00,1.00
+アルファ位置=0.00,1.00
+アルファ中間点=0.50
+アルファマーカー数=2
+アルファぼかし幅=100
 )";
 
     static constexpr const char* SCRIPT_TAMPLATES[2] = {MUTLI_GRADIENT_ALIAS_TEMPLATE, GRADIENT_MAP_ALIAS_TEMPLATE};
