@@ -6,7 +6,7 @@
 #define WIDEN2(x) L##x
 #define WIDEN(x) WIDEN2(x)
 #ifndef PLUGIN_VERSION
-#define PLUGIN_VERSION "0.4.3"
+#define PLUGIN_VERSION "0.5.0"
 #endif
 
 namespace scale {

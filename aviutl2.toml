@@ -3,7 +3,7 @@
 [project]
 id = "gradient-editor"
 name = "GradientEditor"
-version = "0.4.2"
+version = "0.5.0"
 
 [artifacts.GradientEditor_aux2]
 destination = "Plugin/GradientEditor.aux2"
