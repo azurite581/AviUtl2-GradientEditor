@@ -70,6 +70,9 @@ vcpkg_installed/
 Testing/
 .cache/
 
+# ---------------------------------------------------------
+*.ini
+
 # VSCode settings
 .vscode/
 
@@ -87,5 +90,8 @@ FodyWeavers.xsd
 /.aviutl2-cli
 /release
 
+# Clangd
 compile_commands.json
-*.ini
+
+# MegaLinter
+megalinter-reports/
