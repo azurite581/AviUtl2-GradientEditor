@@ -13,6 +13,9 @@ jobs:
     permissions:
       contents: write
     steps:
+    - name: Checkout repository
+      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
     - name: Setup mise
       uses: jdx/mise-action@1648a7812b9aeae629881980618f079932869151 # v4.0.1
 
@@ -23,22 +26,22 @@ jobs:
         $version = "$env:GITHUB_REF_NAME".TrimStart('v')
         echo "version=$version" >> $env:GITHUB_OUTPUT
 
+    - name: Install yq
+      run: |
+        choco install yq -y
+
     # aulua の VERSION 変数を置き換える
     - name: aulua variable update
-      uses: mikefarah/yq@master
-      with:
-        cmd:
-          $version = "v$env:VERSION"
-          yq -i ".project.variables.VERSION = `"$version`"" ./script/aulua.yaml
+      run: |
+        $version = "v$env:VERSION"
+        yq -i ".project.variables.VERSION = `"$version`"" ./script/aulua.yaml
       env:
         VERSION: ${{ steps.extract-version.outputs.version }}
 
     # CMakePresets.json の PLUGIN_VERSION 変数を置き換える
     - name: CMakePresets.json variable update
-      uses: mikefarah/yq@master
-      with:
-        cmd:
-          yq -i '(.configurePresets[] | select(.name == "windows-base")).cacheVariables.PLUGIN_VERSION = env(VERSION)' ./CMakePresets.json
+      run: |
+        yq -i '(.configurePresets[] | select(.name == "windows-base")).cacheVariables.PLUGIN_VERSION = env(VERSION)' ./CMakePresets.json
       env:
         VERSION: ${{ steps.extract-version.outputs.version }}
 
