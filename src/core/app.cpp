@@ -90,7 +90,7 @@ void App::run(std::promise<HWND>&& hwnd_promise)
     //
     // フォントの設定
     //
-    static ImWchar exclude_ranges[] = {ICON_MIN_MS, ICON_MAX_MS, 0};
+    static ImWchar exclude_ranges[] = {static_cast<ImWchar>(ICON_MIN_MS), static_cast<ImWchar>(ICON_MAX_MS), 0};
     ImFontConfig config1;
     config1.GlyphExcludeRanges = exclude_ranges;
 

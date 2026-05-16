@@ -1,6 +1,6 @@
 #include "window_manager.h"
 
-bool WindowManager::createPluginWindow(const wchar_t* window_name, const float scale, WNDPROC wnd_proc)
+bool WindowManager::createPluginWindow(const wchar_t* window_name, [[maybe_unused]] const float scale, WNDPROC wnd_proc)
 {
     // 自身のウィンドウを作成
     m_wc.cbSize        = sizeof(WNDCLASSEX);
@@ -17,7 +17,8 @@ bool WindowManager::createPluginWindow(const wchar_t* window_name, const float s
     m_hwnd = CreateWindowEx(
         0, window_name, window_name,
         WS_POPUP,  // 親設定前なのでPOPUPで作る
-        0, 0, (int)(470 * scale), (int)(290 * scale),
+        0, 0,
+        CW_USEDEFAULT , CW_USEDEFAULT ,
         nullptr, nullptr, GetModuleHandle(nullptr), nullptr);
     return true;
 }

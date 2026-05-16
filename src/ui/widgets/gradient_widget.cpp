@@ -143,6 +143,7 @@ GradientData* drawGradientEditor(
     ImVec2 cursor               = ImGui::GetCursorScreenPos();
     ImGui::SetCursorScreenPos(ImVec2(cursor.x + marker_half_width, cursor.y));
     gradient_region_size.x -= marker_half_width + window_padding_x;
+    gradient_region_size.x = (std::max)(1.0f, gradient_region_size.x);
 
     // グラデーション本体
     ImGui::Image((ImTextureID)(intptr_t)gradient_data->getOutputSrv(), gradient_region_size);

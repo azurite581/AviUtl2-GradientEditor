@@ -181,8 +181,8 @@ inline Lab d50xyz2lab(const XYZ& xyz) {
 
 // 参考: http://www.brucelindbloom.com/Eqn_Lab_to_XYZ.html
 inline XYZ lab2d50xyz(const Lab& lab) {
-    float f = (lab.l + 16.0) / 116.0;
-    float y = lab.l > 0.008856 * 903.3 ? std::pow(std::abs((lab.l + 16.0) / 116.0), 3.0) : lab.l / 903.3;
+    double f = (lab.l + 16.0) / 116.0;
+    double y = lab.l > 0.008856 * 903.3 ? std::pow(std::abs((lab.l + 16.0) / 116.0), 3.0) : lab.l / 903.3;
     auto lab2xyz_f = [](const double x) {
         return std::pow(x, 3.0) > 0.008856 ? std::pow(x, 3.0) : (116.0 * x - 16.0) / 903.3;
     };

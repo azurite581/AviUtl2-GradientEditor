@@ -404,6 +404,8 @@ public:
     // デフォルトのプリセットファイルが存在しない場合に書き出すプリセット
     static constexpr const char* DEFAULT_PRESET_FILE_JSON = R"(
 {
+    "version": "0.5.0",
+    "selected_category": 0,
     "categories": [
         "Basic"
     ],
@@ -411,20 +413,34 @@ public:
         {
             "category": "Basic",
             "name": "Basic01",
-            "colors": [
-                "0x000000FF",
-                "0xFFFFFFFF"
+            "color_markers": [
+                {
+                    "color": "0x000000FF",
+                    "position": 0.0,
+                    "midpoint": 0.5
+                },
+                {
+                    "color": "0xFFFFFFFF",
+                    "position": 1.0,
+                    "midpoint": 0.5
+                }
             ],
-            "positions": [
-                0.0,
-                1.0
-            ],
-            "midpoints": [
-                0.5
-            ],
-            "blur_width": 1.0,
+            "color_blur_width": 1.0,
             "color_space": 0,
-            "interpolation_path": 0
+            "interpolation_path": 0,
+            "alpha_markers": [
+                {
+                    "value": 1.0,
+                    "position": 0.0,
+                    "midpoint": 0.5
+                },
+                {
+                    "value": 1.0,
+                    "position": 1.0,
+                    "midpoint": 0.5
+                }
+            ],
+            "alpha_blur_width": 1.0
         }
     ]
 }
@@ -443,7 +459,7 @@ private:
 
         std::ifstream ifs(path);
         if (!ifs) {
-            result.error = "config file open failed: " + path.string();
+            result.error = "Config file open failed: " + path.string();
             return result;
         }
 
@@ -457,7 +473,7 @@ private:
             result.error  = e.what();
             result.config = default_cfg;
         } catch (...) {
-            result.error  = "unknown error";
+            result.error  = "Unknown error";
             result.config = default_cfg;
         }
 
@@ -469,7 +485,7 @@ private:
     {
         std::ofstream ofs(path);
         if (!ofs) {
-            return {false, "failed to open config file: " + path.string()};
+            return {false, "Failed to open config file: " + path.string()};
         }
 
         try {
@@ -624,7 +640,7 @@ public:
 
                     // 色の形式に応じて変換
                     // using ColorObject = std::variant<BookColor, CMYC, Grsc, HSBC, LbCl, RGBC>;
-                    int32_t color_type_index = col.color_object.color_object_variant.index();
+                    int32_t color_type_index = static_cast<int32_t>(col.color_object.color_object_variant.index());
                     switch (color_type_index) {
                         case 0:  // BookColor
                             message.push_back("BookColor stop is not supported.\n");

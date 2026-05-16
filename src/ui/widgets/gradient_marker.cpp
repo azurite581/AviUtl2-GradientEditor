@@ -53,7 +53,7 @@ void MarkerData::drawMarker(
     }
 
     // カラーボタンを描画
-    ImGui::PushID(id);
+    ImGui::PushID(std::format("{}", id).c_str());  // int64_t 型に対応していないため、文字列に変換して渡す
     {
         ImVec2 backup = ImGui::GetCursorScreenPos();
         ImGui::SetCursorScreenPos(p0);

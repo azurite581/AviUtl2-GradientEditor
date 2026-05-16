@@ -398,7 +398,7 @@ public:
 
     void setIOEnable(const bool enable) noexcept { m_io_enable = enable; }
     void setMarkerUpward(const bool upward) noexcept { m_is_upward = upward; }
-    void setMarkerMaxCount(const int64_t max_count) noexcept { m_marker_max_count = max_count; }
+    void setMarkerMaxCount(const int32_t max_count) noexcept { m_marker_max_count = max_count; }
     void setNewMarkerValue(const ImVec4& new_value) noexcept { m_new_marker_value = new_value; }
 
     //

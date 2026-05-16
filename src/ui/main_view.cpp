@@ -328,6 +328,7 @@ void MainView::render()
         ImGui::SameLine();
         static float font_scale_main = old_font_scale_main;
         if (ImGui::DragFloat("##ui_size", &font_scale_main, 0.02f, 0.5f, 4.0f, "%.2f")) {
+            font_scale_main = std::clamp(font_scale_main, 0.5f, 4.0f);;
             ImGui::GetStyle().FontScaleMain = font_scale_main;
         }
 
