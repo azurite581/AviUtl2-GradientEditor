@@ -74,8 +74,8 @@ inline OpenFileDialogResult openFiles(const HWND owner = nullptr)
     }
 
     COMDLG_FILTERSPEC filters[] = {
-        {L"GRDファイル (*.GRD;*.grd)",
-         L"*.GRD;*.grd"}};
+        {L"GRDファイル (*.grd;*.GRD)",
+         L"*.grd;*.GRD"}};
 
     dialog->SetFileTypes(
         static_cast<UINT>(std::size(filters)),
@@ -199,10 +199,10 @@ inline WriteFileDialogResult writeFile(const HWND owner = nullptr)
     }
 
     COMDLG_FILTERSPEC filters[] = {
-        {L"GRDファイル (*.GRD;*.grd)", L"*.GRD;*.grd"}};
+        {L"GRDファイル (*.grd;*.GRD)", L"*.grd;*.GRD"}};
 
     dialog->SetFileTypes(_countof(filters), filters);
-    dialog->SetDefaultExtension(L"GRD");
+    dialog->SetDefaultExtension(L"grd");
 
     hr = dialog->Show(owner);
 
