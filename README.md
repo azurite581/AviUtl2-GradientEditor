@@ -17,7 +17,7 @@
 
 ## はじめに
 
-各説明の詳細は Wiki を参照してください。
+各説明の詳細は [Wiki](https://github.com/azurite581/AviUtl2-GradientEditor/wiki) を参照してください。
 
 ## 動作環境
 
@@ -42,8 +42,7 @@
 > ### For non-Japanese speaking users
 > Please download the translation files from [here](https://github.com/azurite581/aviutl2_translations_azurite/releases/latest).
 
-詳細
-
+[🔗詳細](https://github.com/azurite581/AviUtl2-GradientEditor/wiki/%E3%82%A4%E3%83%B3%E3%82%B9%E3%83%88%E3%83%BC%E3%83%AB)
 
 ## 付属するスクリプトについて
 
@@ -57,22 +56,22 @@
 >[!NOTE]
 スクリプト単体でも使うことはできますが、グラデーションエディタ上で編集することを前提とした作りになっているため推奨しません。
 
-### 多色グラデーション（`MutliGradient@GradientEditor`）
+### 多色グラデーション
 
 ![MultiGradient](assets/multi_gradient.png)
 
 2色以上のグラデーションを作成するスクリプトです。デフォルトでは `色調整` カテゴリの中にあります。
 
-詳細
+[🔗詳細](https://github.com/azurite581/AviUtl2-GradientEditor/wiki/%E5%A4%9A%E8%89%B2%E3%82%B0%E3%83%A9%E3%83%87%E3%83%BC%E3%82%B7%E3%83%A7%E3%83%B3)
 
-### グラデーションマップ（`GradientMap@GradientEditor`）
+### グラデーションマップ
 
 ![GradientMap](assets/gradient_map.png)
 Image by <a href="https://pixabay.com/users/pavanprasad_ind-22614562/?utm_source=link-attribution&utm_medium=referral&utm_campaign=image&utm_content=9076520">Pavan Prasad</a> from <a href="https://pixabay.com//?utm_source=link-attribution&utm_medium=referral&utm_campaign=image&utm_content=9076520">Pixabay</a>
 
 グラデーションマップを適用するスクリプトです。デフォルトでは `色調整` カテゴリの中にあります。
 
-詳細
+[🔗詳細](https://github.com/azurite581/AviUtl2-GradientEditor/wiki/%E3%82%B0%E3%83%A9%E3%83%87%E3%83%BC%E3%82%B7%E3%83%A7%E3%83%B3%E3%83%9E%E3%83%83%E3%83%97)
 
 ## 使い方
 
@@ -85,16 +84,13 @@ Image by <a href="https://pixabay.com/users/pavanprasad_ind-22614562/?utm_source
 
 1 で適用したスクリプトと同名のスクリプトを、グラデーションエディタの `対象` から選択します。
 
-#### 3-A. グラデーションエディタの内容をスクリプトに反映する
+#### 3. グラデーションエディタの内容をスクリプトに反映する
 
-オブジェクトを選択した状態でグラデーションエディタの [`反映`](#-反映)を押すことで、スクリプト側に値が反映されます。  
+オブジェクトを選択した状態でグラデーションエディタの `反映` ボタンを押すことで、スクリプト側に値が反映されます。  
 `反映` ボタンが押されている状態であれば、エディタ上の変更が即座にスクリプトに反映されます。
 
-#### 3-B. スクリプトの内容をグラデーションエディタに反映させる
-
-[`読込`](#-読込)を押すことでスクリプトの内容をグラデーションエディタに反映させることができます。`反映` ボタンとは違い、常にスクリプト側から値を取得することはできません。
-
-詳細
+[🔗詳細（使い方）](https://github.com/azurite581/AviUtl2-GradientEditor/wiki/%E4%BD%BF%E3%81%84%E6%96%B9)  
+[🔗詳細（グラデーションエディタの説明）](https://github.com/azurite581/AviUtl2-GradientEditor/wiki/%E3%82%B0%E3%83%A9%E3%83%87%E3%83%BC%E3%82%B7%E3%83%A7%E3%83%B3%E3%82%A8%E3%83%87%E3%82%A3%E3%82%BF)
 
 ## ライセンス
 
