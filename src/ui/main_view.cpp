@@ -239,8 +239,8 @@ void MainView::render()
                     }
                 }
 
-                // カテゴリ内のプリセットをまとめて GRD ファイルとして出力
-                if (ImGui::BeginMenu(m_config_wrapper->tr(L"カテゴリ").c_str())) {
+                // カテゴリー内のプリセットをまとめて GRD ファイルとして出力
+                if (ImGui::BeginMenu(m_config_wrapper->tr(L"カテゴリー").c_str())) {
                     auto categories = m_config_manager.loadCategories(m_preset_config);
                     for (const auto& category : categories) {
                         if (ImGui::MenuItem(category.c_str(), nullptr)) {
@@ -249,7 +249,7 @@ void MainView::render()
                                 case FileDialogResult::FD_OKAY: {
                                     auto path = std::get<static_cast<int32_t>(FileDialogResult::FD_OKAY)>(open_file_dialog_result.value);
 
-                                    // 選択したカテゴリのプリセットを取得
+                                    // 選択したカテゴリーのプリセットを取得
                                     std::vector<GradientPreset> presets;
                                     for (const auto& [i, preset] : m_preset_config.presets | std::views::enumerate) {
                                         if (preset.category == category) {

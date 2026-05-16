@@ -728,6 +728,9 @@ void PresetWindow::renderPresetList(GradientConfigManager& manager, Preset& cfg,
                 if ((!contains_same_preset && !input_preset_name.empty() && ImGui::IsItemDeactivatedAfterEdit() && ImGui::IsKeyPressed(ImGuiKey_Enter)) || save) {
                     cfg.presets[i].name = input_preset_name;
                     m_old_preset_name = input_preset_name;
+                    if (i == m_selected_preset_index) {
+                        m_preset_name = input_preset_name;
+                    }
                     ImGui::CloseCurrentPopup();
                 }
 

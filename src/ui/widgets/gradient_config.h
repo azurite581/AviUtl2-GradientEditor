@@ -96,7 +96,7 @@ inline void from_json(const nlohmann::ordered_json& j, ColorMarker& c)
 }
 
 struct AlphaMarker {
-    float value{0};
+    float alpha{0};
     float position{0};
     float midpoint{0.5f};
 };
@@ -104,7 +104,7 @@ struct AlphaMarker {
 inline void to_json(nlohmann::ordered_json& j, const AlphaMarker& c)
 {
     j = nlohmann::ordered_json{
-        {"value", c.value},
+        {"alpha", c.alpha},
         {"position", c.position},
         {"midpoint", c.midpoint},
     };
@@ -112,7 +112,7 @@ inline void to_json(nlohmann::ordered_json& j, const AlphaMarker& c)
 
 inline void from_json(const nlohmann::ordered_json& j, AlphaMarker& c)
 {
-    c.value    = j.value("value", c.value);
+    c.alpha    = j.value("alpha", c.alpha);
     c.position = j.value("position", c.position);
     c.midpoint = j.value("midpoint", c.midpoint);
 }
@@ -120,7 +120,7 @@ inline void from_json(const nlohmann::ordered_json& j, AlphaMarker& c)
 struct GradientPreset {
     std::string category{"Uncategorized"};
     std::string name{"default"};
-    std::vector<ColorMarker> color_markers{{"0x000000ff", 0.0f, 0.5f}, {"0x000000ff", 1.0f, 0.5f}};
+    std::vector<ColorMarker> color_markers{{"0x000000ff", 0.0f, 0.5f}, {"0xffffffff", 1.0f, 0.5f}};
     float color_blur_width{1.0f};
     int32_t color_space{0};
     int32_t interpolation_path{0};
@@ -193,7 +193,7 @@ inline void from_json(const nlohmann::ordered_json& j, OldGradientHistory& histo
 // 新形式（v0.5.0 以降）
 struct GradientHistory {
     std::string name{"default"};
-    std::vector<ColorMarker> color_markers{{"0x000000ff", 0.0f, 0.5f}, {"0x000000ff", 1.0f, 0.5f}};
+    std::vector<ColorMarker> color_markers{{"0x000000ff", 0.0f, 0.5f}, {"0xffffffff", 1.0f, 0.5f}};
     float color_blur_width{1.0f};
     int32_t color_space{0};
     int32_t interpolation_path{0};
@@ -415,12 +415,12 @@ public:
             "name": "Basic01",
             "color_markers": [
                 {
-                    "color": "0x000000FF",
+                    "color": "0x000000ff",
                     "position": 0.0,
                     "midpoint": 0.5
                 },
                 {
-                    "color": "0xFFFFFFFF",
+                    "color": "0xffffffff",
                     "position": 1.0,
                     "midpoint": 0.5
                 }
@@ -430,12 +430,12 @@ public:
             "interpolation_path": 0,
             "alpha_markers": [
                 {
-                    "value": 1.0,
+                    "alpha": 1.0,
                     "position": 0.0,
                     "midpoint": 0.5
                 },
                 {
-                    "value": 1.0,
+                    "alpha": 1.0,
                     "position": 1.0,
                     "midpoint": 0.5
                 }
@@ -541,7 +541,7 @@ public:
         // アルファマーカー
         std::vector<MarkerData> alpha_markers;
         for (uint32_t i = 0; i < static_cast<uint32_t>(std::ssize(preset.alpha_markers)); ++i) {
-            ImVec4 value = ImVec4(0, 0, 0, preset.alpha_markers[i].value);
+            ImVec4 value = ImVec4(0, 0, 0, preset.alpha_markers[i].alpha);
             MarkerData marker_data(static_cast<int64_t>(i), preset.alpha_markers[i].position, value, preset.alpha_markers[i].midpoint);
             alpha_markers.push_back(marker_data);
         }
@@ -585,7 +585,7 @@ public:
         auto alpha_marker_positionts = gradient.m_alpha_markers.getMarkerPositions();
         auto alpha_marker_midpoints  = gradient.m_alpha_markers.getMidpointRatios();
         for (int32_t i = 0; i < alpha_marker_num; ++i) {
-            alpha_markers[i].value    = alpha_marker_values[i].w;
+            alpha_markers[i].alpha    = alpha_marker_values[i].w;
             alpha_markers[i].position = alpha_marker_positionts[i];
             if (i < alpha_marker_num - 1) {
                 alpha_markers[i].midpoint = alpha_marker_midpoints[i];
@@ -705,7 +705,7 @@ public:
                 std::vector<AlphaMarker> alpha_markers;
                 for (const auto& transparency : solid_grad.transparency_stops.transparency_stop_objects) {
                     AlphaMarker alpha_marker;
-                    alpha_marker.value    = static_cast<float>(transparency.opacity / 100.0);
+                    alpha_marker.alpha    = static_cast<float>(transparency.opacity / 100.0);
                     alpha_marker.position = static_cast<float>(transparency.location / 4096.0);
                     alpha_marker.midpoint = static_cast<float>(transparency.midpoint / 100.0);
                     alpha_markers.push_back(alpha_marker);
@@ -786,7 +786,7 @@ public:
                 TransparencyStopObject trns_stop_object;
                 trns_stop_object.location = static_cast<int32_t>(alpha.position * 4096.0);
                 trns_stop_object.midpoint = static_cast<int32_t>(alpha.midpoint * 100.0);
-                trns_stop_object.opacity = alpha.value * 100.0;
+                trns_stop_object.opacity = alpha.alpha * 100.0;
                 trns_stop_objects.push_back(trns_stop_object);
             }
             trns_stops.transparency_stop_objects = trns_stop_objects;
@@ -815,7 +815,7 @@ public:
         // アルファマーカー
         std::vector<MarkerData> alpha_markers;
         for (uint32_t i = 0; i < static_cast<uint32_t>(std::ssize(history.alpha_markers)); ++i) {
-            ImVec4 value = ImVec4(0, 0, 0, history.alpha_markers[i].value);
+            ImVec4 value = ImVec4(0, 0, 0, history.alpha_markers[i].alpha);
             MarkerData marker_data(static_cast<int64_t>(i), history.alpha_markers[i].position, value, history.alpha_markers[i].midpoint);
             alpha_markers.push_back(marker_data);
         }
@@ -861,7 +861,7 @@ public:
         auto alpha_marker_midpoints  = gradient.m_alpha_markers.getMidpointRatios();
 
         for (int32_t i = 0; i < alpha_marker_num; ++i) {
-            alpha_markers[i].value    = alpha_marker_values[i].w;
+            alpha_markers[i].alpha    = alpha_marker_values[i].w;
             alpha_markers[i].position = alpha_marker_positionts[i];
             if (i < alpha_marker_num - 1) {
                 alpha_markers[i].midpoint = alpha_marker_midpoints[i];
