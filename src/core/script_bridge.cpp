@@ -145,7 +145,7 @@ void ScriptBridge::loadGradientFromScript(EDIT_SECTION* edit,
 
     m_curr_values.alpha_marker_count      = static_cast<uint32_t>(std::ssize(data.getAlphaMarkers()->getMarkers()));
     m_curr_values.selected_alpha_marker_pos = data.getAlphaMarkers()->getSelectedMarkerPosition();
-    m_curr_values.selected_alpha_marker_value = data.getAlphaMarkers()->getSelectedMarkerPosition();
+    m_curr_values.selected_alpha_marker_value = data.getAlphaMarkers()->getSelectedMarkerValue().w;
     m_curr_values.selected_alpha_midpoint_ratio = data.getAlphaMarkers()->getSelectedMidpointRatio();
 }
 

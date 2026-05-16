@@ -391,7 +391,7 @@ public:
 
     void setSelectedMidpointRatio(const float ratio)
     {
-        auto idx = getMarkerIndexById(m_state.selected_marker_id);
+        auto idx = getMarkerIndexById(m_state.selected_midpoint_id);
         if (idx == -1) return;
         m_markers[idx].midpoint.ratio = std::clamp(ratio, 0.0f, 1.0f);
     }

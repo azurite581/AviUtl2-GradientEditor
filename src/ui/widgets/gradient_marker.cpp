@@ -294,6 +294,9 @@ void MarkerManager::selectNextMarker()
     } else {
         m_state.selected_marker_id = m_markers.front().id;
     }
+
+    // 中間点も変更
+    m_state.selected_midpoint_id = m_state.selected_marker_id;
 }
 
 void MarkerManager::selectBackMarker()
@@ -310,6 +313,9 @@ void MarkerManager::selectBackMarker()
     } else {
         m_state.selected_marker_id = m_markers.back().id;
     }
+
+    // 中間点も変更
+    m_state.selected_midpoint_id = m_state.selected_marker_id;
 }
 
 void MarkerManager::deleteMarker(const int64_t id)
@@ -411,6 +417,7 @@ void MarkerManager::updateMarkerAndMidpointPosition(const ImVec2& mouse_pos)
         if (m_state.clicked == Clicked::Marker) {
             m_state.selected_marker_id = id;
         } else if (m_state.clicked == Clicked::Midpoint) {
+            m_state.selected_marker_id = id;  // 中間点はマーカーに紐づいているためマーカーも変更
             m_state.selected_midpoint_id = id;
         }
     }
