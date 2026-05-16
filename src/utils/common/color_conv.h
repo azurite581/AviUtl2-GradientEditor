@@ -104,6 +104,12 @@ inline double gammaEncode(const double x) {
 
 struct sRGB {
     double r, g, b;
+    void norm()
+    {
+        r = std::clamp(r, 0.0, 1.0);
+        g = std::clamp(g, 0.0, 1.0);
+        b = std::clamp(b, 0.0, 1.0);
+    }
 };
 
 struct Linear {
@@ -182,7 +188,7 @@ inline Lab d50xyz2lab(const XYZ& xyz) {
 // 参考: http://www.brucelindbloom.com/Eqn_Lab_to_XYZ.html
 inline XYZ lab2d50xyz(const Lab& lab) {
     double f = (lab.l + 16.0) / 116.0;
-    double y = lab.l > 0.008856 * 903.3 ? std::pow(std::abs((lab.l + 16.0) / 116.0), 3.0) : lab.l / 903.3;
+    double y = lab.l > 0.008856 * 903.3 ? std::pow(((lab.l + 16.0) / 116.0), 3.0) : lab.l / 903.3;
     auto lab2xyz_f = [](const double x) {
         return std::pow(x, 3.0) > 0.008856 ? std::pow(x, 3.0) : (116.0 * x - 16.0) / 903.3;
     };

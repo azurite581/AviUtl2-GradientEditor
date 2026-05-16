@@ -661,7 +661,8 @@ public:
                         case 3:  // HSBC
                         {
                             const auto& hsb        = std::get<3>(col.color_object.color_object_variant);
-                            const auto norm_srgb   = color_conv::hsv2srgb({hsb.hue * std::numbers::pi / 180.0, hsb.saturate / 100.0, hsb.brightness / 100.0});
+                            auto norm_srgb   = color_conv::hsv2srgb({hsb.hue * std::numbers::pi / 180.0, hsb.saturate / 100.0, hsb.brightness / 100.0});
+                            norm_srgb.norm();
                             const ImVec4 norm_rgba = ImVec4{static_cast<float>(norm_srgb.r), static_cast<float>(norm_srgb.g), static_cast<float>(norm_srgb.b), 1.0f};
                             const auto u32_rgba    = color_conv::vec4normRgba2u32Rgba<ImVec4>(norm_rgba);
                             color_marker.color     = std::format("0x{:08X}", u32_rgba);
@@ -670,7 +671,8 @@ public:
                         case 4:  // LbCl
                         {
                             const auto& lab        = std::get<4>(col.color_object.color_object_variant);
-                            const auto norm_srgb   = color_conv::d50lab2srgb({lab.luminance, lab.a, lab.b});
+                            auto norm_srgb   = color_conv::d50lab2srgb({lab.luminance, lab.a, lab.b});
+                            norm_srgb.norm();
                             const ImVec4 norm_rgba = ImVec4{static_cast<float>(norm_srgb.r), static_cast<float>(norm_srgb.g), static_cast<float>(norm_srgb.b), 1.0f};
                             const auto u32_rgba    = color_conv::vec4normRgba2u32Rgba<ImVec4>(norm_rgba);
                             color_marker.color     = std::format("0x{:08X}", u32_rgba);

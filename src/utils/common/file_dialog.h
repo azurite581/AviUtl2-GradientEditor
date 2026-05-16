@@ -202,7 +202,7 @@ inline WriteFileDialogResult writeFile(const HWND owner = nullptr)
         {L"GRDファイル (*.grd;*.GRD)", L"*.grd;*.GRD"}};
 
     dialog->SetFileTypes(_countof(filters), filters);
-    dialog->SetDefaultExtension(L"grd");
+    dialog->SetDefaultExtension(L"GRD");
 
     hr = dialog->Show(owner);
 
