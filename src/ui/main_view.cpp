@@ -88,7 +88,7 @@ MainView::MainView(LoggerWrapperInterface* logger_wrapper, ConfigWrapperInterfac
 
 bool MainView::colorPickerPopup(const char* label, ImVec4& current_color, ImVec4& previous_color)
 {
-    bool changed  = false;
+    bool changed = false;
     ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(10, 2));
     ImGui::PushStyleVarX(ImGuiStyleVar_ItemInnerSpacing, 2);
 
@@ -340,7 +340,7 @@ void MainView::render()
         if (off > 0.0f) ImGui::SetCursorPosX(ImGui::GetCursorPosX() + off);
 
         if (ImGui::Button(m_config_wrapper->tr(L"キャンセル").c_str(), ImVec2(button_width, 0))) {
-            font_scale_main = old_font_scale_main;
+            font_scale_main                 = old_font_scale_main;
             ImGui::GetStyle().FontScaleMain = old_font_scale_main;
             ImGui::CloseCurrentPopup();
         }
@@ -570,8 +570,8 @@ void MainView::renderGradientEditor()
     // 描画設定
     static custom_ui::GradientEditorConfig config;
     config.max_marker_count = MAX_MARKER_COUNT;
-    config.marker_size = {frame_height * scale::relative::GRADIENT_MARKER_WIDTH, frame_height * scale::relative::GRADIENT_MARKER_HEIGHT};
-    config.midpoint_size = {frame_height * scale::relative::GRADIENT_MIDPOINT_WIDTH, frame_height * scale::relative::GRADIENT_MIDPOINT_WIDTH};
+    config.marker_size      = {frame_height * scale::relative::GRADIENT_MARKER_WIDTH, frame_height * scale::relative::GRADIENT_MARKER_HEIGHT};
+    config.midpoint_size    = {frame_height * scale::relative::GRADIENT_MIDPOINT_WIDTH, frame_height * scale::relative::GRADIENT_MIDPOINT_WIDTH};
 
     // プリセット、履歴がクリックされたときはそのグラデーションを使用する
     if (m_preset_window.isPresetClicked()) {
@@ -584,7 +584,7 @@ void MainView::renderGradientEditor()
     }
 
     bool should_replace = m_preset_window.isPresetClicked() || m_history_window.isHistoryClicked() || (!m_is_init && !m_history_window.m_history_data.empty());
-    m_data = custom_ui::drawGradientEditor(
+    m_data              = custom_ui::drawGradientEditor(
         "gradient",
         ImVec2(std::clamp(ImGui::GetContentRegionAvail().x, 1.0f, 4096.0f), frame_height * scale::relative::GRADIENT_HEIGHT),
         replace_data,
@@ -602,7 +602,7 @@ void MainView::renderGradientEditor()
     // カラーピッカーポップアップ
     if (m_data->getColorMarkers()->isDoubleClickedMarker(ImGui::GetIO().MousePos)) {
         m_popup_previous_color = m_popup_current_color;
-        m_popup_current_color = m_data->getColorMarkers()->getSelectedMarkerValue();
+        m_popup_current_color  = m_data->getColorMarkers()->getSelectedMarkerValue();
         ImGui::OpenPopup(COLOR_PICKER_POPUP_ID);
     }
     if (colorPickerPopup(COLOR_PICKER_POPUP_ID, m_popup_current_color, m_popup_previous_color)) {
@@ -631,7 +631,7 @@ void MainView::renderGradientEditor()
     ImGui::SameLine();
 
     constexpr int32_t tool_icon_num = 7;
-    float tb_width = frame_height * tool_icon_num + ImGui::GetStyle().ItemSpacing.x * (tool_icon_num - 2);
+    float tb_width                  = frame_height * tool_icon_num + ImGui::GetStyle().ItemSpacing.x * (tool_icon_num - 2);
     imgui_utils::alignForWidth(tb_width, 1.0f);  // 右揃えにする
 
     bool select_back_marker = imgui_utils::squareIconButton(ICON_MS_ARROW_BACK_2, "##left");
@@ -742,7 +742,7 @@ void MainView::renderGradientEditor()
     }
 
     // プロパティエディタを描画する
-    bool draw_color_peditor = false;
+    bool draw_color_peditor        = false;
     ImGuiTabBarFlags tab_bar_flags = ImGuiTabBarFlags_None;
     if (ImGui::BeginTabBar("##PropertyEditorTabBar", tab_bar_flags)) {
         if (ImGui::BeginTabItem(m_config_wrapper->tr(L"色設定").c_str())) {
@@ -812,7 +812,7 @@ void MainView::renderColorPropertyEditor(GradientData* data)
         }
         if (click_btn) {
             m_popup_previous_color = m_popup_current_color;
-            m_popup_current_color = m_data->getColorMarkers()->getSelectedMarkerValue();
+            m_popup_current_color  = m_data->getColorMarkers()->getSelectedMarkerValue();
             ImGui::OpenPopup(COLOR_PICKER_POPUP_ID);
         }
 

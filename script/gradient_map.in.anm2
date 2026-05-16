@@ -159,12 +159,6 @@ local function reorder(t, idx)
     return r
 end
 
-local function rotate(deg)
-    local rad = math.rad(deg)
-    return {math.cos(rad), -math.sin(rad),
-            math.sin(rad),  math.cos(rad)}
-end
-
 local function clamp(x, min, max)
     if x < min then return min end
     if x > max then return max end

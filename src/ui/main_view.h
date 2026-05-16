@@ -58,7 +58,7 @@ private:
     ImVec4 m_popup_current_color{1.0f, 1.0f, 1.0f, 1.0f};
     ImVec4 m_popup_previous_color{1.0f, 1.0f, 1.0f, 1.0f};
 
-    static constexpr int32_t NEW_OBJECT_LENGTH = 81;
+    static constexpr int32_t NEW_OBJECT_LENGTH                     = 81;
     static constexpr const char* NEW_MULTI_GRADIENT_ALIAS_TEMPLATE = R"(
 [Object]
 [Object.0]
@@ -215,7 +215,6 @@ effect.name=GradientMap@GradientEditor
 )";
 
     static constexpr const char* SCRIPT_TAMPLATES[2] = {MUTLI_GRADIENT_ALIAS_TEMPLATE, GRADIENT_MAP_ALIAS_TEMPLATE};
-
 };
 
 #endif  // MAIN_VIEW_H

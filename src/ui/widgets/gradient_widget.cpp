@@ -1,6 +1,8 @@
 #include "gradient_widget.h"
+
 #include "imgui.h"
 #include "imgui_internal.h"
+
 
 namespace custom_ui {
 
@@ -64,7 +66,7 @@ GradientData* drawGradientEditor(
         it = g_editor_gradients.emplace(label, std::move(gradient_data)).first;
     }
 
-    auto* gradient_data  = it->second.get();
+    auto* gradient_data = it->second.get();
     auto* color_markers = it->second.get()->getColorMarkers();
     auto* alpha_markers = it->second.get()->getAlphaMarkers();
 
@@ -80,7 +82,7 @@ GradientData* drawGradientEditor(
     alpha_markers->setMidpointSize(config.midpoint_size);
 
     const float marker_half_width = config.marker_size.x * 0.5f;
-    const float window_padding_x = ImGui::GetStyle().WindowPadding.x;
+    const float window_padding_x  = ImGui::GetStyle().WindowPadding.x;
 
     // データを置換する場合
     if (replace_data) {
@@ -92,7 +94,7 @@ GradientData* drawGradientEditor(
         gradient_data->setInterpDir(data.m_interp_dir);
     }
 
-    ImVec2 dsize = ImVec2(ImMax(1.0f, display_size.x), ImMax(1.0f, display_size.y));
+    ImVec2 dsize           = ImVec2(ImMax(1.0f, display_size.x), ImMax(1.0f, display_size.y));
     int32_t current_width  = static_cast<int32_t>(dsize.x);
     int32_t current_height = static_cast<int32_t>(dsize.y);
 
@@ -138,7 +140,7 @@ GradientData* drawGradientEditor(
     }
 
     ImVec2 gradient_region_size = dsize;
-    ImVec2 cursor = ImGui::GetCursorScreenPos();
+    ImVec2 cursor               = ImGui::GetCursorScreenPos();
     ImGui::SetCursorScreenPos(ImVec2(cursor.x + marker_half_width, cursor.y));
     gradient_region_size.x -= marker_half_width + window_padding_x;
 
@@ -242,7 +244,7 @@ ID3D11ShaderResourceView* getGradientSrv(
 
     auto* gradient_data = it->second.get();
 
-    ImVec2 dsize = ImVec2(ImMax(1.0f, display_size.x), ImMax(1.0f, display_size.y));
+    ImVec2 dsize           = ImVec2(ImMax(1.0f, display_size.x), ImMax(1.0f, display_size.y));
     int32_t current_width  = static_cast<int32_t>(dsize.x);
     int32_t current_height = static_cast<int32_t>(dsize.y);
 
@@ -275,9 +277,9 @@ ID3D11ShaderResourceView* getGradientSrv(
 
 bool drawGradientButton(const std::string label, const ImVec2& display_size, const GradientData& data)
 {
-    ImVec2 dsize = ImVec2(ImMax(1.0f, display_size.x), ImMax(1.0f, display_size.y));
+    ImVec2 dsize         = ImVec2(ImMax(1.0f, display_size.x), ImMax(1.0f, display_size.y));
     ImVec2 gradient_size = ImVec2(dsize.x - ImGui::GetStyle().FramePadding.x * 2.0f, dsize.y - ImGui::GetStyle().FramePadding.y * 2.0f);
-    gradient_size = ImVec2(ImMax(1.0f, gradient_size.x), ImMax(1.0f, gradient_size.y));
+    gradient_size        = ImVec2(ImMax(1.0f, gradient_size.x), ImMax(1.0f, gradient_size.y));
 
     ID3D11ShaderResourceView* gradient_srv = getGradientSrv(g_button_gradients, label, gradient_size, data);
     return ImGui::ImageButton(label.c_str(), (ImTextureID)(intptr_t)gradient_srv, gradient_size);
