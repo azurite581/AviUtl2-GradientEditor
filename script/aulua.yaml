@@ -3,7 +3,7 @@ project:
     VERSION: v0.4.3
     AUTHOR: azurite
     LABEL: 色調整
-    MARKER_MAX_COUNT: 40
+    MARKER_MAX_COUNT: 100
 build:
   out_dir: ../out_script
 scripts:

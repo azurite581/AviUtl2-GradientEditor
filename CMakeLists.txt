@@ -12,7 +12,6 @@ project(GradientEditor LANGUAGES C CXX)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(IMGUI_SOURCE third_party/imgui)
-set(MARKER_COUNT 40 CACHE STRING "marker count")  # MARKER_COUNT マクロ定義
 set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
 
 # .cpp font file generation
