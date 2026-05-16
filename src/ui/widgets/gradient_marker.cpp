@@ -68,8 +68,8 @@ void MarkerData::drawMarker(
     }
 
     // 四角形の枠を描画
-    draw_list->AddRect(p0, p1, ImGui::ColorConvertFloat4ToU32(inner_border_color), 0, 0, 3.0f);
-    draw_list->AddRect(p0, p1, ImGui::ColorConvertFloat4ToU32(outer_border_color), 0, 0, 1.0f);
+    draw_list->AddRect(p0, p1, ImGui::ColorConvertFloat4ToU32(inner_border_color), 0, 3.0f, 0);
+    draw_list->AddRect(p0, p1, ImGui::ColorConvertFloat4ToU32(outer_border_color), 0, 1.0f, 0);
 }
 
 void MarkerData::drawMidpoint(const ImVec2 rect_p0, const ImVec2 rect_p1, const ImVec4& color, const float thickness) const
@@ -100,7 +100,7 @@ void MarkerData::highlightMarker(
 
     p0 = ImVec2(p0.x - offset, p0.y - offset);
     p1 = ImVec2(p1.x + offset, p1.y + offset);
-    draw_list->AddRect(p0, p1, ImGui::ColorConvertFloat4ToU32(highlight_color), 0.0f, 0, thickness);
+    draw_list->AddRect(p0, p1, ImGui::ColorConvertFloat4ToU32(highlight_color), 0.0f, thickness, 0);
 }
 
 void MarkerData::highlightMidpoint(

@@ -157,7 +157,7 @@ GradientData* drawGradientEditor(
     // ボーダー
     if (ImGui::GetStyle().FrameBorderSize == 1.0f) {
         ImVec4 border_color = ImGui::GetStyle().Colors[ImGuiCol_Border];
-        draw_list->AddRect(p0, p1, ImGui::ColorConvertFloat4ToU32(border_color), 0, 0, 1.0f);
+        draw_list->AddRect(p0, p1, ImGui::ColorConvertFloat4ToU32(border_color), 0, 1.0f, 0);
     }
     if (!(flags & GradientEditorFlags_NoMarker)) ImGui::PopStyleVar();
 
