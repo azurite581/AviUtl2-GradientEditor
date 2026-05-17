@@ -625,8 +625,7 @@ public:
             if (grad.gradient_form == "CstS" && grad.gradient_object.index() == 0) {
                 const auto& solid_grad = std::get<0>(grad.gradient_object);
 
-                // ぼかし幅
-                preset.color_blur_width = static_cast<float>(solid_grad.interpolation / 4096.0);
+                preset.color_blur_width = 1.0f;  // ぼかし幅は対応する項目がないので初期値
 
                 // カラーマーカー
                 int32_t color_marker_num = solid_grad.color_stops.item_num;
@@ -753,7 +752,7 @@ public:
             // CustomStopsGradientObject = {interpolation, color_stops, transparency_stops}
             // interpolation
             CustomStopsGradientObject grd_gradient_object;
-            grd_gradient_object.interpolation = g.color_blur_width * 4096;
+            grd_gradient_object.interpolation = 4096.0;  // 滑らかさは対応する項目がないので初期値
 
             // color_stops
             ColorStops color_stops;
