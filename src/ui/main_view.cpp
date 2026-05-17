@@ -487,7 +487,7 @@ void MainView::renderGradientEditor()
     ImGui::Text((m_config_wrapper->tr(L"レイヤー") + "=%d, " + m_config_wrapper->tr(L"フレーム") + "=[%d - %d]").c_str(), m_layer_frame.layer + 1, m_layer_frame.start + 1, m_layer_frame.end + 1);
 
     bool is_reset_alpha_marker = imgui_utils::squareIconButton(ICON_MS_SYNC, "##alpha_marker_reset");
-    if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNormal)) ImGui::SetTooltip("%s", m_config_wrapper->tr(L"アルファマーカーをリセット").c_str());
+    if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNormal)) ImGui::SetTooltip("%s", m_config_wrapper->tr(L"マーカーをリセット").c_str());
     ImGui::SameLine();
 
     float alpha_tool_buttons_width = frame_height * 7 + ImGui::GetStyle().ItemSpacing.x * 5;
@@ -498,7 +498,7 @@ void MainView::renderGradientEditor()
     bool select_next_alpha_marker = imgui_utils::squareIconButton(ICON_MS_PLAY_ARROW, "##select_next_alpha_marker");
     ImGui::SameLine();
     bool is_distribute_alpha_marker = imgui_utils::squareIconButton(ICON_MS_ARROW_RANGE, "##alpha_marker_distribute");
-    if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNormal)) ImGui::SetTooltip("%s", m_config_wrapper->tr(L"アルファマーカーを等間隔に配置").c_str());
+    if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNormal)) ImGui::SetTooltip("%s", m_config_wrapper->tr(L"マーカーを等間隔に配置").c_str());
     ImGui::SameLine();
     bool is_distribute_alpha_marker_and_alpha_midpoint = imgui_utils::squareIconButton(ICON_MS_FORMAT_LETTER_SPACING, "##alpha_distribut_bothe");
     if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNormal)) ImGui::SetTooltip("%s", m_config_wrapper->tr(L"マーカーと中間点を等間隔に配置").c_str());
@@ -507,10 +507,10 @@ void MainView::renderGradientEditor()
     if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNormal)) ImGui::SetTooltip("%s", m_config_wrapper->tr(L"すべての中間点を中央に再配置").c_str());
     ImGui::SameLine();
     bool is_reverse_alpha_marker = imgui_utils::squareIconButton(ICON_MS_SWITCH_LEFT, "##alpha_marker_reverse");
-    if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNormal)) ImGui::SetTooltip("%s", m_config_wrapper->tr(L"アルファマーカーを反転").c_str());
+    if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNormal)) ImGui::SetTooltip("%s", m_config_wrapper->tr(L"マーカーを反転").c_str());
     ImGui::SameLine();
     bool is_delete_alpha_marker = imgui_utils::squareIconButton(ICON_MS_DELETE, "##alpha_marker_delete");
-    if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNormal)) ImGui::SetTooltip("%s", m_config_wrapper->tr(L"選択中のアルファマーカーを削除").c_str());
+    if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNormal)) ImGui::SetTooltip("%s", m_config_wrapper->tr(L"選択中のマーカーを削除").c_str());
 
     if (off_to_on || (m_apply && is_refresh)) {
         plugin2_utils::call_edit_lambda(gradient_editor::g_app_state.edit_handle->call_edit_section_param, [&](EDIT_SECTION* edit) {
