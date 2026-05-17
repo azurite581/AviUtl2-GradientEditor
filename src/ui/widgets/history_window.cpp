@@ -6,9 +6,8 @@
 
 #include "IconsMaterialSymbols.h"
 #include "gradient_widget.h"
-#include "imgui_utils.h"
-
 #include "imgui.h"
+#include "imgui_utils.h"
 
 void HistoryWindow::pushHistory(const GradientData& gradient_data)
 {
@@ -63,16 +62,16 @@ void HistoryWindow::render(GradientConfigManager& manager, History& cfg)
 
         // 履歴削除確認ポップアップ
         static ImGuiWindowFlags modal_flags = ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoMove;
-        ImVec2 center = ImGui::GetMainViewport()->GetCenter();
+        ImVec2 center                       = ImGui::GetMainViewport()->GetCenter();
         ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
         if (ImGui::BeginPopupModal((m_config_wrapper->tr(L"すべての履歴を削除") + "###delete_history").c_str(), nullptr, modal_flags)) {
             ImGui::Text("すべての履歴を削除しますか？");
             ImGui::Dummy(ImVec2(0, ImGui::GetFrameHeight() * ITEM_SPACING_SCALE_Y));
 
-            float button_width = ImGui::GetFrameHeight() * 4;
+            float button_width          = ImGui::GetFrameHeight() * 4;
             float combined_button_width = button_width * 2 + ImGui::GetStyle().ItemSpacing.x * 1;
-            float avail     = ImGui::GetContentRegionAvail().x;
-            float off       = (avail - combined_button_width) * 0.5f;
+            float avail                 = ImGui::GetContentRegionAvail().x;
+            float off                   = (avail - combined_button_width) * 0.5f;
             if (off > 0.0f) ImGui::SetCursorPosX(ImGui::GetCursorPosX() + off);
 
             if (ImGui::Button((m_config_wrapper->tr(L"キャンセル") + "###cancel").c_str(), ImVec2(button_width, 0))) {
@@ -94,8 +93,8 @@ void HistoryWindow::render(GradientConfigManager& manager, History& cfg)
 
         if (history_num >= 1) {
             ImVec2 button_size   = ImVec2(ImGui::GetContentRegionAvail().x, ImGui::GetFrameHeight() * PRESET_GRADIENT_HEIGHT);
-            button_size.x = ImMax(1.0f, button_size.x);
-            button_size.y = ImMax(1.0f, button_size.y);
+            button_size.x        = ImMax(1.0f, button_size.x);
+            button_size.y        = ImMax(1.0f, button_size.y);
             m_is_history_clicked = false;
 
             // 履歴をレンダリング

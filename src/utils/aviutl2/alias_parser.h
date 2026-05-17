@@ -2,8 +2,8 @@
 #define ALIAS_PARSER_H
 
 #include <algorithm>
-#include <charconv>
 #include <cctype>
+#include <charconv>
 #include <cstdint>
 #include <expected>
 #include <optional>
@@ -39,7 +39,8 @@ inline std::expected<T, std::string> parseValue(std::string_view sv)
 }
 
 template <>
-inline std::expected<float, std::string> parseValue<float>(std::string_view sv) {
+inline std::expected<float, std::string> parseValue<float>(std::string_view sv)
+{
     try {
         size_t idx;
         float v = std::stof(std::string(sv), &idx);
@@ -51,7 +52,8 @@ inline std::expected<float, std::string> parseValue<float>(std::string_view sv) 
 }
 
 template <>
-inline std::expected<double, std::string> parseValue<double>(std::string_view sv) {
+inline std::expected<double, std::string> parseValue<double>(std::string_view sv)
+{
     try {
         size_t idx;
         double v = std::stod(std::string(sv), &idx);
@@ -63,22 +65,25 @@ inline std::expected<double, std::string> parseValue<double>(std::string_view sv
 }
 
 template <>
-inline std::expected<std::string, std::string> parseValue<std::string>(std::string_view sv) {
+inline std::expected<std::string, std::string> parseValue<std::string>(std::string_view sv)
+{
     return std::string(sv);
 }
 
-inline std::string_view trim(std::string_view sv) {
+inline std::string_view trim(std::string_view sv)
+{
     auto is_space = [](unsigned char c) { return std::isspace(c); };
 
     while (!sv.empty() && is_space(sv.front())) sv.remove_prefix(1);
-    while (!sv.empty() && is_space(sv.back()))  sv.remove_suffix(1);
+    while (!sv.empty() && is_space(sv.back())) sv.remove_suffix(1);
 
     return sv;
 }
 
 // カンマ区切りの文字列を指定した型のベクターにパースする
 template <typename T>
-inline std::expected<std::vector<T>, std::string> splitStr(std::string_view sv, std::string_view delim) {
+inline std::expected<std::vector<T>, std::string> splitStr(std::string_view sv, std::string_view delim)
+{
     std::vector<T> result;
 
     for (auto s : sv | std::views::split(delim)) {

@@ -18,7 +18,7 @@ bool WindowManager::createPluginWindow(const wchar_t* window_name, [[maybe_unuse
         0, window_name, window_name,
         WS_POPUP,  // 親設定前なのでPOPUPで作る
         0, 0,
-        CW_USEDEFAULT , CW_USEDEFAULT ,
+        CW_USEDEFAULT, CW_USEDEFAULT,
         nullptr, nullptr, GetModuleHandle(nullptr), nullptr);
     return true;
 }
@@ -33,4 +33,3 @@ void WindowManager::destroyPluginWindow()
     ::DestroyWindow(m_hwnd);
     ::UnregisterClassW(m_wc.lpszClassName, m_wc.hInstance);
 }
-

@@ -6,13 +6,13 @@
 #define NOMINMAX
 #include <windows.h>
 
-#include "aviutl2_sdk/config2.h"
-#include "aviutl2_sdk/logger2.h"
-#include "aviutl2_sdk/plugin2.h"
-
 #include <fstream>
 #include <future>
 #include <thread>
+
+#include "aviutl2_sdk/config2.h"
+#include "aviutl2_sdk/logger2.h"
+#include "aviutl2_sdk/plugin2.h"
 
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam);
 
@@ -66,7 +66,7 @@ void guiThreadMain(std::promise<HWND>&& hwnd_promise)
 //	AviUtl2 Plugin 関連
 //---------------------------------------------------------------------
 COMMON_PLUGIN_TABLE common_plugin_table = {
-    .name = PLUGIN_NAME,
+    .name        = PLUGIN_NAME,
     .information = PLUGIN_INFO,
 };
 
@@ -125,11 +125,11 @@ EXTERN_C __declspec(dllexport) void RegisterPlugin(HOST_APP_TABLE* host)
     if (gradient_editor::g_app_state.version < 2003500) {
         host->set_plugin_information(PLUGIN_INFO);
     }
-    gradient_editor::g_app_state.edit_handle = host->create_edit_handle();
+    gradient_editor::g_app_state.edit_handle   = host->create_edit_handle();
     gradient_editor::g_app_state.host_app_hwnd = gradient_editor::g_app_state.edit_handle->get_host_app_window();
 
     std::promise<HWND> p;
-    auto f                = p.get_future();
+    auto f                                  = p.get_future();
     gradient_editor::g_app_state.gui_thread = std::thread(guiThreadMain, std::move(p));
 
     HWND hwnd = f.get();

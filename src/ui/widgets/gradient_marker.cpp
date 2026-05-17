@@ -417,7 +417,7 @@ void MarkerManager::updateMarkerAndMidpointPosition(const ImVec2& mouse_pos)
         if (m_state.clicked == Clicked::Marker) {
             m_state.selected_marker_id = id;
         } else if (m_state.clicked == Clicked::Midpoint) {
-            m_state.selected_marker_id = id;  // 中間点はマーカーに紐づいているためマーカーも変更
+            m_state.selected_marker_id   = id;  // 中間点はマーカーに紐づいているためマーカーも変更
             m_state.selected_midpoint_id = id;
         }
     }

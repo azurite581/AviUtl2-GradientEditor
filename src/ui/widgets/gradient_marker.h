@@ -14,7 +14,6 @@
 
 #include "imgui.h"
 
-
 struct Midpoint {
     float ratio{0.5f};
     float pos{0.0f};

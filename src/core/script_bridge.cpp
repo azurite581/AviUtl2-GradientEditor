@@ -28,7 +28,7 @@ void ScriptBridge::loadGradientFromScript(EDIT_SECTION* edit,
 
     // 位置
     std::string pos_array_str = edit->get_object_item_value(object_handle, effect_name_with_idx.c_str(), L"位置");
-    auto pos_result = alias_parser::splitStr<float>(pos_array_str, ",");
+    auto pos_result           = alias_parser::splitStr<float>(pos_array_str, ",");
     if (!pos_result) {
         m_logger_wrapper->error("Failed to parse 位置: {}", pos_result.error());
     } else {
@@ -39,7 +39,7 @@ void ScriptBridge::loadGradientFromScript(EDIT_SECTION* edit,
 
     // 中間点
     std::string mid_array_str = edit->get_object_item_value(object_handle, effect_name_with_idx.c_str(), L"中間点");
-    auto mid_result = alias_parser::splitStr<float>(mid_array_str, ",");
+    auto mid_result           = alias_parser::splitStr<float>(mid_array_str, ",");
     if (!mid_result) {
         m_logger_wrapper->error("Failed to parse 中間点: {}", mid_result.error());
     } else {
@@ -50,9 +50,9 @@ void ScriptBridge::loadGradientFromScript(EDIT_SECTION* edit,
 
     // 色と透明度
     std::string color_array_str = edit->get_object_item_value(object_handle, effect_name_with_idx.c_str(), L"色");
-    auto color_result = alias_parser::splitStr<uint32_t>(color_array_str, ",");
+    auto color_result           = alias_parser::splitStr<uint32_t>(color_array_str, ",");
     std::string alpha_array_str = edit->get_object_item_value(object_handle, effect_name_with_idx.c_str(), L"色の透明度");
-    auto alpha_result = alias_parser::splitStr<float>(alpha_array_str, ",");
+    auto alpha_result           = alias_parser::splitStr<float>(alpha_array_str, ",");
     if (!color_result) {
         m_logger_wrapper->error("Failed to parse 色: {}", color_result.error());
     } else if (!alpha_result) {
@@ -99,7 +99,7 @@ void ScriptBridge::loadGradientFromScript(EDIT_SECTION* edit,
 
     // 位置
     std::string alpha_pos_array_str = edit->get_object_item_value(object_handle, effect_name_with_idx.c_str(), L"アルファ位置");
-    auto alpha_pos_result = alias_parser::splitStr<float>(alpha_pos_array_str, ",");
+    auto alpha_pos_result           = alias_parser::splitStr<float>(alpha_pos_array_str, ",");
     if (!alpha_pos_result) {
         m_logger_wrapper->error("Failed to parse アルファ位置: {}", alpha_pos_result.error());
     } else {
@@ -110,7 +110,7 @@ void ScriptBridge::loadGradientFromScript(EDIT_SECTION* edit,
 
     // アルファ値
     std::string alpha_value_array_str = edit->get_object_item_value(object_handle, effect_name_with_idx.c_str(), L"アルファ値");
-    auto alpha_value_result = alias_parser::splitStr<float>(alpha_value_array_str, ",");
+    auto alpha_value_result           = alias_parser::splitStr<float>(alpha_value_array_str, ",");
     if (!alpha_value_result) {
         m_logger_wrapper->error("Failed to parse アルファ値: {}", alpha_value_result.error());
     } else {
@@ -121,7 +121,7 @@ void ScriptBridge::loadGradientFromScript(EDIT_SECTION* edit,
 
     // 中間点
     std::string alpha_mid_array_str = edit->get_object_item_value(object_handle, effect_name_with_idx.c_str(), L"アルファ中間点");
-    auto alpha_mid_result = alias_parser::splitStr<float>(alpha_mid_array_str, ",");
+    auto alpha_mid_result           = alias_parser::splitStr<float>(alpha_mid_array_str, ",");
     if (!alpha_mid_result) {
         m_logger_wrapper->error("Failed to parse アルファ中間点: {}", alpha_mid_result.error());
     } else {
@@ -143,9 +143,9 @@ void ScriptBridge::loadGradientFromScript(EDIT_SECTION* edit,
     m_curr_values.color_space_index       = data.getColorSpace();
     m_curr_values.interp_dir_index        = data.getInterpDir();
 
-    m_curr_values.alpha_marker_count      = static_cast<uint32_t>(std::ssize(data.getAlphaMarkers()->getMarkers()));
-    m_curr_values.selected_alpha_marker_pos = data.getAlphaMarkers()->getSelectedMarkerPosition();
-    m_curr_values.selected_alpha_marker_value = data.getAlphaMarkers()->getSelectedMarkerValue().w;
+    m_curr_values.alpha_marker_count            = static_cast<uint32_t>(std::ssize(data.getAlphaMarkers()->getMarkers()));
+    m_curr_values.selected_alpha_marker_pos     = data.getAlphaMarkers()->getSelectedMarkerPosition();
+    m_curr_values.selected_alpha_marker_value   = data.getAlphaMarkers()->getSelectedMarkerValue().w;
     m_curr_values.selected_alpha_midpoint_ratio = data.getAlphaMarkers()->getSelectedMidpointRatio();
 }
 
@@ -209,7 +209,7 @@ void ScriptBridge::applyGradientToScript(EDIT_SECTION* edit,
     }
 
     // アルファマーカー数
-    auto alpha_markers = data.getAlphaMarkers()->getMarkers();
+    auto alpha_markers          = data.getAlphaMarkers()->getMarkers();
     uint32_t alpha_marker_count = static_cast<uint32_t>(alpha_markers.size());
     edit->set_object_item_value(object_handle, effect_name_with_idx.c_str(), L"アルファマーカー数", std::to_string(alpha_marker_count).c_str());
 

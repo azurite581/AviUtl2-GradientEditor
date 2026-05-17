@@ -25,13 +25,12 @@ public:
 
     void setCategories(std::vector<std::string>& categories) noexcept { m_categories = categories; }
 
-
 private:
-    static constexpr float MODAL_WINDOW_WIDTH   = 120.0f;
+    static constexpr float MODAL_WINDOW_WIDTH = 120.0f;
 
     // ImGui::GetFrameHeight() を基準としたときの相対スケール
     static constexpr float PRESET_GRADIENT_HEIGHT = 1.25f;
-    static constexpr float ITEM_SPACING_SCALE_Y = 0.25f;
+    static constexpr float ITEM_SPACING_SCALE_Y   = 0.25f;
 
     LoggerWrapperInterface* m_logger_wrapper;
     ConfigWrapperInterface* m_config_wrapper;

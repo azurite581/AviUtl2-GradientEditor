@@ -13,7 +13,6 @@
 #include "imgui_utils.h"
 #include "misc/cpp/imgui_stdlib.h"
 
-
 void PresetWindow::render(GradientConfigManager& manager, Preset& cfg)
 {
     static std::vector<std::string> categories;
@@ -38,7 +37,7 @@ void PresetWindow::render(GradientConfigManager& manager, Preset& cfg)
     if (!m_is_initialized) {
         m_is_initialized = true;
         loadCategories();
-        category_selected_index = std::clamp(category_selected_index, 0, static_cast<int32_t>(std::ssize(m_categories) - 1));
+        category_selected_index   = std::clamp(category_selected_index, 0, static_cast<int32_t>(std::ssize(m_categories) - 1));
         m_selected_category_index = category_selected_index;
 
         m_old_category_name = m_categories[category_selected_index];  // 起動時に読み込まれるカテゴリー
@@ -727,7 +726,7 @@ void PresetWindow::renderPresetList(GradientConfigManager& manager, Preset& cfg,
 
                 if ((!contains_same_preset && !input_preset_name.empty() && ImGui::IsItemDeactivatedAfterEdit() && ImGui::IsKeyPressed(ImGuiKey_Enter)) || save) {
                     cfg.presets[i].name = input_preset_name;
-                    m_old_preset_name = input_preset_name;
+                    m_old_preset_name   = input_preset_name;
                     if (i == m_selected_preset_index) {
                         m_preset_name = input_preset_name;
                     }

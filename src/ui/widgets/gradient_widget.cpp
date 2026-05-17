@@ -3,7 +3,6 @@
 #include "imgui.h"
 #include "imgui_internal.h"
 
-
 namespace custom_ui {
 
 Microsoft::WRL::ComPtr<ID3D11Device> g_d3d_device                = nullptr;

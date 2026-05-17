@@ -40,10 +40,10 @@ bool drawGradientButton(
 
 // 描画前にユーザーが設定できるオプション
 struct GradientEditorConfig {
-    uint32_t max_marker_count = 30;     // 最大マーカー数。最大マーカー数を超えると新規マーカー追加不可
+    uint32_t max_marker_count = 30;  // 最大マーカー数。最大マーカー数を超えると新規マーカー追加不可
     ImVec2 marker_size{20.0f, 20.0f};
-    ImVec2 midpoint_size{ 20.0f, 20.0f };
-    bool io_enable = true;              // マウス入力を受け付けるかどうか
+    ImVec2 midpoint_size{20.0f, 20.0f};
+    bool io_enable = true;  // マウス入力を受け付けるかどうか
 };
 
 /// @brief グラデーションを描画する関数

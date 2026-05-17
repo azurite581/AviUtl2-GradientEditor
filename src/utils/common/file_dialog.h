@@ -10,8 +10,8 @@
 #include <expected>
 #include <filesystem>
 #include <string>
-#include <vector>
 #include <variant>
+#include <vector>
 
 inline std::wstring hresultToString(HRESULT hr)
 {
@@ -57,7 +57,7 @@ inline OpenFileDialogResult openFiles(const HWND owner = nullptr)
         COINIT_APARTMENTTHREADED);
 
     if (FAILED(hr)) {
-        return { FileDialogResult::FD_ERROR, hresultToString(hr)};
+        return {FileDialogResult::FD_ERROR, hresultToString(hr)};
     }
 
     IFileOpenDialog* dialog = nullptr;
@@ -70,7 +70,7 @@ inline OpenFileDialogResult openFiles(const HWND owner = nullptr)
 
     if (FAILED(hr)) {
         CoUninitialize();
-        return { FileDialogResult::FD_ERROR, hresultToString(hr)};
+        return {FileDialogResult::FD_ERROR, hresultToString(hr)};
     }
 
     COMDLG_FILTERSPEC filters[] = {
@@ -89,7 +89,7 @@ inline OpenFileDialogResult openFiles(const HWND owner = nullptr)
         dialog->Release();
         CoUninitialize();
 
-        return { FileDialogResult::FD_ERROR, hresultToString(hr)};
+        return {FileDialogResult::FD_ERROR, hresultToString(hr)};
     }
 
     hr = dialog->SetOptions(
@@ -100,7 +100,7 @@ inline OpenFileDialogResult openFiles(const HWND owner = nullptr)
     if (FAILED(hr)) {
         dialog->Release();
         CoUninitialize();
-        return { FileDialogResult::FD_ERROR, hresultToString(hr)};
+        return {FileDialogResult::FD_ERROR, hresultToString(hr)};
     }
 
     hr = dialog->Show(owner);
@@ -108,13 +108,13 @@ inline OpenFileDialogResult openFiles(const HWND owner = nullptr)
     if (hr == HRESULT_FROM_WIN32(ERROR_CANCELLED)) {
         dialog->Release();
         CoUninitialize();
-        return { FileDialogResult::FD_CANCEL, std::monostate{}};
+        return {FileDialogResult::FD_CANCEL, std::monostate{}};
     }
 
     if (FAILED(hr)) {
         dialog->Release();
         CoUninitialize();
-        return { FileDialogResult::FD_ERROR, hresultToString(hr)};
+        return {FileDialogResult::FD_ERROR, hresultToString(hr)};
     }
 
     IShellItemArray* items = nullptr;
@@ -124,7 +124,7 @@ inline OpenFileDialogResult openFiles(const HWND owner = nullptr)
     if (FAILED(hr)) {
         dialog->Release();
         CoUninitialize();
-        return { FileDialogResult::FD_ERROR, hresultToString(hr)};
+        return {FileDialogResult::FD_ERROR, hresultToString(hr)};
     }
 
     DWORD count = 0;
@@ -135,7 +135,7 @@ inline OpenFileDialogResult openFiles(const HWND owner = nullptr)
         items->Release();
         dialog->Release();
         CoUninitialize();
-        return { FileDialogResult::FD_ERROR, hresultToString(hr)};
+        return {FileDialogResult::FD_ERROR, hresultToString(hr)};
     }
 
     std::vector<std::filesystem::path> paths;
@@ -167,7 +167,7 @@ inline OpenFileDialogResult openFiles(const HWND owner = nullptr)
 
     CoUninitialize();
 
-    return { FileDialogResult::FD_OKAY, paths };
+    return {FileDialogResult::FD_OKAY, paths};
 }
 
 struct WriteFileDialogResult {
@@ -182,7 +182,7 @@ inline WriteFileDialogResult writeFile(const HWND owner = nullptr)
         COINIT_APARTMENTTHREADED);
 
     if (FAILED(hr)) {
-        return { FileDialogResult::FD_ERROR, hresultToString(hr)};
+        return {FileDialogResult::FD_ERROR, hresultToString(hr)};
     }
 
     IFileSaveDialog* dialog = nullptr;
@@ -195,7 +195,7 @@ inline WriteFileDialogResult writeFile(const HWND owner = nullptr)
 
     if (FAILED(hr)) {
         CoUninitialize();
-        return { FileDialogResult::FD_ERROR, hresultToString(hr)};
+        return {FileDialogResult::FD_ERROR, hresultToString(hr)};
     }
 
     COMDLG_FILTERSPEC filters[] = {
@@ -209,13 +209,13 @@ inline WriteFileDialogResult writeFile(const HWND owner = nullptr)
     if (hr == HRESULT_FROM_WIN32(ERROR_CANCELLED)) {
         dialog->Release();
         CoUninitialize();
-        return { FileDialogResult::FD_CANCEL, std::monostate{}};
+        return {FileDialogResult::FD_CANCEL, std::monostate{}};
     }
 
     if (FAILED(hr)) {
         dialog->Release();
         CoUninitialize();
-        return { FileDialogResult::FD_ERROR, hresultToString(hr)};
+        return {FileDialogResult::FD_ERROR, hresultToString(hr)};
     }
 
     IShellItem* item = nullptr;
@@ -225,7 +225,7 @@ inline WriteFileDialogResult writeFile(const HWND owner = nullptr)
     if (FAILED(hr)) {
         dialog->Release();
         CoUninitialize();
-        return { FileDialogResult::FD_ERROR, hresultToString(hr)};
+        return {FileDialogResult::FD_ERROR, hresultToString(hr)};
     }
 
     PWSTR path = nullptr;
@@ -238,7 +238,7 @@ inline WriteFileDialogResult writeFile(const HWND owner = nullptr)
         item->Release();
         dialog->Release();
         CoUninitialize();
-        return { FileDialogResult::FD_ERROR, hresultToString(hr)};
+        return {FileDialogResult::FD_ERROR, hresultToString(hr)};
     }
 
     std::filesystem::path out_path = path;
@@ -250,7 +250,7 @@ inline WriteFileDialogResult writeFile(const HWND owner = nullptr)
 
     CoUninitialize();
 
-    return { FileDialogResult::FD_OKAY, out_path };
+    return {FileDialogResult::FD_OKAY, out_path};
 }
 
 #endif

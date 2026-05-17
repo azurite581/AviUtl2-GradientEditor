@@ -1,13 +1,13 @@
 #ifndef HISTORY_WINDOW_H
 #define HISTORY_WINDOW_H
 
-#include "gradient_data.h"
-#include "gradient_config.h"
-#include "logger_wrapper_interface.h"
-#include "config2_wrapper_interface.h"
-
 #include <deque>
 #include <iterator>
+
+#include "config2_wrapper_interface.h"
+#include "gradient_config.h"
+#include "gradient_data.h"
+#include "logger_wrapper_interface.h"
 
 class HistoryWindow {
 public:
@@ -31,18 +31,18 @@ public:
     std::deque<HistoryData> m_history_data;
 
 private:
-    static constexpr float MODAL_WINDOW_WIDTH   = 120.0f;
+    static constexpr float MODAL_WINDOW_WIDTH  = 120.0f;
     static constexpr int32_t HISTORY_MAX_COUNT = 50;
 
     // ImGui::GetFrameHeight() を基準としたときの相対スケール
     static constexpr float PRESET_GRADIENT_HEIGHT = 1.25f;
-    static constexpr float ITEM_SPACING_SCALE_Y = 0.25f;
+    static constexpr float ITEM_SPACING_SCALE_Y   = 0.25f;
 
     LoggerWrapperInterface* m_logger_wrapper;
     ConfigWrapperInterface* m_config_wrapper;
 
     bool m_is_history_clicked = false;
-    bool m_is_initialized = false;
+    bool m_is_initialized     = false;
     GradientData m_selected_gradient;
 };
 

@@ -10,9 +10,9 @@
 #include <string>
 #include <string_view>
 #include <unordered_set>
+#include <utility>
 #include <variant>
 #include <vector>
-#include <utility>
 
 #include "color_conv.h"
 #include "gradient_data.h"
@@ -20,7 +20,6 @@
 #include "grd_codec.h"
 #include "json.hpp"
 #include "str_conv.h"
-
 
 // 共通の結果型
 template <typename T>
@@ -393,7 +392,7 @@ inline void from_json(const nlohmann::ordered_json& j, History& c)
     } else if (c.version == "0.5.0") {
         c.histories = j.value("histories", c.histories);
     } else {
-        c.version   = "0.5.0";
+        c.version = "0.5.0";
     }
 }
 
@@ -547,9 +546,9 @@ public:
         }
 
         gradient.m_color_markers.setMarkers(color_markers);
-        gradient.m_blur_width       = preset.color_blur_width;
-        gradient.m_color_space      = preset.color_space;
-        gradient.m_interp_dir       = preset.interpolation_path;
+        gradient.m_blur_width  = preset.color_blur_width;
+        gradient.m_color_space = preset.color_space;
+        gradient.m_interp_dir  = preset.interpolation_path;
 
         gradient.m_alpha_markers.setMarkers(alpha_markers);
         gradient.m_alpha_blur_width = preset.alpha_blur_width;
@@ -565,8 +564,8 @@ public:
         int32_t color_marker_num = static_cast<int32_t>(std::ssize(gradient.m_color_markers.getMarkers()));
         std::vector<ColorMarker> color_markers(color_marker_num);
         std::vector<ImVec4> color_marker_colors = gradient.m_color_markers.getMarkerValues();
-        auto color_marker_positions = gradient.m_color_markers.getMarkerPositions();
-        auto color_marker_midpoints = gradient.m_color_markers.getMidpointRatios();
+        auto color_marker_positions             = gradient.m_color_markers.getMarkerPositions();
+        auto color_marker_midpoints             = gradient.m_color_markers.getMidpointRatios();
         for (int32_t i = 0; i < color_marker_num; ++i) {
             uint32_t rgba             = color_conv::vec4normRgba2u32Rgba<ImVec4>(color_marker_colors[i]);
             color_markers[i].color    = std::format("0x{:08X}", rgba);
@@ -599,8 +598,8 @@ public:
         preset.color_space        = gradient.getColorSpace();
         preset.interpolation_path = gradient.getInterpDir();
 
-        preset.alpha_markers      = alpha_markers;
-        preset.alpha_blur_width   = gradient.getAlphaBlurWidth();
+        preset.alpha_markers    = alpha_markers;
+        preset.alpha_blur_width = gradient.getAlphaBlurWidth();
 
         return preset;
     }
@@ -659,8 +658,8 @@ public:
                         }
                         case 3:  // HSBC
                         {
-                            const auto& hsb        = std::get<3>(col.color_object.color_object_variant);
-                            auto norm_srgb   = color_conv::hsv2srgb({hsb.hue * std::numbers::pi / 180.0, hsb.saturate / 100.0, hsb.brightness / 100.0});
+                            const auto& hsb = std::get<3>(col.color_object.color_object_variant);
+                            auto norm_srgb  = color_conv::hsv2srgb({hsb.hue * std::numbers::pi / 180.0, hsb.saturate / 100.0, hsb.brightness / 100.0});
                             norm_srgb.norm();
                             const ImVec4 norm_rgba = ImVec4{static_cast<float>(norm_srgb.r), static_cast<float>(norm_srgb.g), static_cast<float>(norm_srgb.b), 1.0f};
                             const auto u32_rgba    = color_conv::vec4normRgba2u32Rgba<ImVec4>(norm_rgba);
@@ -669,8 +668,8 @@ public:
                         }
                         case 4:  // LbCl
                         {
-                            const auto& lab        = std::get<4>(col.color_object.color_object_variant);
-                            auto norm_srgb   = color_conv::d50lab2srgb({lab.luminance, lab.a, lab.b});
+                            const auto& lab = std::get<4>(col.color_object.color_object_variant);
+                            auto norm_srgb  = color_conv::d50lab2srgb({lab.luminance, lab.a, lab.b});
                             norm_srgb.norm();
                             const ImVec4 norm_rgba = ImVec4{static_cast<float>(norm_srgb.r), static_cast<float>(norm_srgb.g), static_cast<float>(norm_srgb.b), 1.0f};
                             const auto u32_rgba    = color_conv::vec4normRgba2u32Rgba<ImVec4>(norm_rgba);
@@ -685,8 +684,7 @@ public:
                             color_marker.color  = std::format("0x{:08X}", u32_rgba);
                             break;
                         }
-                        default:
-                        {
+                        default: {
                             message.push_back("Unknown color type.\n");
                             conversion_completed = false;
                             break;
@@ -734,14 +732,13 @@ public:
     {
         GRD grd;
         grd.header = {
-            .signature = "8BGR",
-            .version = 5,
+            .signature          = "8BGR",
+            .version            = 5,
             .descriptor_version = 16,
         };
 
         grd.descripter_object = {
-            .key_item_num = 1
-        };
+            .key_item_num = 1};
 
         std::vector<Gradient> gradient_list;
         for (const auto& g : gradient) {
@@ -759,23 +756,23 @@ public:
             color_stops.item_num = static_cast<int32_t>(std::ssize(g.color_markers));
             std::vector<ColorStopObject> color_stop_object(color_stops.item_num);
             for (int32_t j = 0; auto& cso : color_stop_object) {
-                cso.type = "UsrS";  // ユーザーストップ
+                cso.type     = "UsrS";  // ユーザーストップ
                 cso.location = static_cast<int32_t>(g.color_markers[j].position * 4096.0);
                 cso.midpoint = static_cast<int32_t>(g.color_markers[j].midpoint * 100.0);
 
                 RGBC rgbc;
                 uint32_t t = std::stoul(g.color_markers[j].color, nullptr, 16);
-                auto rgba = color_conv::hexRgba2rgba(t);
-                rgbc.red = rgba.r;
+                auto rgba  = color_conv::hexRgba2rgba(t);
+                rgbc.red   = rgba.r;
                 rgbc.green = rgba.g;
-                rgbc.blue = rgba.b;
+                rgbc.blue  = rgba.b;
 
-                cso.color_object.color_type = "RGBC";
+                cso.color_object.color_type           = "RGBC";
                 cso.color_object.color_object_variant = rgbc;
 
                 ++j;
             }
-            color_stops.color_stop_objects = color_stop_object;
+            color_stops.color_stop_objects  = color_stop_object;
             grd_gradient_object.color_stops = color_stops;
 
             // transparency_stops
@@ -785,10 +782,10 @@ public:
                 TransparencyStopObject trns_stop_object;
                 trns_stop_object.location = static_cast<int32_t>(alpha.position * 4096.0);
                 trns_stop_object.midpoint = static_cast<int32_t>(alpha.midpoint * 100.0);
-                trns_stop_object.opacity = alpha.alpha * 100.0;
+                trns_stop_object.opacity  = alpha.alpha * 100.0;
                 trns_stop_objects.push_back(trns_stop_object);
             }
-            trns_stops.transparency_stop_objects = trns_stop_objects;
+            trns_stops.transparency_stop_objects   = trns_stop_objects;
             grd_gradient_object.transparency_stops = trns_stops;
 
             grd_gradient.gradient_object = grd_gradient_object;
@@ -820,9 +817,9 @@ public:
         }
 
         gradient.m_color_markers.setMarkers(color_markers);
-        gradient.m_blur_width       = history.color_blur_width;
-        gradient.m_color_space      = history.color_space;
-        gradient.m_interp_dir       = history.interpolation_path;
+        gradient.m_blur_width  = history.color_blur_width;
+        gradient.m_color_space = history.color_space;
+        gradient.m_interp_dir  = history.interpolation_path;
 
         gradient.m_alpha_markers.setMarkers(alpha_markers);
         gradient.m_alpha_blur_width = history.alpha_blur_width;
@@ -837,9 +834,9 @@ public:
         // カラーマーカー
         int32_t color_marker_num = static_cast<int32_t>(std::ssize(gradient.m_color_markers.getMarkers()));
         std::vector<ColorMarker> color_markers(color_marker_num);
-        auto color_marker_colors = gradient.m_color_markers.getMarkerValues();
-        auto color_marker_positions             = gradient.m_color_markers.getMarkerPositions();
-        auto color_marker_midpoints             = gradient.m_color_markers.getMidpointRatios();
+        auto color_marker_colors    = gradient.m_color_markers.getMarkerValues();
+        auto color_marker_positions = gradient.m_color_markers.getMarkerPositions();
+        auto color_marker_midpoints = gradient.m_color_markers.getMidpointRatios();
 
         for (int32_t i = 0; i < color_marker_num; ++i) {
             uint32_t rgba             = color_conv::vec4normRgba2u32Rgba<ImVec4>(color_marker_colors[i]);
@@ -855,7 +852,7 @@ public:
         // アルファマーカー
         int32_t alpha_marker_num = static_cast<int32_t>(std::ssize(gradient.m_alpha_markers.getMarkers()));
         std::vector<AlphaMarker> alpha_markers(alpha_marker_num);
-        auto alpha_marker_values    = gradient.m_alpha_markers.getMarkerValues();
+        auto alpha_marker_values     = gradient.m_alpha_markers.getMarkerValues();
         auto alpha_marker_positionts = gradient.m_alpha_markers.getMarkerPositions();
         auto alpha_marker_midpoints  = gradient.m_alpha_markers.getMidpointRatios();
 
@@ -874,8 +871,8 @@ public:
         history.color_space        = gradient.getColorSpace();
         history.interpolation_path = gradient.getInterpDir();
 
-        history.alpha_markers      = alpha_markers;
-        history.alpha_blur_width   = gradient.getAlphaBlurWidth();
+        history.alpha_markers    = alpha_markers;
+        history.alpha_blur_width = gradient.getAlphaBlurWidth();
 
         return history;
     }
