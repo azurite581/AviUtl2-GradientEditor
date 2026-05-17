@@ -1,7 +1,5 @@
 <h1 align="center">AviUtl2 Gradient Editor</h1>
 
-![splash](assets/gradient_editor.png)
-
 <p align="center">
   <img src="https://img.shields.io/github/license/azurite581/AviUtl2-GradientEditor">
   <a href="https://github.com/azurite581/AviUtl2-GradientEditor/releases/latest">
@@ -14,6 +12,8 @@
 </p>
 
 <p align="center"><a href="https://spring-fragrance.mints.ne.jp/aviutl/">AviUtl2</a> 用のグラデーションエディタプラグイン</p>
+
+![splash](assets/gradient_editor.png)
 
 ## はじめに
 
@@ -32,7 +32,7 @@
 ### AviUtl2 カタログを使う（推奨）
 
 本プラグインは [aviutl2-catalog](https://github.com/Neosku/aviutl2-catalog) に登録済みです。  
-メインメニュー ＞ パッケージ一覧 ＞ 汎用プラグイン ＞ GradientEditor からインストールしてください。
+メインメニュー ➡️ パッケージ一覧 ➡️ 汎用プラグイン ➡️ GradientEditor からインストールしてください。
 
 ### 手動インストール
 
@@ -66,8 +66,14 @@
 
 ### グラデーションマップ
 
-![GradientMap](assets/gradient_map.png)
-Image by <a href="https://pixabay.com/users/pavanprasad_ind-22614562/?utm_source=link-attribution&utm_medium=referral&utm_campaign=image&utm_content=9076520">Pavan Prasad</a> from <a href="https://pixabay.com//?utm_source=link-attribution&utm_medium=referral&utm_campaign=image&utm_content=9076520">Pixabay</a>
+<table>
+  <tr>
+    <td><img style="max-width: 100%; height: auto;" alt="gradient_map_before" src="https://github.com/user-attachments/assets/50c30b37-db1d-4ceb-b144-077c04082067" /><br>適用前</td>
+    <td><img style="max-width: 100%; height: auto;" alt="gradient_map_after" src="https://github.com/user-attachments/assets/1ee781e1-06db-4dfd-b78d-9f9b4aa24cc9" /><br>適用後</td>
+  </tr>
+</table>
+
+Image by <a href="https://pixabay.com/users/wj_y2017fufu-41862272/?utm_source=link-attribution&utm_medium=referral&utm_campaign=image&utm_content=10139490">WJ Y</a> from <a href="https://pixabay.com//?utm_source=link-attribution&utm_medium=referral&utm_campaign=image&utm_content=10139490">Pixabay</a>
 
 グラデーションマップを適用するスクリプトです。デフォルトでは `色調整` カテゴリの中にあります。
 
