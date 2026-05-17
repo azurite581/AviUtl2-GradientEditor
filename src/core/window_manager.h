@@ -15,7 +15,7 @@ public:
     WindowManager(WindowManager&&)                 = delete;
     WindowManager& operator=(WindowManager&&)      = delete;
 
-    bool createPluginWindow(const wchar_t* window_name, const float scale, WNDPROC wnd_proc);
+    bool createPluginWindow(const wchar_t* window_name, [[maybe_unused]] const float scale, WNDPROC wnd_proc);
     void unregisterClass();
     void destroyPluginWindow();
     static LRESULT CALLBACK windowProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam);
@@ -30,4 +30,4 @@ private:
     bool m_is_resizing = false;
 };
 
-#endif WINDOW_MANAGER_H
+#endif

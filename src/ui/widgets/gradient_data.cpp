@@ -4,12 +4,12 @@ GradientRenderer::PixelConstantBuffer GradientData::gradientData2pixelConstantBu
 {
     GradientRenderer::PixelConstantBuffer buffer_values;
 
-    auto markers = m_marker_manager.getMarkers();
+    auto markers = m_color_markers.getMarkers();
     for (const auto& [i, merker] : markers | std::views::take(std::ssize(markers) - 1) | std::views::enumerate) {
         buffer_values.gradient[i].start_pos   = markers[i].pos;
         buffer_values.gradient[i].stop_pos    = markers[i + 1].pos;
-        buffer_values.gradient[i].start_color = {markers[i].color.x, markers[i].color.y, markers[i].color.z, markers[i].color.w};
-        buffer_values.gradient[i].stop_color  = {markers[i + 1].color.x, markers[i + 1].color.y, markers[i + 1].color.z, markers[i + 1].color.w};
+        buffer_values.gradient[i].start_color = {markers[i].value.x, markers[i].value.y, markers[i].value.z, markers[i].value.w};
+        buffer_values.gradient[i].stop_color  = {markers[i + 1].value.x, markers[i + 1].value.y, markers[i + 1].value.z, markers[i + 1].value.w};
         buffer_values.gradient[i].ratio       = markers[i].midpoint.ratio;
     }
     buffer_values.gradient_num             = static_cast<int32_t>(std::ssize(markers)) - 1;
@@ -20,6 +20,18 @@ GradientRenderer::PixelConstantBuffer GradientData::gradientData2pixelConstantBu
     buffer_values.texture_size[1]          = static_cast<float>(m_texture_height);
     buffer_values.gradient_display_size[0] = m_gradient_display_width;
     buffer_values.gradient_display_size[1] = m_gradient_display_height;
+
+    auto alpha_markers = m_alpha_markers.getMarkers();
+    auto alpha_sec_num = static_cast<int32_t>(std::ssize(alpha_markers)) - 1;
+    for (int32_t i = 0; i < alpha_sec_num; ++i) {
+        buffer_values.alpha_stops[i].start_pos   = alpha_markers[i].pos;
+        buffer_values.alpha_stops[i].stop_pos    = alpha_markers[i + 1].pos;
+        buffer_values.alpha_stops[i].start_value = alpha_markers[i].value.w;
+        buffer_values.alpha_stops[i].stop_value  = alpha_markers[i + 1].value.w;
+        buffer_values.alpha_stops[i].mid_ratio   = alpha_markers[i].midpoint.ratio;
+    }
+    buffer_values.alpha_sec_num    = alpha_sec_num;
+    buffer_values.alpha_blur_width = m_alpha_blur_width;
 
     return buffer_values;
 }

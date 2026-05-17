@@ -7,8 +7,18 @@
 ---step=0.01
 local intensity = 100
 
---track0:中心X,-5000,5000,0,0.1
---track1:中心Y,-5000,5000,0,0.1
+---$track:中心X
+---min=-5000
+---max=5000
+---step=0.01
+local center_x = 0
+
+---$track:中心Y
+---min=-5000
+---max=5000
+---step=0.01
+local center_y = 0
+--trackgroup@center_x,center_y:Group
 ---$track:角度
 ---min=-360
 ---max=360
@@ -37,6 +47,18 @@ local bg_alpha = 0
 ---凸形ループ=6
 local gradient_type = 0
 
+---$track:シフト
+---min=-1000
+---max=1000
+---step=0.01
+local shift = 0
+
+---$select:境界モード
+---境界色=0
+---ループ=1
+---ミラー=2
+local edge_mode = 0
+
 ---$select:合成モード
 ---通常=0
 ---加算=1
@@ -56,639 +78,23 @@ local blend_mode = 0
 ---$check:幅をオブジェクトに合わせる
 local is_fit = 0
 
---group:色,false
----$color:色1
-local col1 = 0x000000
+--group:グラデーションデータ,false
+--separator:色設定
+---$value:色
+local color_rgb_table = {0x000000,0xffffff}
 
----$color:色2
-local col2 = 0xffffff
+---$value:色の透明度
+local color_a_table = {0.00,0.00}
 
----$color:色3
-local col3 = 0xffffff
+---$value:位置
+local color_pos_table = {0.00,1.00}
 
----$color:色4
-local col4 = 0xffffff
+---$value:中間点
+local color_mid_table = {0.50}
 
----$color:色5
-local col5 = 0xffffff
+---$value:マーカー数
+local marker_num = 2
 
----$color:色6
-local col6 = 0xffffff
-
----$color:色7
-local col7 = 0xffffff
-
----$color:色8
-local col8 = 0xffffff
-
----$color:色9
-local col9 = 0xffffff
-
----$color:色10
-local col10 = 0xffffff
-
----$color:色11
-local col11 = 0xffffff
-
----$color:色12
-local col12 = 0xffffff
-
----$color:色13
-local col13 = 0xffffff
-
----$color:色14
-local col14 = 0xffffff
-
----$color:色15
-local col15 = 0xffffff
-
----$color:色16
-local col16 = 0xffffff
-
----$color:色17
-local col17 = 0xffffff
-
----$color:色18
-local col18 = 0xffffff
-
----$color:色19
-local col19 = 0xffffff
-
----$color:色20
-local col20 = 0xffffff
-
----$color:色21
-local col21 = 0xffffff
-
----$color:色22
-local col22 = 0xffffff
-
----$color:色23
-local col23 = 0xffffff
-
----$color:色24
-local col24 = 0xffffff
-
----$color:色25
-local col25 = 0xffffff
-
----$color:色26
-local col26 = 0xffffff
-
----$color:色27
-local col27 = 0xffffff
-
----$color:色28
-local col28 = 0xffffff
-
----$color:色29
-local col29 = 0xffffff
-
----$color:色30
-local col30 = 0xffffff
-
---group
---group:透明度,false
----$track:透明度1
----min=0
----max=100
----step=0.01
-local alpha1 = 0
-
----$track:透明度2
----min=0
----max=100
----step=0.01
-local alpha2 = 0
-
----$track:透明度3
----min=0
----max=100
----step=0.01
-local alpha3 = 0
-
----$track:透明度4
----min=0
----max=100
----step=0.01
-local alpha4 = 0
-
----$track:透明度5
----min=0
----max=100
----step=0.01
-local alpha5 = 0
-
----$track:透明度6
----min=0
----max=100
----step=0.01
-local alpha6 = 0
-
----$track:透明度7
----min=0
----max=100
----step=0.01
-local alpha7 = 0
-
----$track:透明度8
----min=0
----max=100
----step=0.01
-local alpha8 = 0
-
----$track:透明度9
----min=0
----max=100
----step=0.01
-local alpha9 = 0
-
----$track:透明度10
----min=0
----max=100
----step=0.01
-local alpha10 = 0
-
----$track:透明度11
----min=0
----max=100
----step=0.01
-local alpha11 = 0
-
----$track:透明度12
----min=0
----max=100
----step=0.01
-local alpha12 = 0
-
----$track:透明度13
----min=0
----max=100
----step=0.01
-local alpha13 = 0
-
----$track:透明度14
----min=0
----max=100
----step=0.01
-local alpha14 = 0
-
----$track:透明度15
----min=0
----max=100
----step=0.01
-local alpha15 = 0
-
----$track:透明度16
----min=0
----max=100
----step=0.01
-local alpha16 = 0
-
----$track:透明度17
----min=0
----max=100
----step=0.01
-local alpha17 = 0
-
----$track:透明度18
----min=0
----max=100
----step=0.01
-local alpha18 = 0
-
----$track:透明度19
----min=0
----max=100
----step=0.01
-local alpha19 = 0
-
----$track:透明度20
----min=0
----max=100
----step=0.01
-local alpha20 = 0
-
----$track:透明度21
----min=0
----max=100
----step=0.01
-local alpha21 = 0
-
----$track:透明度22
----min=0
----max=100
----step=0.01
-local alpha22 = 0
-
----$track:透明度23
----min=0
----max=100
----step=0.01
-local alpha23 = 0
-
----$track:透明度24
----min=0
----max=100
----step=0.01
-local alpha24 = 0
-
----$track:透明度25
----min=0
----max=100
----step=0.01
-local alpha25 = 0
-
----$track:透明度26
----min=0
----max=100
----step=0.01
-local alpha26 = 0
-
----$track:透明度27
----min=0
----max=100
----step=0.01
-local alpha27 = 0
-
----$track:透明度28
----min=0
----max=100
----step=0.01
-local alpha28 = 0
-
----$track:透明度29
----min=0
----max=100
----step=0.01
-local alpha29 = 0
-
----$track:透明度30
----min=0
----max=100
----step=0.01
-local alpha30 = 0
-
---group
---group:位置,false
----$track:位置1
----min=0
----max=100
----step=0.01
-local pos1 = 0
-
----$track:位置2
----min=0
----max=100
----step=0.01
-local pos2 = 100
-
----$track:位置3
----min=0
----max=100
----step=0.01
-local pos3 = 0
-
----$track:位置4
----min=0
----max=100
----step=0.01
-local pos4 = 0
-
----$track:位置5
----min=0
----max=100
----step=0.01
-local pos5 = 0
-
----$track:位置6
----min=0
----max=100
----step=0.01
-local pos6 = 0
-
----$track:位置7
----min=0
----max=100
----step=0.01
-local pos7 = 0
-
----$track:位置8
----min=0
----max=100
----step=0.01
-local pos8 = 0
-
----$track:位置9
----min=0
----max=100
----step=0.01
-local pos9 = 0
-
----$track:位置10
----min=0
----max=100
----step=0.01
-local pos10 = 0
-
----$track:位置11
----min=0
----max=100
----step=0.01
-local pos11 = 0
-
----$track:位置12
----min=0
----max=100
----step=0.01
-local pos12 = 0
-
----$track:位置13
----min=0
----max=100
----step=0.01
-local pos13 = 0
-
----$track:位置14
----min=0
----max=100
----step=0.01
-local pos14 = 0
-
----$track:位置15
----min=0
----max=100
----step=0.01
-local pos15 = 0
-
----$track:位置16
----min=0
----max=100
----step=0.01
-local pos16 = 0
-
----$track:位置17
----min=0
----max=100
----step=0.01
-local pos17 = 0
-
----$track:位置18
----min=0
----max=100
----step=0.01
-local pos18 = 0
-
----$track:位置19
----min=0
----max=100
----step=0.01
-local pos19 = 0
-
----$track:位置20
----min=0
----max=100
----step=0.01
-local pos20 = 0
-
----$track:位置21
----min=0
----max=100
----step=0.01
-local pos21 = 0
-
----$track:位置22
----min=0
----max=100
----step=0.01
-local pos22 = 0
-
----$track:位置23
----min=0
----max=100
----step=0.01
-local pos23 = 0
-
----$track:位置24
----min=0
----max=100
----step=0.01
-local pos24 = 0
-
----$track:位置25
----min=0
----max=100
----step=0.01
-local pos25 = 0
-
----$track:位置26
----min=0
----max=100
----step=0.01
-local pos26 = 0
-
----$track:位置27
----min=0
----max=100
----step=0.01
-local pos27 = 0
-
----$track:位置28
----min=0
----max=100
----step=0.01
-local pos28 = 0
-
----$track:位置29
----min=0
----max=100
----step=0.01
-local pos29 = 0
-
----$track:位置30
----min=0
----max=100
----step=0.01
-local pos30 = 0
-
---group
---group:中間点,false
----$track:中間点1
----min=0
----max=100
----step=0.01
-local midpoint1 = 50
-
----$track:中間点2
----min=0
----max=100
----step=0.01
-local midpoint2 = 50
-
----$track:中間点3
----min=0
----max=100
----step=0.01
-local midpoint3 = 50
-
----$track:中間点4
----min=0
----max=100
----step=0.01
-local midpoint4 = 50
-
----$track:中間点5
----min=0
----max=100
----step=0.01
-local midpoint5 = 50
-
----$track:中間点6
----min=0
----max=100
----step=0.01
-local midpoint6 = 50
-
----$track:中間点7
----min=0
----max=100
----step=0.01
-local midpoint7 = 50
-
----$track:中間点8
----min=0
----max=100
----step=0.01
-local midpoint8 = 50
-
----$track:中間点9
----min=0
----max=100
----step=0.01
-local midpoint9 = 50
-
----$track:中間点10
----min=0
----max=100
----step=0.01
-local midpoint10 = 50
-
----$track:中間点11
----min=0
----max=100
----step=0.01
-local midpoint11 = 50
-
----$track:中間点12
----min=0
----max=100
----step=0.01
-local midpoint12 = 50
-
----$track:中間点13
----min=0
----max=100
----step=0.01
-local midpoint13 = 50
-
----$track:中間点14
----min=0
----max=100
----step=0.01
-local midpoint14 = 50
-
----$track:中間点15
----min=0
----max=100
----step=0.01
-local midpoint15 = 50
-
----$track:中間点16
----min=0
----max=100
----step=0.01
-local midpoint16 = 50
-
----$track:中間点17
----min=0
----max=100
----step=0.01
-local midpoint17 = 50
-
----$track:中間点18
----min=0
----max=100
----step=0.01
-local midpoint18 = 50
-
----$track:中間点19
----min=0
----max=100
----step=0.01
-local midpoint19 = 50
-
----$track:中間点20
----min=0
----max=100
----step=0.01
-local midpoint20 = 50
-
----$track:中間点21
----min=0
----max=100
----step=0.01
-local midpoint21 = 50
-
----$track:中間点22
----min=0
----max=100
----step=0.01
-local midpoint22 = 50
-
----$track:中間点23
----min=0
----max=100
----step=0.01
-local midpoint23 = 50
-
----$track:中間点24
----min=0
----max=100
----step=0.01
-local midpoint24 = 50
-
----$track:中間点25
----min=0
----max=100
----step=0.01
-local midpoint25 = 50
-
----$track:中間点26
----min=0
----max=100
----step=0.01
-local midpoint26 = 50
-
----$track:中間点27
----min=0
----max=100
----step=0.01
-local midpoint27 = 50
-
----$track:中間点28
----min=0
----max=100
----step=0.01
-local midpoint28 = 50
-
----$track:中間点29
----min=0
----max=100
----step=0.01
-local midpoint29 = 50
-
---group
---group:その他,false
 ---$track:ぼかし幅
 ---min=0
 ---max=100
@@ -711,11 +117,24 @@ local color_space = 0
 ---長経路=1
 local interp_dir = 0
 
----$track:マーカー数
----min=2
----max=30
+--separator:アルファ設定
+---$value:アルファ値
+local alpha_val_table = {1.00,1.00}
+
+---$value:アルファ位置
+local alpha_pos_table = {0.00,1.00}
+
+---$value:アルファ中間点
+local alpha_mid_table = {0.50}
+
+---$value:アルファマーカー数
+local alpha_marker_num = 2
+
+---$track:アルファぼかし幅
+---min=0
+---max=100
 ---step=1
-local marker_num = 2
+local alpha_blur_width = 100
 
 --group
 
@@ -731,12 +150,6 @@ float4 mask(float4 pos : SV_Position) : SV_Target {
 }
 ]]
 
-local colors = {col1, col2, col3, col4, col5, col6, col7, col8, col9, col10, col11, col12, col13, col14, col15, col16, col17, col18, col19, col20, col21, col22, col23, col24, col25, col26, col27, col28, col29, col30}
-local alphas = {alpha1, alpha2, alpha3, alpha4, alpha5, alpha6, alpha7, alpha8, alpha9, alpha10, alpha11, alpha12, alpha13, alpha14, alpha15, alpha16, alpha17, alpha18, alpha19, alpha20, alpha21, alpha22, alpha23, alpha24, alpha25, alpha26, alpha27, alpha28, alpha29, alpha30}
-local positions = {pos1, pos2, pos3, pos4, pos5, pos6, pos7, pos8, pos9, pos10, pos11, pos12, pos13, pos14, pos15, pos16, pos17, pos18, pos19, pos20, pos21, pos22, pos23, pos24, pos25, pos26, pos27, pos28, pos29, pos30}
-local midpoints = {midpoint1, midpoint2, midpoint3, midpoint4, midpoint5, midpoint6, midpoint7, midpoint8, midpoint9, midpoint10, midpoint11, midpoint12, midpoint13, midpoint14, midpoint15, midpoint16, midpoint17, midpoint18, midpoint19, midpoint20, midpoint21, midpoint22, midpoint23, midpoint24, midpoint25, midpoint26, midpoint27, midpoint28, midpoint29, 0}
-
--- 色を正規化する
 local function norm_color(color)
     local r, g, b = RGB(color)
     return {r / 255, g / 255, b / 255}
@@ -770,16 +183,6 @@ local function extend_back(t, n, v)
 	return t
 end
 
--- テーブルから指定した範囲を切り出す
-local function slice(t, first, last)
-    local res = {}
-    for i = first, last do
-        res[#res + 1] = t[i]
-    end
-    return res
-end
-
--- 並び替え
 local function reorder(t, idx)
     local r = {}
     for i, j in ipairs(idx) do
@@ -788,116 +191,177 @@ local function reorder(t, idx)
     return r
 end
 
--- HLSL のコンスタントバッファーに渡すために変数を詰める
-local function pack(colors, alphas, positions, midpoints, color_space, interp_dir, blur_width, marker_num)
-    assert(#colors == #alphas and #alphas == #positions and #positions == #midpoints, "Marker arrays must have the same length")
-
-    local marker_count = marker_num
-    local MARKER_MAX_COUNT = #colors
-
-    -- マーカー数分だけ切り出す
-    local marker_colors = slice(colors, 1, marker_count)
-    local marker_alphas = slice(alphas, 1, marker_count)
-    local marker_positions = slice(positions, 1, marker_count)
-    local marker_midpoints = slice(midpoints, 1, marker_count)
-
-    -- インデックス配列
-    local idx = {}
-    for i = 1, marker_count do
-        idx[i] = i
-    end
-
-    table.sort(idx, function(a, b)
-        local pa, pb = marker_positions[a], marker_positions[b]
-        if pa ~= pb then
-            return pa < pb
-        end
-        return a < b   -- 同じ positions の場合は若いインデックス優先
-    end)
-
-    -- 並び替え
-    marker_colors   = reorder(marker_colors, idx)
-    marker_alphas   = reorder(marker_alphas, idx)
-    marker_positions = reorder(marker_positions, idx)
-    marker_midpoints = reorder(marker_midpoints, idx)
-
-    -- 元のサイズに戻す
-    marker_colors    = extend_back(marker_colors, MARKER_MAX_COUNT - #marker_colors, 0xffffff)
-    marker_alphas    = extend_back(marker_alphas, MARKER_MAX_COUNT - #marker_alphas, 0)
-    marker_positions = extend_back(marker_positions, MARKER_MAX_COUNT - #marker_positions, 0)
-    marker_midpoints = extend_back(marker_midpoints, MARKER_MAX_COUNT - #marker_midpoints, 50)
-
-    local start_col = {}; local start_pos = {};
-    local stop_col = {}; local stop_pos = {};
-    local mid = {};
-    for i = 1, MARKER_MAX_COUNT do
-        -- Start Color & Position
-        local start_rgb = norm_color(marker_colors[i])
-        start_col[#start_col + 1] = start_rgb[1]
-        start_col[#start_col + 1] = start_rgb[2]
-        start_col[#start_col + 1] = start_rgb[3]
-        start_col[#start_col + 1] = (100 - marker_alphas[i]) / 100
-        start_pos[#start_pos + 1] = marker_positions[i] / 100
-
-        -- Midpoint
-        mid[#mid + 1] = marker_midpoints[i] / 100
-
-        -- Stop Color & Position (Next marker)
-        local next_i = i + 1
-        if next_i > MARKER_MAX_COUNT then next_i = MARKER_MAX_COUNT end
-
-        local stop_rgb = norm_color(marker_colors[next_i])
-        stop_col[#stop_col + 1] = stop_rgb[1]
-        stop_col[#stop_col + 1] = stop_rgb[2]
-        stop_col[#stop_col + 1] = stop_rgb[3]
-        stop_col[#stop_col + 1] = (100 - marker_alphas[next_i]) / 100
-        stop_pos[#stop_pos + 1] = marker_positions[next_i] / 100
-    end
-
-    local pos_and_mid = {}
-    for i = 1, MARKER_MAX_COUNT do
-        pos_and_mid[#pos_and_mid + 1] = start_pos[i]
-        pos_and_mid[#pos_and_mid + 1] = stop_pos[i]
-        pos_and_mid[#pos_and_mid + 1] = mid[i]
-        pos_and_mid[#pos_and_mid + 1] = 0.0  -- パディング
-    end
-
-    local packed = merge(
-        {color_space},
-        {interp_dir},
-        {blur_width / 100},
-        {marker_count},
-        start_col,
-        stop_col,
-        pos_and_mid
-    )
-
-    return packed
-end
-
 local function rotate(deg)
     local rad = math.rad(deg)
     return {math.cos(rad), -math.sin(rad),
             math.sin(rad),  math.cos(rad)}
 end
 
-local constants = pack(colors, alphas, positions, midpoints, color_space, interp_dir, blur_width, marker_num)
-local PAD = 0.0
+local function clamp(x, min, max)
+    if x < min then return min end
+    if x > max then return max end
+    return x
+end
 
-local n = obj.setanchor("track", 0, "line")
-local center_x = obj.track0
-local center_y = obj.track1
+local function is_number_table(t)
+    if type(t) ~= "table" then return nil end
+    for _, v in pairs(t) do
+        if (tonumber(v) == nil) then
+            print("@warn", v.." is not number")
+            return nil
+        end
+    end
+    return t
+end
+
+local PAD = 0.0
+local MARKER_MIN_COUNT = 2
+local MARKER_MAX_COUNT = ${MARKER_MAX_COUNT}
+local GRADIENT_MAX_COUNT = MARKER_MAX_COUNT - 1
+
+local COLOR_RGB = 0xffffff
+local COLOR_A = 0
+local COLOR_POS = 0
+local COLOR_MID = 0.5
+local ALPHA_VAL = 1
+local ALPHA_POS = 0
+local ALPHA_MID = 0.5
+
+local COLOR_RGB_TABLE = {0x000000,0xffffff}
+local COLOR_A_TABLE = {0.00,0.00}
+local COLOR_POS_TABLE = {0.00,1.00}
+local COLOR_MID_TABLE = {0.50}
+local ALPHA_VAL_TABLE = {1.00,1.00}
+local ALPHA_POS_TABLE = {0.00,1.00}
+local ALPHA_MID_TABLE = {0.50}
+
+color_rgb_table = is_number_table(color_rgb_table) or COLOR_RGB_TABLE
+color_a_table = is_number_table(color_a_table) or COLOR_A_TABLE
+color_pos_table = is_number_table(color_pos_table) or COLOR_POS_TABLE
+color_mid_table = is_number_table(color_mid_table) or COLOR_MID_TABLE
+alpha_val_table = is_number_table(alpha_val_table) or ALPHA_VAL_TABLE
+alpha_pos_table = is_number_table(alpha_pos_table) or ALPHA_POS_TABLE
+alpha_mid_table = is_number_table(alpha_mid_table) or ALPHA_MID_TABLE
+marker_num  = tonumber(marker_num) or MARKER_MIN_COUNT
+alpha_marker_num = tonumber(alpha_marker_num) or MARKER_MIN_COUNT
+
+marker_num = clamp(marker_num, MARKER_MIN_COUNT, MARKER_MAX_COUNT)
+alpha_marker_num = clamp(alpha_marker_num, MARKER_MIN_COUNT, MARKER_MAX_COUNT)
+
+local idx = {}
+for i = 1, marker_num do idx[i] = i end
+
+-- 位置を基準にインデックスをソート
+table.sort(idx, function(a, b)
+    local pa, pb = color_pos_table[a], color_pos_table[b]
+    if pa ~= pb then return pa < pb end
+    return a < b
+end)
+
+-- 位置を基準に並び替え
+color_rgb_table = reorder(color_rgb_table, idx)
+color_a_table = reorder(color_a_table, idx)
+color_pos_table = reorder(color_pos_table, idx)
+color_mid_table = reorder(color_mid_table, idx)
+
+local alpha_idx = {}
+for i = 1, alpha_marker_num do alpha_idx[i] = i end
+
+table.sort(alpha_idx, function(a, b)
+    local pa, pb = alpha_pos_table[a], alpha_pos_table[b]
+    if pa ~= pb then
+        return pa < pb
+    end
+    return a < b
+end)
+
+alpha_val_table = reorder(alpha_val_table, alpha_idx)
+alpha_pos_table = reorder(alpha_pos_table, alpha_idx)
+
+color_rgb_table = extend_back(color_rgb_table, MARKER_MAX_COUNT - #color_rgb_table, COLOR_RGB)
+color_a_table = extend_back(color_a_table, MARKER_MAX_COUNT - #color_a_table, COLOR_A)
+color_pos_table = extend_back(color_pos_table, MARKER_MAX_COUNT - #color_pos_table, COLOR_POS)
+color_mid_table = extend_back(color_mid_table, MARKER_MAX_COUNT - #color_mid_table, COLOR_MID)
+alpha_val_table = extend_back(alpha_val_table, MARKER_MAX_COUNT - #alpha_val_table, ALPHA_VAL)
+alpha_pos_table = extend_back(alpha_pos_table, MARKER_MAX_COUNT - #alpha_pos_table, ALPHA_POS)
+alpha_mid_table = extend_back(alpha_mid_table, MARKER_MAX_COUNT - #alpha_mid_table, ALPHA_MID)
+
+local start_col = {}
+local stop_col = {}
+
+for i = 1, MARKER_MAX_COUNT do
+    local start_rgb = norm_color(color_rgb_table[i])
+    start_col[#start_col + 1] = start_rgb[1]
+    start_col[#start_col + 1] = start_rgb[2]
+    start_col[#start_col + 1] = start_rgb[3]
+    start_col[#start_col + 1] = 1 - color_a_table[i]
+
+    local next_i = i + 1
+    if next_i > MARKER_MAX_COUNT then next_i = i end
+    local stop_rgb = norm_color(color_rgb_table[next_i])
+    stop_col[#stop_col + 1] = stop_rgb[1]
+    stop_col[#stop_col + 1] = stop_rgb[2]
+    stop_col[#stop_col + 1] = stop_rgb[3]
+    stop_col[#stop_col + 1] = 1 - color_a_table[next_i]
+end
+
+local pos_and_mid = {}
+for i = 1, GRADIENT_MAX_COUNT do
+    pos_and_mid[#pos_and_mid + 1] = color_pos_table[i]
+    pos_and_mid[#pos_and_mid + 1] = color_pos_table[i + 1]
+    pos_and_mid[#pos_and_mid + 1] = color_mid_table[i]
+    pos_and_mid[#pos_and_mid + 1] = PAD
+end
+
+local alpha_pos_and_mid = {}
+for i = 1, GRADIENT_MAX_COUNT do
+    alpha_pos_and_mid[#alpha_pos_and_mid + 1] = alpha_pos_table[i]
+    alpha_pos_and_mid[#alpha_pos_and_mid + 1] = alpha_pos_table[i + 1]
+    alpha_pos_and_mid[#alpha_pos_and_mid + 1] = alpha_mid_table[i]
+    alpha_pos_and_mid[#alpha_pos_and_mid + 1] = PAD
+end
+
+local alpha_val = {}
+for i = 1, GRADIENT_MAX_COUNT do
+    alpha_val[#alpha_val + 1] = alpha_val_table[i]
+    alpha_val[#alpha_val + 1] = alpha_val_table[i + 1]
+    alpha_val[#alpha_val + 1] = PAD
+    alpha_val[#alpha_val + 1] = PAD
+end
+
+local constants = merge(
+    {color_space, interp_dir, blur_width / 100, marker_num - 1},
+    start_col,
+    stop_col,
+    pos_and_mid,
+    {alpha_marker_num - 1, alpha_blur_width / 100, PAD, PAD},
+    alpha_pos_and_mid,
+    alpha_val
+)
+
+-- packed は float4 単位で並ぶテーブル
+
+-- [0]=色空間 [1]=補間経路 [2]=ぼかし幅 [3]=色の区間数  : グラデーション情報（x1）
+-- [0]=r [1]=g [2]=b [3]=a                           : 開始色（xマーカー数）
+-- [0]=r [1]=g [2]=b [3]=a                           : 終了色（xマーカー数）
+-- [0]=開始位置 [1]=終了位置 [2]=中間点 [3]=パディング  : 区間情報（x区間数）
+-- [0]=アルファの区間数 [1]=ぼかし幅 [2-3]=パディング   : アルファマーカー情報（x1）
+-- [0]=開始位置 [1]=終了位置 [2]=中間点 [3]=パディング  : アルファマーカーの区間情報（x区間数）
+-- [0]=開始値 [1]=終了値 [2-3]=パディング              : アルファ値（x区間数）
+
+local n = obj.setanchor("center_x,center_y", 0, "line")
 local m00, m01, m10, m11 = unpack(rotate(angle))
 local cache_name = "orig_img_"..tostring(obj.id)
 
-obj.copybuffer("cache:"..cache_name, "object")
+_ = obj.copybuffer("cache:"..cache_name, "object")
 obj.setoption("drawtarget", "tempbuffer", obj.w, obj.h)
 obj.draw(0.0, 0.0, 0.0, 1.0, (100 - bg_alpha) / 100)
 
 obj.pixelshader("psmain", "object", {"object"},
     {
         obj.w, obj.h, center_x, center_y,
-        radius, gradient_type, is_fit, PAD,
+        radius, gradient_type, is_fit, shift / 100,
+        edge_mode, PAD, PAD, PAD,
         m00, m01, PAD, PAD,
         m10, m11, PAD, PAD,
         unpack(constants),
@@ -907,7 +371,7 @@ obj.pixelshader("psmain", "object", {"object"},
 
 obj.setoption("blend", blend_mode)
 obj.draw(0.0, 0.0, 0.0, 1.0, intensity / 100.0)
-obj.copybuffer("obj", "tmp")
+_ = obj.copybuffer("obj", "tmp")
 obj.setoption("blend", 0)
 
 obj.pixelshader("mask", "object", {"cache:"..cache_name}, {}, "mask")

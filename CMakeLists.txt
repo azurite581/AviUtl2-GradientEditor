@@ -8,15 +8,15 @@ if(NOT DEFINED PLUGIN_VERSION)
     set(PLUGIN_VERSION "0.1.0")
 endif()
 
-project(GradientEditor LANGUAGES CXX)
+project(GradientEditor LANGUAGES C CXX)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(IMGUI_SOURCE third_party/imgui)
-set(MARKER_COUNT 30 CACHE STRING "marker count")
 set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
 
 # .cpp font file generation
 include(${CMAKE_SOURCE_DIR}/src/fonts/ImGuiFontCodegen.cmake)
+imgui_font_codegen(${IMGUI_SOURCE}/misc/fonts/binary_to_compressed_c.cpp)
 
 # shader compilation
 include(${CMAKE_SOURCE_DIR}/src/shaders/CompileShaders.cmake)
@@ -89,6 +89,7 @@ target_include_directories(${PROJECT_NAME} PRIVATE src/ui/widgets)
 target_include_directories(${PROJECT_NAME} PRIVATE src/utils/aviutl2)
 target_include_directories(${PROJECT_NAME} PRIVATE src/utils/common)
 target_include_directories(${PROJECT_NAME} PRIVATE src/utils/imgui)
+target_include_directories(${PROJECT_NAME} PRIVATE src/utils/grd_codec)
 target_include_directories(${PROJECT_NAME} PRIVATE preset)
 
 # AviUtl2 SDK
@@ -107,7 +108,7 @@ endif()
 # Compiler Options ------------------------------------------------------------------
 if("${CMAKE_CXX_COMPILER_ID}" MATCHES "MSVC")
     target_compile_options(${PROJECT_NAME} PRIVATE
-        /source-charset:utf-8
+        /utf-8
         /W4
         $<IF:$<CONFIG:Debug>,/Od,/O2>
         $<IF:$<CONFIG:Debug>,/GL-,/GL>

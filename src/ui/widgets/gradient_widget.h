@@ -12,14 +12,14 @@
 #include "gradient_data.h"
 #include "gradient_renderer.h"
 
-namespace CustomUI {
+namespace custom_ui {
 
 enum GradientEditorFlags_ {
     GradientEditorFlags_None                    = 0,       // フラグなし
     GradientEditorFlags_NoMidpoint              = 1 << 1,  // 中間点非表示
     GradientEditorFlags_NoMarker                = 1 << 2,  // マーカー非表示
-    GradientEditorFlags_NotAlignSideToMarker    = 1 << 3,  // グラデーションの両端（幅）をマーカーに合わせない
-    GradientEditorFlags_newMarkerColorFromClick = 1 << 4,  // 新規マーカーの色をクリック位置の色にする
+    GradientEditorFlags_newMarkerColorFromClick = 1 << 3,  // 新規マーカーの色をクリック位置の色にする
+    GradientEditorFlags_AlphaMarker             = 1 << 4,
 };
 using GradientEditorFlags = int32_t;
 
@@ -40,9 +40,10 @@ bool drawGradientButton(
 
 // 描画前にユーザーが設定できるオプション
 struct GradientEditorConfig {
-    uint32_t max_marker_count = 30;     // 最大マーカー数。最大マーカー数を超えると新規マーカー追加不可
-    float marker_width        = 20.0f;  // マーカーの幅
-    bool io_enable = true;              // マウス入力を受け付けるかどうか
+    uint32_t max_marker_count = 30;  // 最大マーカー数。最大マーカー数を超えると新規マーカー追加不可
+    ImVec2 marker_size{20.0f, 20.0f};
+    ImVec2 midpoint_size{20.0f, 20.0f};
+    bool io_enable = true;  // マウス入力を受け付けるかどうか
 };
 
 /// @brief グラデーションを描画する関数
@@ -61,6 +62,6 @@ GradientData* drawGradientEditor(
     bool replace_data           = false,
     GradientEditorConfig config = GradientEditorConfig());
 
-}  // namespace CustomUI
+}  // namespace custom_ui
 
 #endif  // !GRADIENT_WIDGET_H

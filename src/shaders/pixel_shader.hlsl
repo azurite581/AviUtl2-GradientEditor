@@ -8,12 +8,22 @@ struct VS_OUTPUT
 
 struct Gradient
 {
-    float4 startColor;
-    float4 stopColor;
+    float4 start_color;
+    float4 stop_color;
     float start_x;
     float stop_x;
     float ratio;
     float pad;
+};
+
+struct AlphaMarker
+{
+    float start_pos;
+    float stop_pos;
+    float start_value;
+    float stop_value;
+    float mid_ratio;
+    float3 pad3;
 };
 
 #ifdef MARKER_COUNT
@@ -31,19 +41,28 @@ cbuffer pixelBuffer : register(b0)
     float gradient_w;
     float2 texture_resolution;
     float2 display_resolution;
+    AlphaMarker alpha_stops[MAX_MARKER_COUNT];
+    int alpha_sec_num;
+    float alpha_blur_width;
+    float2 pad;
 };
 
 Texture2D src : register(t0);
 SamplerState samp : register(s0);
 
-float4 makeGradient(float4 color1, float4 color2, float t, float mid, float width, int color_space, int interp_dir)
+float smoothPulse(float t, float mid, float width)
 {
     float half_width = width * 0.5;
 
     float lower = mid - half_width;
     float upper = mid + half_width;
 
-    t = smoothstep(lower, upper, t);
+    return smoothstep(lower, upper, t);
+}
+
+float4 makeGradient(float4 color1, float4 color2, float t, float mid, float width, int color_space, int interp_dir)
+{
+    t = smoothPulse(t, mid, width);
 
     float3 col1 = color1.rgb;
     float3 col2 = color2.rgb;
@@ -206,30 +225,42 @@ float4 psmain(VS_OUTPUT input) : SV_Target
     float4 transparent_checker_col = drawCheckerBoard(display_uv_pos, 8, float3(0.75, 0.75, 0.75), float3(0.90, 0.90, 0.90));
 
     float4 gradient_col = float4(0, 0, 0, 0);
-    if (x <= gradient[0].start_x)
-    {
-        gradient_col = gradient[0].startColor;
-        return alphaBlend(transparent_checker_col, gradient_col);
+    if (x <= gradient[0].start_x) {
+        gradient_col = gradient[0].start_color;
+    } else if (x >= gradient[gradient_count - 1].stop_x) {
+        gradient_col = gradient[gradient_count - 1].stop_color;
+    } else {
+        for (int i = 0; i < gradient_count; i++) {
+            float p_curr = gradient[i].start_x;
+            float p_next = gradient[i].stop_x;
+
+            // x が現在の区間内にある場合
+            if (x >= p_curr && x < p_next) {
+                float dist = p_next - p_curr;
+                float t = (x - p_curr) / dist;
+
+                gradient_col = makeGradient(gradient[i].start_color, gradient[i].stop_color, t, gradient[i].ratio, gradient_w, gradient_type, interp_dir);
+                break;
+            }
+        }
     }
-    else if (x >= gradient[gradient_count - 1].stop_x)
-    {
-        gradient_col = gradient[gradient_count - 1].stopColor;
-        return alphaBlend(transparent_checker_col, gradient_col);
-    }
 
-    for (int i = 0; i < gradient_count; i++)
-    {
-        float p_curr = gradient[i].start_x;
-        float p_next = gradient[i].stop_x;
+    if (x <= alpha_stops[0].start_pos) {
+        gradient_col.a *= alpha_stops[0].start_value;
+    } else if (x >= alpha_stops[alpha_sec_num - 1].stop_pos) {
+        gradient_col.a *= alpha_stops[alpha_sec_num - 1].stop_value;
+    } else {
+        for (int j = 0; j < alpha_sec_num; j++) {
+            float p_curr = alpha_stops[j].start_pos;
+            float p_next = alpha_stops[j].stop_pos;
 
-        // x が現在の区間内にある場合
-        if (x >= p_curr && x < p_next)
-        {
-            float dist = p_next - p_curr;
-            float t = (x - p_curr) / dist;
-
-            gradient_col = makeGradient(gradient[i].startColor, gradient[i].stopColor, t, gradient[i].ratio, gradient_w, gradient_type, interp_dir);
-            break;
+            if (x >= p_curr && x < p_next) {
+                float dist = p_next - p_curr;
+                float t = (x - p_curr) / dist;
+                float alpha_value = lerp(alpha_stops[j].start_value, alpha_stops[j].stop_value, smoothPulse(t, alpha_stops[j].mid_ratio, alpha_blur_width));
+                gradient_col.a *= alpha_value;
+                break;
+            }
         }
     }
 

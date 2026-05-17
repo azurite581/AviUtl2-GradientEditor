@@ -1,0 +1,5 @@
+[tools]
+cmake = "latest"
+"github:karoterra/aviutl2-aulua" = "latest"
+"github:sevenc-nanashi/aviutl2-cli" = { version = "latest", bin = "au2.exe" }
+ninja = "latest"

@@ -9,7 +9,8 @@
       "cacheVariables": {
         "CMAKE_C_COMPILER": "cl.exe",
         "CMAKE_CXX_COMPILER": "cl.exe",
-        "PLUGIN_VERSION": "0.4.3"
+        "MARKER_COUNT": "100",
+        "PLUGIN_VERSION": "0.5.0"
       }
     },
     {

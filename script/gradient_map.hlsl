@@ -1,19 +1,27 @@
 Texture2D<float4> src : register(t0);
 SamplerState samp : register(s0);
 
-static const int GRADIENT_MAX_COUNT = 30;
+#define EPS 1e-6
+static const int MARKER_MAX_COUNT = ${MARKER_MAX_COUNT};
+static const int GRADIENT_MAX_COUNT = MARKER_MAX_COUNT - 1;
+
 cbuffer constant0 : register(b0) {
     float luma_mode;
     float shift;
     float edge_mode;
-    float pad;
+    float PAD1;
     float color_space;
     float interp_dir;
     float gradient_w;
-    float gradient_count;  // 実際のグラデーションの数
-    float4 start_col[GRADIENT_MAX_COUNT];
-    float4 stop_col[GRADIENT_MAX_COUNT];
+    float color_section_count;
+    float4 start_col[MARKER_MAX_COUNT];
+    float4 stop_col[MARKER_MAX_COUNT];
     float4 pos_and_mid[GRADIENT_MAX_COUNT];
+    float alpha_section_count;
+    float alpha_blur_width;
+    float2 PAD2;
+    float4 alpha_pos_and_mid[GRADIENT_MAX_COUNT];
+    float4 alpha_value[GRADIENT_MAX_COUNT];
 }
 
 float4 blend_colors(float4 color1, float4 color2, float t, float color_space, int interp_dir)
@@ -23,7 +31,7 @@ float4 blend_colors(float4 color1, float4 color2, float t, float color_space, in
     float alpha1 = color1.a;
     float alpha2 = color2.a;
     float3 result = float3(0.0, 0.0, 0.0);
-    float mixed_alpha = max(alpha_mix(alpha1, alpha2, t), 1e-6);
+    float mixed_alpha = max(alpha_mix(alpha1, alpha2, t), EPS);
     switch (color_space) {
         case 0:  // sRGB
         {
@@ -153,17 +161,19 @@ float4 blend_colors(float4 color1, float4 color2, float t, float color_space, in
     return float4(result * mixed_alpha, mixed_alpha);
 }
 
-float4 makeGradient(float4 col1, float4 col2, float t, float mid, float width, float color_space, int interp_dir)
+float smoothPulse(float t, float mid, float width)
 {
     float half_width = width * 0.5;
 
     float lower = mid - half_width;
     float upper = mid + half_width;
 
-    t = smoothstep(lower, upper, t);
+    return smoothstep(lower, upper, t);
+}
 
-    float4 result = blend_colors(col1, col2, t, color_space, interp_dir);
-    return result;
+float4 makeGradient(float4 col1, float4 col2, float t, float mid, float width, float color_space, int interp_dir)
+{
+    return blend_colors(col1, col2, smoothPulse(t, mid, width), color_space, interp_dir);
 }
 
 float4 unpremulti(float4 col)
@@ -171,28 +181,29 @@ float4 unpremulti(float4 col)
     return col.a > 0.0 ? float4(col.rgb / col.a, 1.0) : float4(col.rgb, 1.0);
 }
 
-float4 psmain(float4 pos : SV_Position, float2 uv : TEXCOORD) : SV_Target {
+float4 psmain(float4 pos : SV_Position, float2 uv : TEXCOORD) : SV_Target
+{
     float4 tex_col = src.Sample(samp, uv);
 
     // アンチエイリアス等でアルファが1未満の場合、RGBがPre-multipliedだと輝度が低く判定されてしまうため、
     // アルファで除算して元の色の輝度を取得する
     float3 unpremul_col = unpremulti(tex_col).rgb;
 
-    float luma;
+    float x;
     switch ((int)luma_mode) {
         case 0:  // Rec. 601
         {
-            luma = dot(unpremul_col, float3(0.299, 0.587, 0.114));
+            x = dot(unpremul_col, float3(0.299, 0.587, 0.114));
             break;
         }
         case 1:  // Rec. 701
         {
-            luma = dot(unpremul_col, float3(0.2126, 0.7152, 0.0722));
+            x = dot(unpremul_col, float3(0.2126, 0.7152, 0.0722));
             break;
         }
         default:
         {
-            luma = dot(unpremul_col, float3(0.299, 0.587, 0.114));
+            x = dot(unpremul_col, float3(0.299, 0.587, 0.114));
             break;
         }
     }
@@ -200,43 +211,70 @@ float4 psmain(float4 pos : SV_Position, float2 uv : TEXCOORD) : SV_Target {
     switch ((int)edge_mode) {
         case 0:  // 境界色
         {
-            luma = clamp(luma + shift, 0.0, 1.0);
+            x = clamp(x + shift, 0.0, 1.0);
             break;
         }
         case 1:  // ループ
         {
-            luma = frac(luma + shift);
+            x = frac(x + shift);
             break;
         }
         case 2:  // ミラー
         {
-            luma = abs(frac((luma + shift) * 0.5 + 0.5) * 2.0 - 1.0);
+            x = abs(frac((x + shift) * 0.5 + 0.5) * 2.0 - 1.0);
             break;
         }
         default:
         {
-            luma = clamp(luma + shift, 0.0, 1.0);
+            x = clamp(x + shift, 0.0, 1.0);
             break;
         }
     }
 
-    int safe_count = min(gradient_count, GRADIENT_MAX_COUNT);
-    float4 out_col = (luma <= pos_and_mid[0].x) ? start_col[0] : start_col[safe_count - 1];
+    int grad_sec_n = (int)color_section_count;
+    float4 out_col = (x <= pos_and_mid[0].x) ? start_col[0] : start_col[grad_sec_n];
+
+    // 区間ごとにグラデーションを作る
+    [loop]
+    for (int i = 0; i < grad_sec_n; ++i) {
+        float2 pos = pos_and_mid[i].xy;
+
+        // x が現在の区間内にある場合
+        if (pos.x <= x && x < pos.y) {
+            float t = (x - pos.x) / (pos.y - pos.x);
+            out_col = makeGradient(
+                start_col[i],
+                stop_col[i],
+                t,
+                pos_and_mid[i].z,
+                gradient_w,
+                color_space,
+                interp_dir
+            );
+            break;
+        }
+    }
+
+    int alpha_sec_n = (int)alpha_section_count;
+    float alpha = (x <= alpha_pos_and_mid[0].x) ? alpha_value[0].x : alpha_value[alpha_sec_n - 1].y;
+
+    [loop]
+    for (int j = 0; j < alpha_sec_n; ++j) {
+        float2 pos = alpha_pos_and_mid[j].xy;
+
+        if (pos.x <= x && x < pos.y) {
+            float t = (x - pos.x) / (pos.y - pos.x);
+            alpha = lerp(
+                alpha_value[j].x,
+                alpha_value[j].y,
+                smoothPulse(t, alpha_pos_and_mid[j].z, alpha_blur_width)
+            );
+            break;
+        }
+    }
+
+    out_col.a *= alpha;
     out_col.rgb *= out_col.a;
-    for (int i = 0; i < safe_count; i++) {
-        float p_curr = pos_and_mid[i].x;
-        float p_next = pos_and_mid[i].y;
-
-        // luma が現在の区間内にある場合
-        if (luma >= p_curr && luma < p_next) {
-            float dist = p_next - p_curr;
-
-            float t = (luma - p_curr) / dist;
-
-            out_col = makeGradient(start_col[i], stop_col[i], t, pos_and_mid[i].z, gradient_w, color_space, interp_dir);
-            break;
-        }
-    }
 
     return out_col;
 }
