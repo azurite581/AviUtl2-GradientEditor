@@ -509,7 +509,7 @@ void PresetWindow::render(GradientConfigManager& manager, Preset& cfg)
                 original_preset_name = cfg.presets[m_selected_preset_index].name;
             }
 
-            ImGui::Text("選択中のプリセット \"%s\" を現在のグラデーションで上書きしますか？", original_preset_name.c_str());
+            ImGui::Text(m_config_wrapper->tr(L"選択中のプリセット \"%s\" を現在のグラデーションで上書きしますか?").c_str(), original_preset_name.c_str());
 
             ImGui::Dummy(ImVec2(0, ImGui::GetFrameHeight() * ITEM_SPACING_SCALE_Y));
 

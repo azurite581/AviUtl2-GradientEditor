@@ -65,7 +65,7 @@ void HistoryWindow::render(GradientConfigManager& manager, History& cfg)
         ImVec2 center                       = ImGui::GetMainViewport()->GetCenter();
         ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
         if (ImGui::BeginPopupModal((m_config_wrapper->tr(L"すべての履歴を削除") + "###delete_history").c_str(), nullptr, modal_flags)) {
-            ImGui::Text("すべての履歴を削除しますか？");
+            ImGui::TextUnformatted(m_config_wrapper->tr(L"すべての履歴を削除しますか?").c_str());
             ImGui::Dummy(ImVec2(0, ImGui::GetFrameHeight() * ITEM_SPACING_SCALE_Y));
 
             float button_width          = ImGui::GetFrameHeight() * 4;
