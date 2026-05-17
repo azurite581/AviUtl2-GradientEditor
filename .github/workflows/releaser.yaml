@@ -19,7 +19,7 @@ jobs:
     - name: Setup mise
       uses: jdx/mise-action@1648a7812b9aeae629881980618f079932869151 # v4.0.1
 
-    # タグから 'v' を取り除いたものを保存
+    # タグから 'v' を取り除いたものを変数に保存
     - name: Extract version
       id: extract-version
       run: |
@@ -57,7 +57,14 @@ jobs:
       run: |
         git config --local user.name "GitHub Actions"
         git config --local user.email "actions@github.com"
+
         git add script/aulua.yaml CMakePresets.json
+
+        if (git diff --cached --quiet) {
+          Write-Host "No changes to commit"
+          exit 0
+        }
+
         git commit -m "feat: update config files version v$env:VERSION"
         git branch
         git push origin HEAD:main
