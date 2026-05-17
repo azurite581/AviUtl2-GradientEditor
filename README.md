@@ -2,10 +2,10 @@
 
 <p align="center">
   <img src="https://img.shields.io/github/license/azurite581/AviUtl2-GradientEditor">
-  <a href="https://github.com/azurite581/AviUtl2-GradientEditor/releases/latest">
+  <a href="https://github.com/azurite581/AviUtl2-GradientEditor/releases/latest" style="text-decoration: none;">
     <img src="https://img.shields.io/github/v/release/azurite581/AviUtl2-GradientEditor">
   </a>
-  <a href="https://github.com/azurite581/AviUtl2-GradientEditor/releases/latest">
+  <a href="https://github.com/azurite581/AviUtl2-GradientEditor/releases/latest" style="text-decoration: none;">
     <img src="https://img.shields.io/github/downloads/azurite581/AviUtl2-GradientEditor/total">
   </a>
   <img src="https://img.shields.io/github/last-commit/azurite581/AviUtl2-GradientEditor">
