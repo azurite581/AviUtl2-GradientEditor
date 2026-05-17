@@ -167,7 +167,7 @@ void App::run(std::promise<HWND>&& hwnd_promise)
     style.Colors[ImGuiCol_ScrollbarGrabActive]  = aulColor2imVec4("ButtonBodyPress");
 
     //
-    // グラデーションエディタ用の D3D を初期化
+    // グラデーションエディター用の D3D を初期化
     //
     custom_ui::initDX11(gradient_editor::g_app_state.d3d_manager.getDevice(), gradient_editor::g_app_state.d3d_manager.getDeviceContext());
 

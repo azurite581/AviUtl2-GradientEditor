@@ -375,7 +375,7 @@ void MainView::render()
         ImGui::SetWindowFocus("###preset_window");
     }
 
-    // グラデーションエディタを描画
+    // グラデーションエディターを描画
     renderGradientEditor();
 
     ImGui::End();
@@ -564,7 +564,7 @@ void MainView::renderGradientEditor()
     }
 
     //
-    // グラデーションエディタの描画
+    // グラデーションエディターの描画
     //
     ImGui::Dummy(ImVec2(0, frame_height * scale::relative::GRADIENT_MARGIN_Y));
 
@@ -705,7 +705,7 @@ void MainView::renderGradientEditor()
         m_script_bridge.setValues(*m_data);
     }
 
-    // スクリプトからグラデーションエディタに値を読み込む
+    // スクリプトからグラデーションエディターに値を読み込む
     if (m_load) {
         m_load = false;
         m_history_window.pushHistory(*m_data);  // 置き換える前のグラデーションデータを履歴に保存
@@ -723,7 +723,7 @@ void MainView::renderGradientEditor()
         });
     }
 
-    // グラデーションエディタからスクリプトへ値を反映するかどうかのフラグ
+    // グラデーションエディターからスクリプトへ値を反映するかどうかのフラグ
     bool is_changed_apply =
         off_to_on ||                                           // 「反映」が OFF から ON に切り替わった
         create_new_object ||                                   // オブジェクトが新たに作成された
@@ -734,7 +734,7 @@ void MainView::renderGradientEditor()
                         is_changed_effect_index ||             // 同じスクリプトが複数ある際、対象とするスクリプトのインデックスが変更された
                         is_reverse || is_reverse_alpha_marker  // マーカー反転のボタンが押された
                         ));
-    // または各値がグラデーションエディタ側で変更された
+    // または各値がグラデーションエディター側で変更された
     // マーカーの削除、リセット、均等配置による変更は isChangedValues() で検知できる
     if (is_changed_apply || (m_apply && m_script_bridge.getIsChangedValues())) {
         plugin2_utils::call_edit_lambda(gradient_editor::g_app_state.edit_handle->call_edit_section_param, [&](EDIT_SECTION* edit) {

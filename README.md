@@ -11,7 +11,7 @@
   <img src="https://img.shields.io/github/last-commit/azurite581/AviUtl2-GradientEditor">
 </p>
 
-<p align="center"><a href="https://spring-fragrance.mints.ne.jp/aviutl/">AviUtl2</a> 用のグラデーションエディタプラグイン</p>
+<p align="center"><a href="https://spring-fragrance.mints.ne.jp/aviutl/">AviUtl2</a> 用のグラデーションエディタープラグイン</p>
 
 ![splash](assets/gradient_editor.png)
 
@@ -23,7 +23,7 @@
 
 [AviUtl ExEdit2](https://spring-fragrance.mints.ne.jp/aviutl/)
 
-- `beta36` 以降必須（`beta43b` で動作確認済み）。
+- `beta36` 以降必須（`beta45` で動作確認済み）。
 
 ## インストール
 
@@ -32,7 +32,7 @@
 ### AviUtl2 カタログを使う（推奨）
 
 本プラグインは [aviutl2-catalog](https://github.com/Neosku/aviutl2-catalog) に登録済みです。  
-メインメニュー ➡️ パッケージ一覧 ➡️ 汎用プラグイン ➡️ GradientEditor からインストールしてください。
+メインメニュー ➡️ パッケージ一覧 ➡️ 汎用プラグイン ➡️ Gradient Editor からインストールしてください。
 
 ### 手動インストール
 
@@ -42,7 +42,7 @@
 > ### For non-Japanese speaking users
 > Please download the translation files from [here](https://github.com/azurite581/aviutl2_translations_azurite/releases/latest).
 
-[🔗詳細](https://github.com/azurite581/AviUtl2-GradientEditor/wiki/%E3%82%A4%E3%83%B3%E3%82%B9%E3%83%88%E3%83%BC%E3%83%AB)
+[🔗詳細](https://github.com/azurite581/AviUtl2-GradientEditor/wiki/インストール)
 
 ## 付属するスクリプトについて
 
@@ -51,7 +51,7 @@
 - 多色グラデーション（`MutliGradient@GradientEditor`）
 - グラデーションマップ（`GradientMap@GradientEditor`）
 
-グラデーションエディタ（`GradientEditor.aux2`）自体はこれらを直感的に操作するためのエディタに過ぎず、プラグイン単体でグラデーション加工を施すことはできません。基本的には上記のスクリプトをオブジェクトに適用し、そのスクリプトのパラメータをグラデーションエディタ上で編集することになります。
+グラデーションエディター（`GradientEditor.aux2`）自体はこれらを直感的に操作するためのエディタに過ぎず、プラグイン単体でグラデーション加工を施すことはできません。基本的には上記のスクリプトをオブジェクトに適用し、そのスクリプトのパラメータをグラデーションエディタ上で編集することになります。
 
 >[!NOTE]
 スクリプト単体でも使うことはできますが、グラデーションエディタ上で編集することを前提とした作りになっているため推奨しません。
@@ -62,7 +62,7 @@
 
 2色以上のグラデーションを作成するスクリプトです。デフォルトでは `色調整` カテゴリの中にあります。
 
-[🔗詳細](https://github.com/azurite581/AviUtl2-GradientEditor/wiki/%E5%A4%9A%E8%89%B2%E3%82%B0%E3%83%A9%E3%83%87%E3%83%BC%E3%82%B7%E3%83%A7%E3%83%B3)
+[🔗詳細](https://github.com/azurite581/AviUtl2-GradientEditor/wiki/多色グラデーション)
 
 ### グラデーションマップ
 
@@ -77,26 +77,21 @@ Image by <a href="https://pixabay.com/users/wj_y2017fufu-41862272/?utm_source=li
 
 グラデーションマップを適用するスクリプトです。デフォルトでは `色調整` カテゴリの中にあります。
 
-[🔗詳細](https://github.com/azurite581/AviUtl2-GradientEditor/wiki/%E3%82%B0%E3%83%A9%E3%83%87%E3%83%BC%E3%82%B7%E3%83%A7%E3%83%B3%E3%83%9E%E3%83%83%E3%83%97)
+[🔗詳細](https://github.com/azurite581/AviUtl2-GradientEditor/wiki/グラデーションマップ)
 
 ## 使い方
 
-#### 1. スクリプトの適用
+1. **スクリプトの選択**  
+オブジェクトに適用したいスクリプトをプラグインのコンボボックスから選択します。
 
-`MutliGradient@GradientEditor`、 `GradientMap@GradientEditor` のどちらかをオブジェクトに適用します。  
-オブジェクトを選択した状態で `反映` ボタンを ON にすると、自動でスクリプトが付与されます。
+2. **スクリプトの追加**  
+オブジェクトを選択した状態で、`反映` ボタンを押すと、1 で指定したスクリプトがオブジェクトに追加されます。すでに同じスクリプトが追加されている場合は追加されません。
 
-#### 2. グラデーションエディタ上で編集したいスクリプトの選択
+3. **グラデーションの反映**  
+`反映` ボタンが押されている状態でプラグイン側でグラデーションを編集すると、スクリプト側に変更が反映されます。
 
-1 で適用したスクリプトと同名のスクリプトを、グラデーションエディタの `対象` から選択します。
-
-#### 3. グラデーションエディタの内容をスクリプトに反映する
-
-オブジェクトを選択した状態でグラデーションエディタの `反映` ボタンを押すことで、スクリプト側に値が反映されます。  
-`反映` ボタンが押されている状態であれば、エディタ上の変更が即座にスクリプトに反映されます。
-
-[🔗詳細（使い方）](https://github.com/azurite581/AviUtl2-GradientEditor/wiki/%E4%BD%BF%E3%81%84%E6%96%B9)  
-[🔗詳細（グラデーションエディタの説明）](https://github.com/azurite581/AviUtl2-GradientEditor/wiki/%E3%82%B0%E3%83%A9%E3%83%87%E3%83%BC%E3%82%B7%E3%83%A7%E3%83%B3%E3%82%A8%E3%83%87%E3%82%A3%E3%82%BF)
+[🔗詳細（使い方）](https://github.com/azurite581/AviUtl2-GradientEditor/wiki/使い方)  
+[🔗詳細（グラデーションエディターの説明）](https://github.com/azurite581/AviUtl2-GradientEditor/wiki/グラデーションエディター)
 
 ## ライセンス
 
