@@ -62,7 +62,6 @@ MainView::MainView(LoggerWrapperInterface* logger_wrapper, ConfigWrapperInterfac
         OutputDebugStringA(error_msg.c_str());
     }
     m_preset_config = preset_load_result.config;
-    m_logger_wrapper->error("preset_num = {}", std::ssize(preset_load_result.config.presets));
 
     // 履歴ファイルがなければ作成
     std::filesystem::path history_path = config_folder_path / HISTORY_FILE_NAME;

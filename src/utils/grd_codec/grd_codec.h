@@ -1,5 +1,5 @@
-#ifndef GRD_PARSER_H
-#define GRD_PARSER_H
+#ifndef GRD_CODEC_H
+#define GRD_CODEC_H
 
 #define WIN32_LEAN_AND_MEAN
 #define NOMINMAX
