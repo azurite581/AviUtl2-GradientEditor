@@ -2,6 +2,7 @@
 #define FONT_LOADER_H
 
 // clang-format off
+#include <format>
 #define WIN32_LEAN_AND_MEAN
 #define NOMINMAX
 #include <windows.h>
@@ -9,86 +10,103 @@
 
 #include <dwrite.h>
 #include <wrl/client.h>
-
-#include <iostream>
 #include <string>
 #include <vector>
-
-#include "imgui.h"
+#include <expected>
+#include <format>
 
 #pragma comment(lib, "dwrite.lib")
 
-using Microsoft::WRL::ComPtr;
+struct FontData {
+    std::vector<unsigned char> bytes;
+    UINT32 face_index;  // TTC 内のインデックス
+};
 
-// フォント名からフォントのデータを取得する関数
-std::vector<unsigned char> getFontDataByName(const std::wstring& font_name)
+inline std::expected<FontData, std::wstring>
+getFontDataByName(const std::wstring& font_name)
 {
+    using Microsoft::WRL::ComPtr;
+
+    ComPtr<IUnknown> unknown;
+    if (FAILED(DWriteCreateFactory(
+            DWRITE_FACTORY_TYPE_SHARED,
+            __uuidof(IDWriteFactory),
+            &unknown)))
+        return std::unexpected(L"Failed to create DWrite factory");
+
     ComPtr<IDWriteFactory> factory;
-    DWriteCreateFactory(DWRITE_FACTORY_TYPE_SHARED, __uuidof(IDWriteFactory), &factory);
+    if (FAILED(unknown.As(&factory)))
+        return std::unexpected(L"Failed to get IDWriteFactory");
 
     ComPtr<IDWriteFontCollection> collection;
-    factory->GetSystemFontCollection(&collection);
+    if (FAILED(factory->GetSystemFontCollection(&collection)))
+        return std::unexpected(L"Failed to get font collection");
 
-    UINT32 index;
-    BOOL exists;
-    collection->FindFamilyName(font_name.c_str(), &index, &exists);
-
-    if (!exists) return {};  // 見つからない場合
+    UINT32 index = 0;
+    BOOL exists  = FALSE;
+    if (FAILED(collection->FindFamilyName(font_name.c_str(), &index, &exists)))
+        return std::unexpected(L"FindFamilyName failed");
+    if (!exists)
+        return std::unexpected(std::format(L"Font '{}' not found", font_name));
 
     ComPtr<IDWriteFontFamily> family;
-    collection->GetFontFamily(index, &family);
+    if (FAILED(collection->GetFontFamily(index, &family)))
+        return std::unexpected(L"GetFontFamily failed");
 
     ComPtr<IDWriteFont> font;
-    family->GetFirstMatchingFont(
-        DWRITE_FONT_WEIGHT_NORMAL,
-        DWRITE_FONT_STRETCH_NORMAL,
-        DWRITE_FONT_STYLE_NORMAL,
-        &font
-    );
+    if (FAILED(family->GetFirstMatchingFont(
+            DWRITE_FONT_WEIGHT_NORMAL,
+            DWRITE_FONT_STRETCH_NORMAL,
+            DWRITE_FONT_STYLE_NORMAL,
+            &font)))
+        return std::unexpected(L"GetFirstMatchingFont failed");
 
     ComPtr<IDWriteFontFace> font_face;
-    font->CreateFontFace(&font_face);
+    if (FAILED(font->CreateFontFace(&font_face)))
+        return std::unexpected(L"CreateFontFace failed");
 
-    // フォントファイル情報の取得
     UINT32 number_of_files = 0;
     font_face->GetFiles(&number_of_files, nullptr);
-    if (number_of_files == 0) return {};
+    if (number_of_files == 0)
+        return std::unexpected(std::format(L"No font files for '{}'", font_name));
+    UINT32 face_index = font_face->GetIndex();
 
-    ComPtr<IDWriteFontFile> font_file;
-    font_face->GetFiles(&number_of_files, &font_file);
+    std::vector<ComPtr<IDWriteFontFile>> font_files(number_of_files);
+    if (FAILED(font_face->GetFiles(&number_of_files, font_files[0].GetAddressOf())))
+        return std::unexpected(L"GetFiles failed");
 
     ComPtr<IDWriteFontFileLoader> loader;
-    font_file->GetLoader(&loader);
+    if (FAILED(font_files[0]->GetLoader(&loader)))
+        return std::unexpected(L"GetLoader failed");
 
-    // ローカルファイル用ローダーか確認
     ComPtr<IDWriteLocalFontFileLoader> local_loader;
-    if (FAILED(loader.As(&local_loader))) return {};
+    if (FAILED(loader.As(&local_loader)))
+        return std::unexpected(
+            std::format(L"Not a local font file loader for '{}'", font_name));
 
-    const void* font_file_reference_key;
-    UINT32 font_file_reference_key_size;
-    font_file->GetReferenceKey(&font_file_reference_key, &font_file_reference_key_size);
+    const void* ref_key      = nullptr;
+    UINT32      ref_key_size = 0;
+    if (FAILED(font_files[0]->GetReferenceKey(&ref_key, &ref_key_size)))
+        return std::unexpected(L"GetReferenceKey failed");
 
     ComPtr<IDWriteFontFileStream> stream;
-    loader->CreateStreamFromKey(
-        font_file_reference_key,
-        font_file_reference_key_size,
-        &stream
-    );
+    if (FAILED(loader->CreateStreamFromKey(ref_key, ref_key_size, &stream)))
+        return std::unexpected(L"CreateStreamFromKey failed");
 
-    UINT64 file_size;
-    stream->GetFileSize(&file_size);
+    UINT64 file_size = 0;
+    if (FAILED(stream->GetFileSize(&file_size)))
+        return std::unexpected(L"GetFileSize failed");
 
-    // メモリへの読み込み
+    const void* fragment_start = nullptr;
+    void*       context        = nullptr;
+    if (FAILED(stream->ReadFileFragment(&fragment_start, 0, file_size, &context)))
+        return std::unexpected(L"ReadFileFragment failed");
+
     std::vector<unsigned char> buffer(static_cast<size_t>(file_size));
-    const void* fragment_start;
-    void* context;
-    stream->ReadFileFragment(&fragment_start, 0, file_size, &context);
-
     memcpy(buffer.data(), fragment_start, buffer.size());
-
     stream->ReleaseFileFragment(context);
 
-    return buffer;
+    return FontData{buffer, face_index};
 }
 
 #endif  // !FONT_LOADER_H
