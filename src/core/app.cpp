@@ -97,14 +97,25 @@ void App::run(std::promise<HWND>&& hwnd_promise)
     // sytle.conf からフォント名を取得
     FONT_INFO* font_info = gradient_editor::g_app_state.config_handle->get_font_info(gradient_editor::g_app_state.config_handle, "DefaultFamily");
     // フォント名からフォントデータを取得
-    std::vector<unsigned char> font_data = getFontDataByName(font_info->name);
+    auto font_data = getFontDataByName(font_info->name);
 
-    if (!font_data.empty()) {
-        // AddFontFromMemoryTTF() はバッファの所有権をフォントアトラスに転送し、フォントアトラス破棄時にバッファを解放する
+    if (font_data.has_value()) {
+        // AddFontFromMemoryTTF() はバッファの所有権をフォントアトラスに転送し、フォントアトラス破棄時にバッファを解放するため、手動で解放しなくて良い。
         // https://github.com/ocornut/imgui/blob/master/docs/FONTS.md#loading-font-data-from-memory
-        void* buffer = malloc(font_data.size());
-        memcpy(buffer, font_data.data(), font_data.size());
-        io.Fonts->AddFontFromMemoryTTF(buffer, static_cast<int>(font_data.size()), font_info->size, &config1);
+        // void* buffer = malloc(font_data->bytes.size());
+        // memcpy(buffer, font_data->bytes.data(), font_data->bytes.size());
+
+        // config1.FontNo = static_cast<int32_t>(font_data->face_index);
+        // io.Fonts->AddFontFromMemoryTTF(
+        //     buffer,
+        //     static_cast<int>(font_data->bytes.size()),
+        //     font_info->size,
+        //     &config1);
+
+        // style.conf によって指定されたフォントを同じサイズで読み込んでも、見かけ上のサイズが等しくならない。
+        // そのため AviUtl2 側と見かけ上のサイズがほぼ等しくなる Yu Gothic Medium 固定にする。
+        // 関連：https://github.com/ocornut/imgui/issues/8822
+        io.Fonts->AddFontFromFileTTF("C:\\Windows\\Fonts\\YuGothM.ttc", DEFAULT_FONT_SIZE, &config1);
     } else {
         io.Fonts->AddFontFromFileTTF("C:\\Windows\\Fonts\\YuGothM.ttc", DEFAULT_FONT_SIZE, &config1);
     }
@@ -123,48 +134,67 @@ void App::run(std::promise<HWND>&& hwnd_promise)
         return color_conv::u32Rgb2Vec4Rgba<ImVec4>(gradient_editor::g_app_state.config_handle->get_color_code(gradient_editor::g_app_state.config_handle, name.c_str()));
     };
 
-    // ウィンドウ
-    style.Colors[ImGuiCol_WindowBg] = aulColor2imVec4("Grouping");
-    style.Colors[ImGuiCol_PopupBg]  = aulColor2imVec4("Grouping");
-    style.Colors[ImGuiCol_Border]   = aulColor2imVec4("Border");
     // テキスト
     style.Colors[ImGuiCol_Text] = aulColor2imVec4("Text");
-    // ボタン
-    style.Colors[ImGuiCol_Button]        = aulColor2imVec4("ButtonBody");
-    style.Colors[ImGuiCol_ButtonHovered] = aulColor2imVec4("ButtonBodyHover");
-    style.Colors[ImGuiCol_ButtonActive]  = aulColor2imVec4("ButtonBodyPress");
+    style.Colors[ImGuiCol_TextDisabled] = aulColor2imVec4("TextDisable");
+    // ウィンドウ
+    style.Colors[ImGuiCol_WindowBg] = aulColor2imVec4("Grouping");
+    style.Colors[ImGuiCol_ChildBg] = aulColor2imVec4("Grouping");
+    style.Colors[ImGuiCol_PopupBg]  = aulColor2imVec4("Grouping");
+    // 境界線
+    style.Colors[ImGuiCol_Border]   = aulColor2imVec4("Border");
+    style.Colors[ImGuiCol_BorderShadow] = aulColor2imVec4("Border");
     // フレーム
     style.Colors[ImGuiCol_FrameBg]        = aulColor2imVec4("ButtonBody");
     style.Colors[ImGuiCol_FrameBgHovered] = aulColor2imVec4("ButtonBodyHover");
     style.Colors[ImGuiCol_FrameBgActive]  = aulColor2imVec4("ButtonBodySelect");
-    // メニューバー
-    style.Colors[ImGuiCol_MenuBarBg] = aulColor2imVec4("GroupingHover");
-    // タブ
+    // タイトルバー
     style.Colors[ImGuiCol_TitleBg]             = aulColor2imVec4("Background");
     style.Colors[ImGuiCol_TitleBgActive]       = aulColor2imVec4("Background");
-    style.Colors[ImGuiCol_Tab]                 = aulColor2imVec4("GroupingHover");
-    style.Colors[ImGuiCol_TabDimmed]           = aulColor2imVec4("GroupingHover");
-    style.Colors[ImGuiCol_TabDimmedSelected]   = aulColor2imVec4("GroupingSelect");
-    style.Colors[ImGuiCol_TabSelected]         = aulColor2imVec4("GroupingSelect");
-    style.Colors[ImGuiCol_TabHovered]          = aulColor2imVec4("GroupingSelect");
-    style.Colors[ImGuiCol_TabSelectedOverline] = aulColor2imVec4("BorderFocus");
-    // コンボボックス
-    style.Colors[ImGuiCol_Header]        = aulColor2imVec4("ButtonBodySelect");
-    style.Colors[ImGuiCol_HeaderHovered] = aulColor2imVec4("ButtonBodySelect");
-    style.Colors[ImGuiCol_HeaderActive]  = aulColor2imVec4("ButtonBodySelect");
-    // スライダー
-    style.Colors[ImGuiCol_SliderGrab]       = aulColor2imVec4("SliderCursor");
-    style.Colors[ImGuiCol_SliderGrabActive] = aulColor2imVec4("SliderCursor");
-    // ドラッグ&ドロップ時の枠線
-    style.Colors[ImGuiCol_DragDropTarget] = aulColor2imVec4("BorderFocus");
-    // ドッキングウィンドウの分割線
-    style.Colors[ImGuiCol_ResizeGripHovered] = aulColor2imVec4("Border");
-    style.Colors[ImGuiCol_ResizeGripActive]  = aulColor2imVec4("BorderFocus");
+    style.Colors[ImGuiCol_TitleBgCollapsed]    = aulColor2imVec4("Background");
+    // メニューバー
+    style.Colors[ImGuiCol_MenuBarBg] = aulColor2imVec4("GroupingHover");
     // スクロールバー
     style.Colors[ImGuiCol_ScrollbarBg]          = aulColor2imVec4("Background");
     style.Colors[ImGuiCol_ScrollbarGrab]        = aulColor2imVec4("ButtonBody");
     style.Colors[ImGuiCol_ScrollbarGrabHovered] = aulColor2imVec4("ButtonBodyHover");
     style.Colors[ImGuiCol_ScrollbarGrabActive]  = aulColor2imVec4("ButtonBodyPress");
+    // チェックボックス
+    style.Colors[ImGuiCol_CheckMark] = aulColor2imVec4("Text");
+    style.Colors[ImGuiCol_CheckboxSelectedBg] = aulColor2imVec4("ButtonBody");
+    // スライダー
+    style.Colors[ImGuiCol_SliderGrab]       = aulColor2imVec4("SliderCursor");
+    style.Colors[ImGuiCol_SliderGrabActive] = aulColor2imVec4("SliderCursor");
+    // ボタン
+    style.Colors[ImGuiCol_Button]        = aulColor2imVec4("ButtonBody");
+    style.Colors[ImGuiCol_ButtonHovered] = aulColor2imVec4("ButtonBodyHover");
+    style.Colors[ImGuiCol_ButtonActive]  = aulColor2imVec4("ButtonBodyPress");
+    // コンボボックス
+    style.Colors[ImGuiCol_Header]        = aulColor2imVec4("ButtonBodySelect");
+    style.Colors[ImGuiCol_HeaderHovered] = aulColor2imVec4("ButtonBodySelect");
+    style.Colors[ImGuiCol_HeaderActive]  = aulColor2imVec4("ButtonBodySelect");
+    // セパレーター
+    style.Colors[ImGuiCol_Separator]        = aulColor2imVec4("Border");
+    style.Colors[ImGuiCol_SeparatorHovered] = aulColor2imVec4("Border");
+    style.Colors[ImGuiCol_SeparatorActive]  = aulColor2imVec4("BorderFocus");
+    // リサイズグリップ
+    style.Colors[ImGuiCol_ResizeGrip]        = aulColor2imVec4("Border");
+    style.Colors[ImGuiCol_ResizeGripHovered] = aulColor2imVec4("Border");
+    style.Colors[ImGuiCol_ResizeGripActive]  = aulColor2imVec4("BorderFocus");
+    // テキストカーソル
+    style.Colors[ImGuiCol_InputTextCursor] = aulColor2imVec4("Text");
+    // タブ
+    style.Colors[ImGuiCol_TabHovered]          = aulColor2imVec4("GroupingHover");
+    style.Colors[ImGuiCol_Tab]                 = aulColor2imVec4("Grouping");
+    style.Colors[ImGuiCol_TabSelected]         = aulColor2imVec4("GroupingSelect");
+    style.Colors[ImGuiCol_TabSelectedOverline] = aulColor2imVec4("BorderFocus");
+    style.Colors[ImGuiCol_TabDimmed]           = aulColor2imVec4("GroupingHover");
+    style.Colors[ImGuiCol_TabDimmedSelected]   = aulColor2imVec4("GroupingSelect");
+    style.Colors[ImGuiCol_TabDimmedSelectedOverline] = aulColor2imVec4("GroupingSelect");
+    // テキスト選択
+    style.Colors[ImGuiCol_TextSelectedBg] = aulColor2imVec4("TextSelect");
+    // ドラッグ&ドロップ時の枠線
+    style.Colors[ImGuiCol_DragDropTarget] = aulColor2imVec4("BorderFocus");
 
     //
     // グラデーションエディター用の D3D を初期化
@@ -231,6 +261,13 @@ void App::renderFrame()
 
     // 非表示になった瞬間にすべてのポップアップを閉じる
     if (just_hidden) {
+        ImGui::ClosePopupsOverWindow(nullptr, false);
+    }
+
+    // ウィンドウの外をクリックした時にすべてのポップアップを閉じる
+    bool any_mouse_pressed =
+        (GetAsyncKeyState(VK_LBUTTON) & 0x8000) || (GetAsyncKeyState(VK_RBUTTON) & 0x8000) || (GetAsyncKeyState(VK_MBUTTON) & 0x8000) || (GetAsyncKeyState(VK_XBUTTON1) & 0x8000) || (GetAsyncKeyState(VK_XBUTTON2) & 0x8000);
+    if (ImGuiContext& g = *GImGui; (!g.HoveredWindow && any_mouse_pressed)) {
         ImGui::ClosePopupsOverWindow(nullptr, false);
     }
 
