@@ -4,6 +4,12 @@
 //   2. v0.4.3 以前を使用していたプロジェクトファイル（aup2）をビルドした exe にドラッグ&ドロップする。
 //      変換に成功すると変換後のプロジェクトファイルが同一階層のディレクトリに出力される。
 
+// Gradient Editor v0.4.3 以前を使用していたプロジェクトファイルを v0.5.0 以降の形式に変換するツール
+// 使い方：
+//   1. このファイルを exe としてビルドする。
+//   2. v0.4.3 以前を使用していたプロジェクトファイル（aup2）をビルドした exe にドラッグ&ドロップする。
+//      変換に成功すると変換後のプロジェクトファイルが同一階層のディレクトリに出力される。
+
 // clang-format off
 #define WIN32_LEAN_AND_MEAN
 #define NOMINMAX
@@ -292,11 +298,11 @@ static bool processFile(const std::wstring& input_path_str)
     return true;
 }
 
-int WINAPI WinMain(
-    HINSTANCE hInstance,
-    HINSTANCE hPrevInstance,
-    LPSTR lpCmdLine,
-    int nCmdShow)
+int WINAPI wWinMain(
+    HINSTANCE,
+    HINSTANCE,
+    PWSTR,
+    int)
 {
     int argc;
     LPWSTR* argv = CommandLineToArgvW(GetCommandLineW(), &argc);
@@ -332,8 +338,8 @@ int WINAPI WinMain(
     }
 
     std::wstring msg;
-    if (ok > 0) msg += L"変換成功 (" + std::to_wstring(ok) + L" 件):\n" + success_list;
-    if (fail > 0) msg += L"\n変換失敗 (" + std::to_wstring(fail) + L" 件):\n" + fail_list;
+    if (ok > 0) msg += L"変換成功（" + std::to_wstring(ok) + L" 件）:\n" + success_list;
+    if (fail > 0) msg += L"\n変換失敗（" + std::to_wstring(fail) + L" 件）:\n" + fail_list;
 
     MessageBoxW(NULL, msg.c_str(), L"Gradient Editor Project Converter",
                 fail > 0 ? MB_ICONWARNING : MB_ICONINFORMATION);
