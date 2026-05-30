@@ -493,8 +493,10 @@ void MainView::renderGradientEditor()
     imgui_utils::alignForWidth(alpha_tool_buttons_width, 1.0f);  // 右揃えにする
 
     bool select_back_alpha_marker = imgui_utils::squareIconButton(ICON_MS_ARROW_BACK_2, "##select_back_alpha_marker");
+    if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNormal)) ImGui::SetTooltip("%s", m_config_wrapper->tr(L"前のマーカーを選択").c_str());
     ImGui::SameLine(0, 0);
     bool select_next_alpha_marker = imgui_utils::squareIconButton(ICON_MS_PLAY_ARROW, "##select_next_alpha_marker");
+    if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNormal)) ImGui::SetTooltip("%s", m_config_wrapper->tr(L"次のマーカーを選択").c_str());
     ImGui::SameLine();
     bool is_distribute_alpha_marker = imgui_utils::squareIconButton(ICON_MS_ARROW_RANGE, "##alpha_marker_distribute");
     if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNormal)) ImGui::SetTooltip("%s", m_config_wrapper->tr(L"マーカーを等間隔に配置").c_str());
@@ -628,7 +630,7 @@ void MainView::renderGradientEditor()
     // 各種ツールボタン
     //
     bool is_reset_all = imgui_utils::squareIconButton(ICON_MS_SYNC, "##reset");
-    if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNormal)) ImGui::SetTooltip("%s", m_config_wrapper->tr(L"リセット").c_str());
+    if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNormal)) ImGui::SetTooltip("%s", m_config_wrapper->tr(L"マーカーをリセット").c_str());
     ImGui::SameLine();
 
     constexpr int32_t tool_icon_num = 7;
@@ -636,8 +638,10 @@ void MainView::renderGradientEditor()
     imgui_utils::alignForWidth(tb_width, 1.0f);  // 右揃えにする
 
     bool select_back_marker = imgui_utils::squareIconButton(ICON_MS_ARROW_BACK_2, "##left");
+    if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNormal)) ImGui::SetTooltip("%s", m_config_wrapper->tr(L"前のマーカーを選択").c_str());
     ImGui::SameLine(0, 0);
     bool select_next_marker = imgui_utils::squareIconButton(ICON_MS_PLAY_ARROW, "##right");
+    if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNormal)) ImGui::SetTooltip("%s", m_config_wrapper->tr(L"次のマーカーを選択").c_str());
     ImGui::SameLine();
     bool is_distribute_marker = imgui_utils::squareIconButton(ICON_MS_ARROW_RANGE, "##distribute");
     if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNormal)) ImGui::SetTooltip("%s", m_config_wrapper->tr(L"マーカーを等間隔に配置").c_str());
