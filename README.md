@@ -23,7 +23,7 @@
 
 [AviUtl ExEdit2](https://spring-fragrance.mints.ne.jp/aviutl/)
 
-- `beta36` 以降必須（`beta45` で動作確認済み）。
+- `beta36` 以降必須（`beta48` で動作確認済み）。
 
 ## インストール
 
