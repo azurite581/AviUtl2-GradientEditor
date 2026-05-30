@@ -39,7 +39,7 @@ if(MSVC)
         $<IF:$<CONFIG:Debug>,/Gy-,/Gy>
     )
 
-    target_link_options(GradientEditorProjectConverter PRIVATE
+    target_link_options(${PROJECT_NAME} PRIVATE
         $<$<CONFIG:Release>:/LTCG>
 
         $<$<CONFIG:Release>:/OPT:REF>
