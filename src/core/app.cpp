@@ -210,6 +210,11 @@ void App::run(std::promise<HWND>&& hwnd_promise)
         get_logger_wrapper_interface(gradient_editor::g_app_state.log_handle),
         get_config_wrapper_interface(gradient_editor::g_app_state.config_handle));
 
+    m_main_view->setWindowVisible({
+        static_cast<bool>(gradient_editor::g_app_state.settings.preset_tab),
+        static_cast<bool>(gradient_editor::g_app_state.settings.history_tab)
+    });
+
     // WM_SIZE で ImGui のレンダリング処理を呼び出すために保存する
     gradient_editor::g_app_state.render = [this]() {
         renderFrame();
@@ -302,6 +307,10 @@ void App::renderFrame()
 
 void App::cleanup()
 {
+    auto visible = m_main_view->getWindowVisible();
+    gradient_editor::g_app_state.settings.preset_tab = static_cast<uint32_t>(visible.preset_window);
+    gradient_editor::g_app_state.settings.history_tab = static_cast<uint32_t>(visible.history_window);
+
     writeSettings();                      // ウィンドウのレイアウト等の設定をファイルに書き込む
     m_main_view.get()->writeHistories();  // グラデーションの履歴をファイルに書き込む
 
@@ -338,6 +347,10 @@ void App::readSettings()
 
     auto ui_scale                                  = getConfigInt(gradient_editor::g_app_state.settings_file_path, "settings", "ui_scale", 100);
     gradient_editor::g_app_state.settings.ui_scale = std::clamp(ui_scale, 50u, 400u);
+    auto preset_tab                                  = getConfigInt(gradient_editor::g_app_state.settings_file_path, "settings", "preset_tab", 0);
+    gradient_editor::g_app_state.settings.preset_tab = std::clamp(preset_tab, 0u, 1u);
+    auto history_tab                                  = getConfigInt(gradient_editor::g_app_state.settings_file_path, "settings", "history_tab", 0);
+    gradient_editor::g_app_state.settings.history_tab = std::clamp(history_tab, 0u, 1u);
 
     // [imgui] セクション以下全体を抽出
     size_t imgui_start = settings_content.find("[imgui]");
@@ -373,6 +386,8 @@ void App::writeSettings()
     std::string settings_data_str{};
     settings_data_str += "[settings]\n";
     settings_data_str += std::format("ui_scale={}\n", gradient_editor::g_app_state.settings.ui_scale);
+    settings_data_str += std::format("preset_tab={}\n", gradient_editor::g_app_state.settings.preset_tab);
+    settings_data_str += std::format("history_tab={}\n", gradient_editor::g_app_state.settings.history_tab);
 
     settings_data_str += "\n";
 

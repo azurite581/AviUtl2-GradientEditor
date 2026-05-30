@@ -44,6 +44,8 @@ struct ApplicationState {
 
     struct Settigs {
         uint32_t ui_scale = 100;
+        uint32_t preset_tab = 0;
+        uint32_t history_tab = 0;
     };
     Settigs settings;
 

@@ -11,16 +11,18 @@
 
 class MainView {
 public:
+    struct WindowVisible {
+        bool preset_window  = false;
+        bool history_window = false;
+    };
+
     MainView(LoggerWrapperInterface* logger_wrapper, ConfigWrapperInterface* config_wrapper);
     void render();
     void writeHistories();
+    void setWindowVisible(const WindowVisible& visible) noexcept { m_window_visible = visible; }
+    WindowVisible getWindowVisible() const noexcept { return m_window_visible; }
 
 private:
-    struct WindowVisible {
-        bool preset_window  = true;
-        bool history_window = true;
-    };
-
     bool colorPickerPopup(const char* label, ImVec4& current_color, ImVec4& previous_color);
     void renderGradientEditor();
     void renderColorPropertyEditor(GradientData* data);
