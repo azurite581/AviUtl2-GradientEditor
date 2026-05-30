@@ -1,6 +1,6 @@
 project:
   variables:
-    VERSION: v0.6.0
+    VERSION: v0.6.1
     AUTHOR: azurite
     LABEL: 色調整
     MARKER_MAX_COUNT: 100

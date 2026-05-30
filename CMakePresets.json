@@ -10,7 +10,7 @@
         "CMAKE_C_COMPILER": "cl.exe",
         "CMAKE_CXX_COMPILER": "cl.exe",
         "MARKER_COUNT": "100",
-        "PLUGIN_VERSION": "0.6.0"
+        "PLUGIN_VERSION": "0.6.1"
       }
     },
     {
