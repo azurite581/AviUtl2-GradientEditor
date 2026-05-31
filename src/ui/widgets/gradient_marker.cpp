@@ -441,6 +441,7 @@ void MarkerManager::updateMarkerAndMidpointPosition(const ImVec2& mouse_pos)
         addMarker(m_state.marker_id_counter, marker_pos, m_new_marker_value, m_default_midpoint_ratio);
 
         m_state.selected_marker_id = m_state.marker_id_counter;  // 追加したマーカーを選択状態にする
+        m_state.selected_midpoint_id = m_state.marker_id_counter;
         m_state.clicked            = Clicked::Marker;
 
         ++m_state.marker_id_counter;
