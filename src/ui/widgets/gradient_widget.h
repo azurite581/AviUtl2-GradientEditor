@@ -58,8 +58,8 @@ GradientData* drawGradientEditor(
     const std::string label,
     const ImVec2& display_size,
     const GradientData& data,
-    bool redraw = false,
-    bool replace_data = false,
+    bool redraw                 = false,
+    bool replace_data           = false,
     GradientEditorFlags flags   = GradientEditorFlags_None,
     GradientEditorConfig config = GradientEditorConfig());
 

@@ -4,16 +4,6 @@
 #include "imgui_internal.h"
 
 namespace custom_ui {
-
-struct GradientCache {
-    ImVec2                                  size = {};
-    GradientData                            last_data = {};
-    bool                                    is_dirty = true;
-    Microsoft::WRL::ComPtr<ID3D11Texture2D> texture;
-    ID3D11RenderTargetView*                 rtv = nullptr;
-    ID3D11ShaderResourceView*               srv = nullptr;
-};
-
 Microsoft::WRL::ComPtr<ID3D11Device> g_d3d_device                = nullptr;
 Microsoft::WRL::ComPtr<ID3D11DeviceContext> g_d3d_device_context = nullptr;
 GradientRenderer::RenderResources g_resources;
@@ -72,7 +62,7 @@ GradientData* drawGradientEditor(
         gradient_data->setInterpDir(data.m_interp_dir);
 
         gradient_data->m_is_dirty = true;
-        it = g_editor_gradients.emplace(label, std::move(gradient_data)).first;
+        it                        = g_editor_gradients.emplace(label, std::move(gradient_data)).first;
     }
 
     auto* gradient_data = it->second.get();
@@ -144,7 +134,7 @@ GradientData* drawGradientEditor(
 
     ImVec2 gradient_region_size = dsize;
     ImVec2 cursor               = ImGui::GetCursorScreenPos();
-    ImVec2 gradient_cursor = ImVec2(cursor.x + marker_half_width, cursor.y);
+    ImVec2 gradient_cursor      = ImVec2(cursor.x + marker_half_width, cursor.y);
     ImGui::SetCursorScreenPos(gradient_cursor);
     gradient_region_size.x -= marker_half_width + window_padding_x;
     gradient_region_size.x = (std::max)(1.0f, gradient_region_size.x);
@@ -214,8 +204,7 @@ GradientData* drawGradientEditor(
 
     if (it != g_editor_gradients.end()) {
         if (old_color_markers != color_markers->getMarkers() ||
-            old_alpha_markers != alpha_markers->getMarkers()
-        ) {
+            old_alpha_markers != alpha_markers->getMarkers()) {
             gradient_data->m_is_dirty = true;
         }
     }
@@ -230,8 +219,7 @@ GradientData* drawGradientEditor(
             gradient_data->getPixelConstantBuffer(),
             &buffer_values,
             gradient_data->getTextureWidth(), gradient_data->getTextureHeight(),
-            gradient_data->getRtv(), gradient_data->getSrv()
-        );
+            gradient_data->getRtv(), gradient_data->getSrv());
 
         gradient_data->m_is_dirty = false;
     }
@@ -270,7 +258,7 @@ ID3D11ShaderResourceView* getGradientSrv(
         gradient_data->setInterpDir(data.m_interp_dir);
 
         gradient_data->m_is_dirty = true;
-        it = gradient_datas.emplace(label, std::move(gradient_data)).first;
+        it                        = gradient_datas.emplace(label, std::move(gradient_data)).first;
     } else {
         auto* old_data = gradient_datas[label].get();
 
@@ -329,8 +317,7 @@ ID3D11ShaderResourceView* getGradientSrv(
             gradient_data->getTextureWidth(),
             gradient_data->getTextureHeight(),
             gradient_data->getRtv(),
-            gradient_data->getSrv()
-        );
+            gradient_data->getSrv());
 
         gradient_data->m_is_dirty = false;
     }
