@@ -269,10 +269,20 @@ void App::renderFrame()
         ImGui::ClosePopupsOverWindow(nullptr, false);
     }
 
-    // ウィンドウの外をクリックした時にフォーカスを外し、すべてのポップアップを閉じる
+    static bool last_mouse_pressed = false;
     bool any_mouse_pressed =
-        (GetAsyncKeyState(VK_LBUTTON) & 0x8000) || (GetAsyncKeyState(VK_RBUTTON) & 0x8000) || (GetAsyncKeyState(VK_MBUTTON) & 0x8000) || (GetAsyncKeyState(VK_XBUTTON1) & 0x8000) || (GetAsyncKeyState(VK_XBUTTON2) & 0x8000);
-    if (ImGuiContext& g = *GImGui; (!g.HoveredWindow && any_mouse_pressed)) {
+        (GetAsyncKeyState(VK_LBUTTON) & 0x8000) ||
+        (GetAsyncKeyState(VK_RBUTTON) & 0x8000) ||
+        (GetAsyncKeyState(VK_MBUTTON) & 0x8000) ||
+        (GetAsyncKeyState(VK_XBUTTON1) & 0x8000) ||
+        (GetAsyncKeyState(VK_XBUTTON2) & 0x8000);
+
+    // 今フレームで新しくクリックされたかどうかを判定
+    bool mouse_clicked_this_frame = any_mouse_pressed && !last_mouse_pressed;
+    last_mouse_pressed = any_mouse_pressed;
+
+    if (ImGuiContext& g = *GImGui; mouse_clicked_this_frame && !g.HoveredWindow && g.MovingWindow == nullptr) {
+        ImGui::ClearActiveID();
         ImGui::ClosePopupsOverWindow(nullptr, false);
     }
 
