@@ -617,15 +617,15 @@ void MainView::renderGradientEditor()
     }
 
     // アルファスライダーポップアップ
-    static float current_alpha{1.0f};
+    static float current_alpha{100.0f};
     if (m_data->getAlphaMarkers()->isDoubleClickedMarker(ImGui::GetIO().MousePos)) {
-        current_alpha = m_data->getAlphaMarkers()->getSelectedMarkerValue().w;
-        ImGui::OpenPopup("alpha_slider_popup2");
+        current_alpha = m_data->getAlphaMarkers()->getSelectedMarkerValue().w * 100.0f;
+        ImGui::OpenPopup("alpha_slider_popup");
     }
-    if (ImGui::BeginPopup("alpha_slider_popup2")) {
-        if (ImGui::DragFloat("##alpha_value", &current_alpha, 0.01f, 0.0f, 1.0f, "%.2f")) {
-            float alpha = std::clamp(current_alpha, 0.0f, 1.0f);
-            m_data->getAlphaMarkers()->setSelectedMarkerValue(ImVec4(0, 0, 0, alpha));
+    if (ImGui::BeginPopup("alpha_slider_popup")) {
+        if (ImGui::DragFloat("##alpha_value", &current_alpha, 1.0f, 0.0f, 100.0f, "%.2f")) {
+            float alpha = std::clamp(current_alpha, 0.0f, 100.0f);
+            m_data->getAlphaMarkers()->setSelectedMarkerValue(ImVec4(0, 0, 0, alpha / 100.0f));
             m_redraw = true;
         }
         ImGui::EndPopup();
@@ -858,21 +858,21 @@ void MainView::renderColorPropertyEditor(GradientData* data)
 
         ImGui::SetNextItemWidth(width);
         float pos = curr.selected_marker_pos * 100.0f;
-        if (ImGui::DragFloat("##marker_pos", &pos, 0.01f, 0.0f, 100.0f, "%.2f")) {
+        if (ImGui::DragFloat("##marker_pos", &pos, 1.0f, 0.0f, 100.0f, "%.2f")) {
             data->getColorMarkers()->setSelectedMarkerPosition(pos / 100.0f);
             m_redraw = true;
         }
 
         ImGui::SetNextItemWidth(width);
         float mid = curr.selected_midpoint_ratio * 100.0f;
-        if (ImGui::DragFloat("##midpoint_ratio", &mid, 0.01f, 0.0f, 100.0f, "%.2f")) {
+        if (ImGui::DragFloat("##midpoint_ratio", &mid, 1.0f, 0.0f, 100.0f, "%.2f")) {
             data->getColorMarkers()->setSelectedMidpointRatio(mid / 100.0f);
             m_redraw = true;
         }
 
         ImGui::SetNextItemWidth(width);
         float blur = curr.blur_width * 100.0f;
-        if (ImGui::DragFloat("##blur_width", &blur, 0.1f, 0.0f, 100.0f, "%.0f")) {
+        if (ImGui::DragFloat("##blur_width", &blur, 1.0f, 0.0f, 100.0f, "%.0f")) {
             data->setColorBlurWidth(blur / 100.0f);
             m_redraw = true;
         }
@@ -939,28 +939,28 @@ void MainView::renderAlphaPropertyEditor(GradientData* data)
 
         ImGui::SetNextItemWidth(width);
         float value = curr.selected_alpha_marker_value * 100.0f;
-        if (ImGui::DragFloat("##alpha_marker_value", &value, 0.01f, 0.0f, 100.0f, "%.2f")) {
+        if (ImGui::DragFloat("##alpha_marker_value", &value, 1.0f, 0.0f, 100.0f, "%.2f")) {
             data->getAlphaMarkers()->setSelectedMarkerValue(ImVec4(0, 0, 0, value / 100.0f));
             m_redraw = true;
         }
 
         ImGui::SetNextItemWidth(width);
         float pos = curr.selected_alpha_marker_pos * 100.0f;
-        if (ImGui::DragFloat("##alpha_marker_pos", &pos, 0.01f, 0.0f, 100.0f, "%.2f")) {
+        if (ImGui::DragFloat("##alpha_marker_pos", &pos, 1.0f, 0.0f, 100.0f, "%.2f")) {
             data->getAlphaMarkers()->setSelectedMarkerPosition(pos / 100.0f);
             m_redraw = true;
         }
 
         ImGui::SetNextItemWidth(width);
         float midpoint = curr.selected_alpha_midpoint_ratio * 100.0f;
-        if (ImGui::DragFloat("##alpha_marker_midpoint", &midpoint, 0.01f, 0.0f, 100.0f, "%.2f")) {
+        if (ImGui::DragFloat("##alpha_marker_midpoint", &midpoint, 1.0f, 0.0f, 100.0f, "%.2f")) {
             data->getAlphaMarkers()->setSelectedMidpointRatio(midpoint / 100.0f);
             m_redraw = true;
         }
 
         ImGui::SetNextItemWidth(width);
         float blur = curr.alpha_blur_width * 100.0f;
-        if (ImGui::DragFloat("##alpha_blur_width", &blur, 0.1f, 0.0f, 100.0f, "%.0f")) {
+        if (ImGui::DragFloat("##alpha_blur_width", &blur, 1.0f, 0.0f, 100.0f, "%.0f")) {
             data->setAlphaBlurWidth(blur / 100.0f);
             m_redraw = true;
         }
