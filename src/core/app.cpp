@@ -273,7 +273,6 @@ void App::renderFrame()
     bool any_mouse_pressed =
         (GetAsyncKeyState(VK_LBUTTON) & 0x8000) || (GetAsyncKeyState(VK_RBUTTON) & 0x8000) || (GetAsyncKeyState(VK_MBUTTON) & 0x8000) || (GetAsyncKeyState(VK_XBUTTON1) & 0x8000) || (GetAsyncKeyState(VK_XBUTTON2) & 0x8000);
     if (ImGuiContext& g = *GImGui; (!g.HoveredWindow && any_mouse_pressed)) {
-        ImGui::ClearActiveID();
         ImGui::ClosePopupsOverWindow(nullptr, false);
     }
 
