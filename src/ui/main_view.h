@@ -52,6 +52,7 @@ private:
     bool m_apply   = false;
     bool m_load    = false;
     bool m_is_init = false;
+    bool m_redraw  = false;
 
     ImU32 m_object_video_color_start = 0;
     ImU32 m_object_video_color_stop  = 0;

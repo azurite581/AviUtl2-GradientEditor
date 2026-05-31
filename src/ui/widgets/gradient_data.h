@@ -41,6 +41,8 @@ public:
         MarkerData(1, 1.0f, {0.0f, 0.0f, 0.0f, 1.0f}, 0.5f),
     };
 
+    bool m_is_dirty = true;
+
     MarkerManager m_color_markers{};
     MarkerManager m_alpha_markers{};
 
