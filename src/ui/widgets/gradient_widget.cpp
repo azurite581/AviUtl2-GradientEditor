@@ -5,6 +5,15 @@
 
 namespace custom_ui {
 
+struct GradientCache {
+    ImVec2                                  size = {};
+    GradientData                            last_data = {};
+    bool                                    is_dirty = true;
+    Microsoft::WRL::ComPtr<ID3D11Texture2D> texture;
+    ID3D11RenderTargetView*                 rtv = nullptr;
+    ID3D11ShaderResourceView*               srv = nullptr;
+};
+
 Microsoft::WRL::ComPtr<ID3D11Device> g_d3d_device                = nullptr;
 Microsoft::WRL::ComPtr<ID3D11DeviceContext> g_d3d_device_context = nullptr;
 GradientRenderer::RenderResources g_resources;
@@ -41,14 +50,13 @@ GradientData* drawGradientEditor(
     const std::string label,
     const ImVec2& display_size,
     const GradientData& data,
-    GradientEditorFlags flags,
+    bool redraw,
     bool replace_data,
+    GradientEditorFlags flags,
     GradientEditorConfig config)
 {
     // レンダラーの初期化に失敗していたら早期終了
-    if (!g_d3d_device || !g_d3d_device_context) {
-        return nullptr;
-    }
+    if (!g_d3d_device || !g_d3d_device_context) return nullptr;
 
     auto it = g_editor_gradients.find(label);
 
@@ -56,18 +64,23 @@ GradientData* drawGradientEditor(
     if (it == g_editor_gradients.end()) {
         auto gradient_data = std::make_unique<GradientData>();
         gradient_data->init(g_d3d_device, static_cast<int32_t>(display_size.x), static_cast<int32_t>(display_size.y));
-        gradient_data->m_color_markers.resetMarkers(gradient_data->m_default_color_markers);
-        gradient_data->m_alpha_markers.resetMarkers(gradient_data->m_default_alpha_markers);
+        gradient_data->m_color_markers.resetMarkers(data.m_color_markers.getMarkers());
+        gradient_data->m_alpha_markers.resetMarkers(data.m_alpha_markers.getMarkers());
         gradient_data->setColorBlurWidth(data.m_blur_width);
         gradient_data->setAlphaBlurWidth(data.m_alpha_blur_width);
         gradient_data->setColorSpace(data.m_color_space);
         gradient_data->setInterpDir(data.m_interp_dir);
+
+        gradient_data->m_is_dirty = true;
         it = g_editor_gradients.emplace(label, std::move(gradient_data)).first;
     }
 
     auto* gradient_data = it->second.get();
     auto* color_markers = it->second.get()->getColorMarkers();
     auto* alpha_markers = it->second.get()->getAlphaMarkers();
+
+    auto old_color_markers = gradient_data->getColorMarkers()->getMarkers();
+    auto old_alpha_markers = gradient_data->getAlphaMarkers()->getMarkers();
 
     // コンフィグをセット
     color_markers->setIOEnable(config.io_enable);
@@ -83,7 +96,7 @@ GradientData* drawGradientEditor(
     const float marker_half_width = config.marker_size.x * 0.5f;
     const float window_padding_x  = ImGui::GetStyle().WindowPadding.x;
 
-    // データを置換する場合
+    // データを強制的に置換する場合
     if (replace_data) {
         gradient_data->getColorMarkers()->resetMarkers(data.m_color_markers.getMarkers());
         gradient_data->getAlphaMarkers()->resetMarkers(data.m_alpha_markers.getMarkers());
@@ -91,6 +104,7 @@ GradientData* drawGradientEditor(
         gradient_data->setAlphaBlurWidth(data.m_alpha_blur_width);
         gradient_data->setColorSpace(data.m_color_space);
         gradient_data->setInterpDir(data.m_interp_dir);
+        gradient_data->m_is_dirty = true;
     }
 
     ImVec2 dsize           = ImVec2(ImMax(1.0f, display_size.x), ImMax(1.0f, display_size.y));
@@ -101,22 +115,12 @@ GradientData* drawGradientEditor(
     if (gradient_data->getTextureWidth() != current_width ||
         gradient_data->getTextureHeight() != current_height) {
         gradient_data->init(g_d3d_device, current_width, current_height);
+        gradient_data->m_is_dirty = true;
     }
 
     // 表示サイズは動的に変わる可能性があるため、毎回セットする
     gradient_data->setGradientDisplayWidth(dsize.x);
     gradient_data->setGradientDisplayHeight(dsize.y);
-
-    // ピクセルシェーダーに渡すコンスタントバッファーの値を設定
-    GradientRenderer::PixelConstantBuffer buffer_values = gradient_data->gradientData2pixelConstantBuffer();
-    // グラデーションをレンダリング
-    GradientRenderer::runOffscreenRendering(
-        g_d3d_device_context,
-        g_resources,
-        gradient_data->getPixelConstantBuffer(),
-        &buffer_values,
-        gradient_data->getTextureWidth(), gradient_data->getTextureHeight(),
-        gradient_data->getRtv(), gradient_data->getSrv());
 
     if (!(flags & GradientEditorFlags_NoMarker)) ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(ImGui::GetStyle().ItemSpacing.x, 0.0f));
 
@@ -140,17 +144,18 @@ GradientData* drawGradientEditor(
 
     ImVec2 gradient_region_size = dsize;
     ImVec2 cursor               = ImGui::GetCursorScreenPos();
-    ImGui::SetCursorScreenPos(ImVec2(cursor.x + marker_half_width, cursor.y));
+    ImVec2 gradient_cursor = ImVec2(cursor.x + marker_half_width, cursor.y);
+    ImGui::SetCursorScreenPos(gradient_cursor);
     gradient_region_size.x -= marker_half_width + window_padding_x;
     gradient_region_size.x = (std::max)(1.0f, gradient_region_size.x);
 
     // グラデーション本体
-    ImGui::Image((ImTextureID)(intptr_t)gradient_data->getOutputSrv(), gradient_region_size);
+    ImGui::InvisibleButton("gradient_region", gradient_region_size);
     ImVec2 p0             = ImGui::GetItemRectMin();
     ImVec2 p1             = ImGui::GetItemRectMax();
     ImDrawList* draw_list = ImGui::GetWindowDrawList();
 
-    // グラデーションの描画領域を基準にマーカーの座標を計算するため、必須
+    // グラデーションの描画領域を基準にマーカーの座標を計算する
     color_markers->setGradientRegion(p0, p1);
     alpha_markers->setGradientRegion(p0, p1);
 
@@ -162,14 +167,16 @@ GradientData* drawGradientEditor(
     if (!(flags & GradientEditorFlags_NoMarker)) ImGui::PopStyleVar();
 
     // マーカーの描画
+    ImVec2 marker_region_size;
     if (!(flags & GradientEditorFlags_NoMarker)) {
-        ImVec2 marker_region_size = ImVec2(dsize.x, color_markers->getMarkerRegionHeight());
+        ImVec2 marker_region_size_ = ImVec2(dsize.x, color_markers->getMarkerRegionHeight());
 
         ImVec2 cursor = ImGui::GetCursorScreenPos();
         ImGui::SetCursorScreenPos(ImVec2(cursor.x + marker_half_width, cursor.y));
-        marker_region_size.x -= marker_half_width + window_padding_x;
+        marker_region_size_.x -= marker_half_width + window_padding_x;
+        marker_region_size = marker_region_size_;
 
-        ImGui::InvisibleButton("markers_draw_region", marker_region_size);
+        ImGui::InvisibleButton("markers_draw_region_", marker_region_size_);
         p0 = ImGui::GetItemRectMin();
         p1 = ImGui::GetItemRectMax();
 
@@ -205,6 +212,36 @@ GradientData* drawGradientEditor(
     color_markers->updateMarkerAndMidpointPosition(mouse_pos);
     alpha_markers->updateMarkerAndMidpointPosition(mouse_pos);
 
+    if (it != g_editor_gradients.end()) {
+        if (old_color_markers != color_markers->getMarkers() ||
+            old_alpha_markers != alpha_markers->getMarkers()
+        ) {
+            gradient_data->m_is_dirty = true;
+        }
+    }
+
+    if (gradient_data->m_is_dirty || redraw) {
+        // ピクセルシェーダーに渡すコンスタントバッファーの値を設定
+        GradientRenderer::PixelConstantBuffer buffer_values = gradient_data->gradientData2pixelConstantBuffer();
+        // グラデーションをレンダリング
+        GradientRenderer::runOffscreenRendering(
+            g_d3d_device_context,
+            g_resources,
+            gradient_data->getPixelConstantBuffer(),
+            &buffer_values,
+            gradient_data->getTextureWidth(), gradient_data->getTextureHeight(),
+            gradient_data->getRtv(), gradient_data->getSrv()
+        );
+
+        gradient_data->m_is_dirty = false;
+    }
+
+    ImGui::SetCursorScreenPos(gradient_cursor);
+    ImGui::Image((ImTextureID)(intptr_t)gradient_data->getOutputSrv(), gradient_region_size);
+    if (!(flags & GradientEditorFlags_NoMarker)) {
+        ImGui::InvisibleButton("markers_draw_region", marker_region_size);
+    }
+
     return gradient_data;
 }
 
@@ -225,21 +262,42 @@ ID3D11ShaderResourceView* getGradientSrv(
     if (it == gradient_datas.end()) {
         auto gradient_data = std::make_unique<GradientData>();
         gradient_data->init(g_d3d_device, static_cast<int32_t>(display_size.x), static_cast<int32_t>(display_size.y));
-        gradient_data->m_color_markers.resetMarkers(gradient_data->m_default_color_markers);
-        gradient_data->m_alpha_markers.resetMarkers(gradient_data->m_default_alpha_markers);
+        gradient_data->m_color_markers.resetMarkers(data.m_color_markers.getMarkers());
+        gradient_data->m_alpha_markers.resetMarkers(data.m_alpha_markers.getMarkers());
         gradient_data->setColorBlurWidth(data.m_blur_width);
         gradient_data->setAlphaBlurWidth(data.m_alpha_blur_width);
         gradient_data->setColorSpace(data.m_color_space);
         gradient_data->setInterpDir(data.m_interp_dir);
+
+        gradient_data->m_is_dirty = true;
         it = gradient_datas.emplace(label, std::move(gradient_data)).first;
     } else {
-        // 存在する場合はデータを上書き
-        gradient_datas[label].get()->getColorMarkers()->resetMarkers(data.m_color_markers.getMarkers());
-        gradient_datas[label].get()->getAlphaMarkers()->resetMarkers(data.m_alpha_markers.getMarkers());
-        gradient_datas[label].get()->setColorBlurWidth(data.m_blur_width);
-        gradient_datas[label].get()->setAlphaBlurWidth(data.m_alpha_blur_width);
-        gradient_datas[label].get()->setColorSpace(data.m_color_space);
-        gradient_datas[label].get()->setInterpDir(data.m_interp_dir);
+        auto* old_data = gradient_datas[label].get();
+
+        if (old_data->getColorMarkers()->getMarkers() != data.m_color_markers.getMarkers()) {
+            old_data->getColorMarkers()->resetMarkers(data.m_color_markers.getMarkers());
+            old_data->m_is_dirty = true;
+        }
+        if (old_data->getAlphaMarkers()->getMarkers() != data.m_alpha_markers.getMarkers()) {
+            old_data->getAlphaMarkers()->resetMarkers(data.m_alpha_markers.getMarkers());
+            old_data->m_is_dirty = true;
+        }
+        if (old_data->getBlurWidth() != data.getBlurWidth()) {
+            old_data->setColorBlurWidth(data.m_blur_width);
+            old_data->m_is_dirty = true;
+        }
+        if (old_data->getAlphaBlurWidth() != data.getAlphaBlurWidth()) {
+            old_data->setAlphaBlurWidth(data.m_alpha_blur_width);
+            old_data->m_is_dirty = true;
+        }
+        if (old_data->getColorSpace() != data.m_color_space) {
+            old_data->setColorSpace(data.m_color_space);
+            old_data->m_is_dirty = true;
+        }
+        if (old_data->getInterpDir() != data.m_interp_dir) {
+            old_data->setInterpDir(data.m_interp_dir);
+            old_data->m_is_dirty = true;
+        }
     }
 
     auto* gradient_data = it->second.get();
@@ -249,28 +307,33 @@ ID3D11ShaderResourceView* getGradientSrv(
     int32_t current_height = static_cast<int32_t>(dsize.y);
 
     // テクスチャサイズが表示サイズと異なる場合、再初期化を行う
-    if (gradient_data->getTextureWidth() != current_width ||
-        gradient_data->getTextureHeight() != current_height) {
+    if (gradient_data->getTextureWidth() != current_width || gradient_data->getTextureHeight() != current_height) {
         gradient_data->init(g_d3d_device, current_width, current_height);
+        gradient_data->m_is_dirty = true;
     }
 
     // 表示サイズは動的に変わる可能性があるため毎回セットし直す
     gradient_data->setGradientDisplayWidth(dsize.x);
     gradient_data->setGradientDisplayHeight(dsize.y);
 
-    // ピクセルシェーダーに渡すコンスタントバッファーの値を設定
-    GradientRenderer::PixelConstantBuffer buffer_values = gradient_data->gradientData2pixelConstantBuffer();
+    if (gradient_data->m_is_dirty) {
+        // ピクセルシェーダーに渡すコンスタントバッファーの値を設定
+        GradientRenderer::PixelConstantBuffer buffer_values = gradient_data->gradientData2pixelConstantBuffer();
 
-    // グラデーションをレンダリング
-    GradientRenderer::runOffscreenRendering(
-        g_d3d_device_context,
-        g_resources,
-        gradient_data->getPixelConstantBuffer(),
-        &buffer_values,
-        gradient_data->getTextureWidth(),
-        gradient_data->getTextureHeight(),
-        gradient_data->getRtv(),
-        gradient_data->getSrv());
+        // グラデーションをレンダリング
+        GradientRenderer::runOffscreenRendering(
+            g_d3d_device_context,
+            g_resources,
+            gradient_data->getPixelConstantBuffer(),
+            &buffer_values,
+            gradient_data->getTextureWidth(),
+            gradient_data->getTextureHeight(),
+            gradient_data->getRtv(),
+            gradient_data->getSrv()
+        );
+
+        gradient_data->m_is_dirty = false;
+    }
 
     return gradient_data->getOutputSrv();
 }

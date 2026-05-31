@@ -389,9 +389,10 @@ void MainView::renderGradientEditor()
 
     float frame_height = ImGui::GetFrameHeight();
 
-    static GradientData replace_data;
+    static GradientData gradient_data;
     if (!m_is_init && !m_history_window.m_history_data.empty()) {
-        replace_data = m_history_window.m_history_data.back().data;
+        // 最後の履歴をデフォルトのグラデーションデータとして使用する
+        gradient_data = m_history_window.m_history_data.back().data;
     }
 
     //
@@ -581,20 +582,22 @@ void MainView::renderGradientEditor()
         if (m_data != nullptr) {
             m_history_window.pushHistory(*m_data);
         }
-        replace_data = m_preset_window.getSelectedGradientData();
+        gradient_data = m_preset_window.getSelectedGradientData();
     } else if (m_history_window.isHistoryClicked()) {
-        replace_data = m_history_window.getSelectedGradient();
+        gradient_data = m_history_window.getSelectedGradient();
     }
 
     bool should_replace = m_preset_window.isPresetClicked() || m_history_window.isHistoryClicked() || (!m_is_init && !m_history_window.m_history_data.empty());
-    m_data              = custom_ui::drawGradientEditor(
+    m_data = custom_ui::drawGradientEditor(
         "gradient",
         ImVec2(std::clamp(ImGui::GetContentRegionAvail().x, 1.0f, 4096.0f), frame_height * scale::relative::GRADIENT_HEIGHT),
-        replace_data,
-        custom_ui::GradientEditorFlags_None |
-            custom_ui::GradientEditorFlags_AlphaMarker,
+        gradient_data,
+        m_redraw,
         should_replace,
-        config);
+        custom_ui::GradientEditorFlags_None | custom_ui::GradientEditorFlags_AlphaMarker,
+        config
+    );
+    m_redraw = false;
 
     ImGui::Dummy(ImVec2(0, frame_height * scale::relative::GRADIENT_MARGIN_Y));
     m_preset_window.setTargetGradientData(*m_data);
@@ -610,6 +613,7 @@ void MainView::renderGradientEditor()
     }
     if (colorPickerPopup(COLOR_PICKER_POPUP_ID, m_popup_current_color, m_popup_previous_color)) {
         m_data->getColorMarkers()->setSelectedMarkerValue(m_popup_current_color);
+        m_redraw = true;
     }
 
     // アルファスライダーポップアップ
@@ -622,6 +626,7 @@ void MainView::renderGradientEditor()
         if (ImGui::DragFloat("##alpha_value", &current_alpha, 0.01f, 0.0f, 1.0f, "%.2f")) {
             float alpha = std::clamp(current_alpha, 0.0f, 1.0f);
             m_data->getAlphaMarkers()->setSelectedMarkerValue(ImVec4(0, 0, 0, alpha));
+            m_redraw = true;
         }
         ImGui::EndPopup();
     }
@@ -676,11 +681,26 @@ void MainView::renderGradientEditor()
     }
     if (select_back_marker) m_data->getColorMarkers()->selectBackMarker();
     if (select_next_marker) m_data->getColorMarkers()->selectNextMarker();
-    if (is_distribute_marker) m_data->getColorMarkers()->distributeMarkersEvenly();
-    if (is_distribute_marker_and_midpoint) m_data->getColorMarkers()->distributeMarkersAndMipointsEvenly();
-    if (is_reset_midpoint) m_data->getColorMarkers()->resetMidpoints();
-    if (is_reverse) m_data->getColorMarkers()->reverseMarkers();
-    if (is_delete_marker) m_data->getColorMarkers()->deleteSelectedMarker();
+    if (is_distribute_marker) {
+        m_data->getColorMarkers()->distributeMarkersEvenly();
+        m_redraw = true;
+    }
+    if (is_distribute_marker_and_midpoint) {
+        m_data->getColorMarkers()->distributeMarkersAndMipointsEvenly();
+        m_redraw = true;
+    }
+    if (is_reset_midpoint) {
+        m_data->getColorMarkers()->resetMidpoints();
+        m_redraw = true;
+    }
+    if (is_reverse) {
+        m_data->getColorMarkers()->reverseMarkers();
+        m_redraw = true;
+    }
+    if (is_delete_marker) {
+        m_data->getColorMarkers()->deleteSelectedMarker();
+        m_redraw = true;
+    }
 
     // アルファマーカーの操作
     if (is_reset_alpha_marker) {
@@ -697,11 +717,26 @@ void MainView::renderGradientEditor()
     }
     if (select_back_alpha_marker) m_data->getAlphaMarkers()->selectBackMarker();
     if (select_next_alpha_marker) m_data->getAlphaMarkers()->selectNextMarker();
-    if (is_distribute_alpha_marker) m_data->getAlphaMarkers()->distributeMarkersEvenly();
-    if (is_distribute_alpha_marker_and_alpha_midpoint) m_data->getAlphaMarkers()->distributeMarkersAndMipointsEvenly();
-    if (is_reset_alpha_midpoint) m_data->getAlphaMarkers()->resetMidpoints();
-    if (is_reverse_alpha_marker) m_data->getAlphaMarkers()->reverseMarkers();
-    if (is_delete_alpha_marker) m_data->getAlphaMarkers()->deleteSelectedMarker();
+    if (is_distribute_alpha_marker) {
+        m_data->getAlphaMarkers()->distributeMarkersEvenly();
+        m_redraw = true;
+    }
+    if (is_distribute_alpha_marker_and_alpha_midpoint) {
+        m_data->getAlphaMarkers()->distributeMarkersAndMipointsEvenly();
+        m_redraw = true;
+    }
+    if (is_reset_alpha_midpoint) {
+        m_data->getAlphaMarkers()->resetMidpoints();
+        m_redraw = true;
+    }
+    if (is_reverse_alpha_marker) {
+        m_data->getAlphaMarkers()->reverseMarkers();
+        m_redraw = true;
+    }
+    if (is_delete_alpha_marker) {
+        m_data->getAlphaMarkers()->deleteSelectedMarker();
+        m_redraw = true;
+    }
 
     // プリセットがクリックされた場合、現在のグラデーションがプリセットのものに置き換わるため、
     // その時のグラデーションのデータを差分検知のために保存しておく
@@ -825,24 +860,30 @@ void MainView::renderColorPropertyEditor(GradientData* data)
         float pos = curr.selected_marker_pos * 100.0f;
         if (ImGui::DragFloat("##marker_pos", &pos, 0.01f, 0.0f, 100.0f, "%.2f")) {
             data->getColorMarkers()->setSelectedMarkerPosition(pos / 100.0f);
+            m_redraw = true;
         }
 
         ImGui::SetNextItemWidth(width);
         float mid = curr.selected_midpoint_ratio * 100.0f;
         if (ImGui::DragFloat("##midpoint_ratio", &mid, 0.01f, 0.0f, 100.0f, "%.2f")) {
             data->getColorMarkers()->setSelectedMidpointRatio(mid / 100.0f);
+            m_redraw = true;
         }
 
         ImGui::SetNextItemWidth(width);
         float blur = curr.blur_width * 100.0f;
         if (ImGui::DragFloat("##blur_width", &blur, 0.1f, 0.0f, 100.0f, "%.0f")) {
             data->setColorBlurWidth(blur / 100.0f);
+            m_redraw = true;
         }
 
         ImGui::SetNextItemWidth(width);
         if (ImGui::BeginCombo("##color_space", COLOR_SPACE_NAMES[curr.color_space_index])) {
             for (uint32_t i = 0; i < IM_ARRAYSIZE(COLOR_SPACE_NAMES); i++) {
-                if (ImGui::Selectable(COLOR_SPACE_NAMES[i], curr.color_space_index == i)) data->setColorSpace(i);
+                if (ImGui::Selectable(COLOR_SPACE_NAMES[i], curr.color_space_index == i)) {
+                    data->setColorSpace(i);
+                    m_redraw = true;
+                }
             }
             ImGui::EndCombo();
         }
@@ -851,7 +892,10 @@ void MainView::renderColorPropertyEditor(GradientData* data)
         if (ImGui::BeginCombo("##interp_dir", m_config_wrapper->tr(str_conv::multiByteToWideChar(INTERP_DIR_NAMES[curr.interp_dir_index]).c_str()).c_str())) {
             for (uint32_t i = 0; i < IM_ARRAYSIZE(INTERP_DIR_NAMES); i++) {
                 if (ImGui::Selectable(m_config_wrapper->tr(str_conv::multiByteToWideChar(INTERP_DIR_NAMES[i]).c_str()).c_str(), curr.interp_dir_index == i))
+                {
                     data->setInterpDir(i);
+                    m_redraw = true;
+                }
             }
             ImGui::EndCombo();
         }
@@ -897,24 +941,28 @@ void MainView::renderAlphaPropertyEditor(GradientData* data)
         float value = curr.selected_alpha_marker_value * 100.0f;
         if (ImGui::DragFloat("##alpha_marker_value", &value, 0.01f, 0.0f, 100.0f, "%.2f")) {
             data->getAlphaMarkers()->setSelectedMarkerValue(ImVec4(0, 0, 0, value / 100.0f));
+            m_redraw = true;
         }
 
         ImGui::SetNextItemWidth(width);
         float pos = curr.selected_alpha_marker_pos * 100.0f;
         if (ImGui::DragFloat("##alpha_marker_pos", &pos, 0.01f, 0.0f, 100.0f, "%.2f")) {
             data->getAlphaMarkers()->setSelectedMarkerPosition(pos / 100.0f);
+            m_redraw = true;
         }
 
         ImGui::SetNextItemWidth(width);
         float midpoint = curr.selected_alpha_midpoint_ratio * 100.0f;
         if (ImGui::DragFloat("##alpha_marker_midpoint", &midpoint, 0.01f, 0.0f, 100.0f, "%.2f")) {
             data->getAlphaMarkers()->setSelectedMidpointRatio(midpoint / 100.0f);
+            m_redraw = true;
         }
 
         ImGui::SetNextItemWidth(width);
         float blur = curr.alpha_blur_width * 100.0f;
         if (ImGui::DragFloat("##alpha_blur_width", &blur, 0.1f, 0.0f, 100.0f, "%.0f")) {
             data->setAlphaBlurWidth(blur / 100.0f);
+            m_redraw = true;
         }
     }
     ImGui::EndGroup();
