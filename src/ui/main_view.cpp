@@ -326,10 +326,9 @@ void MainView::render()
         ImGui::TextUnformatted(m_config_wrapper->tr(L"UIのサイズ").c_str());
         ImGui::SameLine();
         static float font_scale_main = old_font_scale_main;
-        if (ImGui::DragFloat("##ui_size", &font_scale_main, 0.02f, 0.5f, 4.0f, "%.2f")) {
-            font_scale_main = std::clamp(font_scale_main, 0.5f, 4.0f);
-            ;
-            ImGui::GetStyle().FontScaleMain = font_scale_main;
+        int32_t font_scale = static_cast<int32_t>(font_scale_main * 100.0f);
+        if (ImGui::DragInt("##ui_size", &font_scale, 1.0f, 50, 400, "%d%%", ImGuiSliderFlags_AlwaysClamp)) {
+            ImGui::GetStyle().FontScaleMain = font_scale_main = std::clamp(font_scale, 50, 400) / 100.0f;
         }
 
         ImGui::Dummy(ImVec2(0, ImGui::GetFrameHeight() * ITEM_SPACING_SCALE_Y));
@@ -623,7 +622,7 @@ void MainView::renderGradientEditor()
         ImGui::OpenPopup("alpha_slider_popup");
     }
     if (ImGui::BeginPopup("alpha_slider_popup")) {
-        if (ImGui::DragFloat("##alpha_value", &current_alpha, 1.0f, 0.0f, 100.0f, "%.2f")) {
+        if (ImGui::DragFloat("##alpha_value", &current_alpha, 1.0f, 0.0f, 100.0f, "%.2f", ImGuiSliderFlags_AlwaysClamp)) {
             float alpha = std::clamp(current_alpha, 0.0f, 100.0f);
             m_data->getAlphaMarkers()->setSelectedMarkerValue(ImVec4(0, 0, 0, alpha / 100.0f));
             m_redraw = true;
@@ -806,6 +805,8 @@ void MainView::renderGradientEditor()
 
 void MainView::renderColorPropertyEditor(GradientData* data)
 {
+    static const ImGuiSliderFlags slider_flags = ImGuiSliderFlags_AlwaysClamp;
+
     ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 0.0f);
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
     ImGui::PushStyleColor(ImGuiCol_SeparatorHovered, ImVec4(0, 0, 0, 0));
@@ -858,21 +859,21 @@ void MainView::renderColorPropertyEditor(GradientData* data)
 
         ImGui::SetNextItemWidth(width);
         float pos = curr.selected_marker_pos * 100.0f;
-        if (ImGui::DragFloat("##marker_pos", &pos, 1.0f, 0.0f, 100.0f, "%.2f")) {
+        if (ImGui::DragFloat("##marker_pos", &pos, 1.0f, 0.0f, 100.0f, "%.2f", slider_flags)) {
             data->getColorMarkers()->setSelectedMarkerPosition(pos / 100.0f);
             m_redraw = true;
         }
 
         ImGui::SetNextItemWidth(width);
         float mid = curr.selected_midpoint_ratio * 100.0f;
-        if (ImGui::DragFloat("##midpoint_ratio", &mid, 1.0f, 0.0f, 100.0f, "%.2f")) {
+        if (ImGui::DragFloat("##midpoint_ratio", &mid, 1.0f, 0.0f, 100.0f, "%.2f", slider_flags)) {
             data->getColorMarkers()->setSelectedMidpointRatio(mid / 100.0f);
             m_redraw = true;
         }
 
         ImGui::SetNextItemWidth(width);
         float blur = curr.blur_width * 100.0f;
-        if (ImGui::DragFloat("##blur_width", &blur, 1.0f, 0.0f, 100.0f, "%.0f")) {
+        if (ImGui::DragFloat("##blur_width", &blur, 1.0f, 0.0f, 100.0f, "%.0f", slider_flags)) {
             data->setColorBlurWidth(blur / 100.0f);
             m_redraw = true;
         }
@@ -905,6 +906,8 @@ void MainView::renderColorPropertyEditor(GradientData* data)
 
 void MainView::renderAlphaPropertyEditor(GradientData* data)
 {
+    static const ImGuiSliderFlags slider_flags = ImGuiSliderFlags_AlwaysClamp;
+
     ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 0.0f);
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
     ImGui::PushStyleColor(ImGuiCol_SeparatorHovered, ImVec4(0, 0, 0, 0));
@@ -939,28 +942,28 @@ void MainView::renderAlphaPropertyEditor(GradientData* data)
 
         ImGui::SetNextItemWidth(width);
         float value = curr.selected_alpha_marker_value * 100.0f;
-        if (ImGui::DragFloat("##alpha_marker_value", &value, 1.0f, 0.0f, 100.0f, "%.2f")) {
+        if (ImGui::DragFloat("##alpha_marker_value", &value, 1.0f, 0.0f, 100.0f, "%.2f", slider_flags)) {
             data->getAlphaMarkers()->setSelectedMarkerValue(ImVec4(0, 0, 0, value / 100.0f));
             m_redraw = true;
         }
 
         ImGui::SetNextItemWidth(width);
         float pos = curr.selected_alpha_marker_pos * 100.0f;
-        if (ImGui::DragFloat("##alpha_marker_pos", &pos, 1.0f, 0.0f, 100.0f, "%.2f")) {
+        if (ImGui::DragFloat("##alpha_marker_pos", &pos, 1.0f, 0.0f, 100.0f, "%.2f", slider_flags)) {
             data->getAlphaMarkers()->setSelectedMarkerPosition(pos / 100.0f);
             m_redraw = true;
         }
 
         ImGui::SetNextItemWidth(width);
         float midpoint = curr.selected_alpha_midpoint_ratio * 100.0f;
-        if (ImGui::DragFloat("##alpha_marker_midpoint", &midpoint, 1.0f, 0.0f, 100.0f, "%.2f")) {
+        if (ImGui::DragFloat("##alpha_marker_midpoint", &midpoint, 1.0f, 0.0f, 100.0f, "%.2f", slider_flags)) {
             data->getAlphaMarkers()->setSelectedMidpointRatio(midpoint / 100.0f);
             m_redraw = true;
         }
 
         ImGui::SetNextItemWidth(width);
         float blur = curr.alpha_blur_width * 100.0f;
-        if (ImGui::DragFloat("##alpha_blur_width", &blur, 1.0f, 0.0f, 100.0f, "%.0f")) {
+        if (ImGui::DragFloat("##alpha_blur_width", &blur, 1.0f, 0.0f, 100.0f, "%.0f", slider_flags)) {
             data->setAlphaBlurWidth(blur / 100.0f);
             m_redraw = true;
         }
