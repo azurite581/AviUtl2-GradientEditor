@@ -32,7 +32,8 @@ void HistoryWindow::pushHistory(const GradientData& gradient_data)
 void HistoryWindow::render(GradientConfigManager& manager, History& cfg)
 {
     static ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse;
-    if (ImGui::Begin((m_config_wrapper->tr(L"履歴") + "###history_window").c_str()), nullptr, window_flags) {
+    bool history_window_visible = ImGui::Begin((m_config_wrapper->tr(L"履歴") + "###history_window").c_str(), nullptr, window_flags);
+    if (history_window_visible) {
         // 履歴を読み込む
         auto loadHistory = [&]() {
             m_history_data.clear();

@@ -47,583 +47,583 @@ void PresetWindow::render(GradientConfigManager& manager, Preset& cfg)
     // プリセットウィンドウ
     //
     static ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse;
-    ImGui::Begin((m_config_wrapper->tr(L"プリセット") + "###preset_window").c_str(), nullptr, window_flags);
+    bool preset_window_visible = ImGui::Begin((m_config_wrapper->tr(L"プリセット") + "###preset_window").c_str(), nullptr, window_flags);
+    if (preset_window_visible) {
+        float item_spacing_x = ImGui::GetStyle().ItemSpacing.x * 0.5f;
+        ImGui::PushStyleVar(ImGuiStyleVar_CellPadding, ImVec2(item_spacing_x, 0));
+        bool is_called_popup = false;
 
-    float item_spacing_x = ImGui::GetStyle().ItemSpacing.x * 0.5f;
-    ImGui::PushStyleVar(ImGuiStyleVar_CellPadding, ImVec2(item_spacing_x, 0));
-    bool is_called_popup = false;
+        if (ImGui::BeginTable("##align_table1", 3)) {
+            std::string text = m_config_wrapper->tr(L"カテゴリー");
+            float text_width = ImGui::CalcTextSize(text.c_str()).x;
+            ImGui::TableSetupColumn("##text", ImGuiTableColumnFlags_WidthFixed, text_width);
+            ImGui::TableSetupColumn("##combo", ImGuiTableColumnFlags_WidthStretch);
+            ImGui::TableSetupColumn("##button", ImGuiTableColumnFlags_WidthFixed, ImGui::GetFrameHeight());
 
-    if (ImGui::BeginTable("##align_table1", 3)) {
-        std::string text = m_config_wrapper->tr(L"カテゴリー");
-        float text_width = ImGui::CalcTextSize(text.c_str()).x;
-        ImGui::TableSetupColumn("##text", ImGuiTableColumnFlags_WidthFixed, text_width);
-        ImGui::TableSetupColumn("##combo", ImGuiTableColumnFlags_WidthStretch);
-        ImGui::TableSetupColumn("##button", ImGuiTableColumnFlags_WidthFixed, ImGui::GetFrameHeight());
+            ImGui::TableNextRow();
+            ImGui::TableNextColumn();
 
-        ImGui::TableNextRow();
-        ImGui::TableNextColumn();
+            ImGui::AlignTextToFramePadding();
+            ImGui::TextUnformatted(text.c_str());
 
-        ImGui::AlignTextToFramePadding();
-        ImGui::TextUnformatted(text.c_str());
+            ImGui::TableNextColumn();
+            static ImGuiComboFlags combo_flags = 0;
 
-        ImGui::TableNextColumn();
-        static ImGuiComboFlags combo_flags = 0;
+            // カテゴリーコンボボックス
+            const char* combo_preview_value = m_categories[category_selected_index].c_str();
+            ImGui::SetNextItemWidth(-FLT_MIN);
+            if (ImGui::BeginCombo("##category_combo", combo_preview_value, combo_flags)) {
+                for (int i = 0; i < std::ssize(m_categories); ++i) {
+                    const bool is_selected = (category_selected_index == i);
+                    if (ImGui::Selectable(m_categories[i].c_str(), is_selected))
+                        category_selected_index = m_selected_category_index = i;
 
-        // カテゴリーコンボボックス
-        const char* combo_preview_value = m_categories[category_selected_index].c_str();
-        ImGui::SetNextItemWidth(-FLT_MIN);
-        if (ImGui::BeginCombo("##category_combo", combo_preview_value, combo_flags)) {
-            for (int i = 0; i < std::ssize(m_categories); ++i) {
-                const bool is_selected = (category_selected_index == i);
-                if (ImGui::Selectable(m_categories[i].c_str(), is_selected))
-                    category_selected_index = m_selected_category_index = i;
-
-                if (is_selected) ImGui::SetItemDefaultFocus();
-            }
-            ImGui::EndCombo();
-        }
-        selected_category_name = m_categories[category_selected_index];
-
-        // カテゴリー編集ボタン
-        ImGui::TableNextColumn();
-        is_called_popup = imgui_utils::squareIconButton(ICON_MS_MENU, "##category_menu");
-        if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNormal | ImGuiHoveredFlags_NoSharedDelay)) {
-            ImGui::SetTooltip(m_config_wrapper->tr(L"カテゴリーを編集").c_str(), ImGui::GetStyle().HoverDelayNormal);
-        }
-
-        ImGui::EndTable();
-    }
-    ImGui::PopStyleVar();
-
-    if (is_called_popup) {
-        ImGui::OpenPopup("preset_category_editor");
-    }
-
-    //
-    // カテゴリー編集ポップアップ
-    //
-    std::string input_placeholder = (ICON_MS_SEARCH + std::string{" "} + m_config_wrapper->tr(L"カテゴリーを検索または作成"));
-    float input_placeholder_width = ImGui::CalcTextSize(input_placeholder.c_str()).x;
-    ImGui::SetNextWindowSize({input_placeholder_width + ImGui::GetStyle().FramePadding.x * 2.0f + ImGui::GetStyle().WindowPadding.x * 2.0f, 0});
-    ImGui::PushStyleVarY(ImGuiStyleVar_ItemSpacing, ImGui::GetFrameHeight() * ITEM_SPACING_SCALE_Y);
-
-    if (ImGui::BeginPopup("preset_category_editor")) {
-        ImGui::TextUnformatted(m_config_wrapper->tr(L"カテゴリーを編集").c_str());
-        ImGui::SameLine();
-        imgui_utils::helpMarker(ICON_MS_HELP, m_config_wrapper->tr(L"カテゴリーをドラッグで並び替え、右クリックからメニューを表示して編集できます").c_str());
-        ImGui::Separator();
-
-        static ImGuiTextFilter filter;
-        static int selected_index = -1;
-
-        if (ImGui::IsWindowAppearing()) {
-            filter.Clear();
-            selected_index = -1;
-        }
-
-        // 検索欄
-        ImGui::PushItemFlag(ImGuiItemFlags_NoNavDefaultFocus, true);
-        ImGui::SetNextItemWidth(-FLT_MIN);
-        if (ImGui::InputTextWithHint("##filter", input_placeholder.c_str(), filter.InputBuf, IM_COUNTOF(filter.InputBuf), ImGuiInputTextFlags_EscapeClearsAll)) {
-            filter.Build();
-        }
-        ImGui::PopItemFlag();
-
-        std::string input_text                  = filter.InputBuf;
-        std::vector<std::string> category_names = m_categories;
-
-        // 並び替え中に同じアイテムが二重に送信されることがあるため、1フレームのみのID競合が発生するという問題がある
-        // そのため一時的に競合の検出を無効にする
-        ImGui::PushItemFlag(ImGuiItemFlags_AllowDuplicateId, true);
-
-        // 既存カテゴリーをループし、フィルターを通過したものだけを表示
-        int32_t swap_a = -1, swap_b = -1;
-        for (int32_t j = 0; j < static_cast<int32_t>(std::ssize(m_categories)); ++j) {
-            std::string category_name_with_icon = ICON_MS_DRAG_INDICATOR + std::string{" "} + ICON_MS_FOLDER + std::string{" "} + m_categories[j];
-
-            if (filter.PassFilter(category_name_with_icon.c_str())) {
-                bool selected = (selected_index == j);
-
-                ImGui::Selectable(category_name_with_icon.c_str(), selected, ImGuiSelectableFlags_DontClosePopups);
-                static std::string category_name{};
-
-                // スワップ
-                if (ImGui::IsItemActive() && !ImGui::IsItemHovered()) {
-                    int32_t j_next = j + (ImGui::GetMouseDragDelta(0).y < 0.0f ? -1 : 1);
-                    if (j_next >= 0 && j_next < std::ssize(m_categories)) {
-                        swap_a = j;
-                        swap_b = j_next;
-                        ImGui::ResetMouseDragDelta();
-                    }
+                    if (is_selected) ImGui::SetItemDefaultFocus();
                 }
+                ImGui::EndCombo();
+            }
+            selected_category_name = m_categories[category_selected_index];
 
-                // 右クリックメニュー
-                static bool contains_same_category = false;
-                if (ImGui::BeginPopupContextItem()) {
-                    selected_index = j;
+            // カテゴリー編集ボタン
+            ImGui::TableNextColumn();
+            is_called_popup = imgui_utils::squareIconButton(ICON_MS_MENU, "##category_menu");
+            if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNormal | ImGuiHoveredFlags_NoSharedDelay)) {
+                ImGui::SetTooltip(m_config_wrapper->tr(L"カテゴリーを編集").c_str(), ImGui::GetStyle().HoverDelayNormal);
+            }
 
-                    if (ImGui::IsWindowAppearing()) {
-                        category_name          = m_categories[j];
-                        m_old_category_name    = m_categories[j];
-                        contains_same_category = false;
-                    }
+            ImGui::EndTable();
+        }
+        ImGui::PopStyleVar();
 
-                    // カテゴリ名変更
-                    ImGui::AlignTextToFramePadding();
-                    ImGui::TextUnformatted(m_config_wrapper->tr(L"名前を変更").c_str());
-                    ImGui::SameLine();
-                    static ImGuiInputTextFlags input_flags = ImGuiInputTextFlags_None;
-                    input_flags |= ImGuiInputTextFlags_CharsNoBlank;   // スペース、タブなし
-                    input_flags |= ImGuiInputTextFlags_AutoSelectAll;  // 最初にマウスフォーカスが当たったときにテキスト全体を選択
+        if (is_called_popup) {
+            ImGui::OpenPopup("preset_category_editor");
+        }
 
-                    // カテゴリー名入力欄
-                    if (ImGui::InputText("##edit", &category_name, input_flags)) {
-                        contains_same_category = GradientConfigManager::containsCategory(m_categories, category_name);
-                    }
-                    ImGui::SameLine();
+        //
+        // カテゴリー編集ポップアップ
+        //
+        std::string input_placeholder = (ICON_MS_SEARCH + std::string{" "} + m_config_wrapper->tr(L"カテゴリーを検索または作成"));
+        float input_placeholder_width = ImGui::CalcTextSize(input_placeholder.c_str()).x;
+        ImGui::SetNextWindowSize({input_placeholder_width + ImGui::GetStyle().FramePadding.x * 2.0f + ImGui::GetStyle().WindowPadding.x * 2.0f, 0});
+        ImGui::PushStyleVarY(ImGuiStyleVar_ItemSpacing, ImGui::GetFrameHeight() * ITEM_SPACING_SCALE_Y);
 
-                    if (contains_same_category || category_name.empty()) ImGui::BeginDisabled();
-                    bool save = ImGui::Button(m_config_wrapper->tr(L"保存").c_str());
-                    if (contains_same_category || category_name.empty()) ImGui::EndDisabled();
+        if (ImGui::BeginPopup("preset_category_editor")) {
+            ImGui::TextUnformatted(m_config_wrapper->tr(L"カテゴリーを編集").c_str());
+            ImGui::SameLine();
+            imgui_utils::helpMarker(ICON_MS_HELP, m_config_wrapper->tr(L"カテゴリーをドラッグで並び替え、右クリックからメニューを表示して編集できます").c_str());
+            ImGui::Separator();
 
-                    if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNormal | ImGuiHoveredFlags_NoSharedDelay | ImGuiHoveredFlags_AllowWhenDisabled)) {
-                        if (category_name.empty()) {
-                            ImGui::SetTooltip(m_config_wrapper->tr(L"カテゴリ名が空です").c_str(), ImGui::GetStyle().HoverDelayNormal);
-                        } else if (contains_same_category) {
-                            ImGui::SetTooltip(m_config_wrapper->tr(L"すでに同じ名前のカテゴリが存在します").c_str(), ImGui::GetStyle().HoverDelayNormal);
+            static ImGuiTextFilter filter;
+            static int selected_index = -1;
+
+            if (ImGui::IsWindowAppearing()) {
+                filter.Clear();
+                selected_index = -1;
+            }
+
+            // 検索欄
+            ImGui::PushItemFlag(ImGuiItemFlags_NoNavDefaultFocus, true);
+            ImGui::SetNextItemWidth(-FLT_MIN);
+            if (ImGui::InputTextWithHint("##filter", input_placeholder.c_str(), filter.InputBuf, IM_COUNTOF(filter.InputBuf), ImGuiInputTextFlags_EscapeClearsAll)) {
+                filter.Build();
+            }
+            ImGui::PopItemFlag();
+
+            std::string input_text                  = filter.InputBuf;
+            std::vector<std::string> category_names = m_categories;
+
+            // 並び替え中に同じアイテムが二重に送信されることがあるため、1フレームのみのID競合が発生するという問題がある
+            // そのため一時的に競合の検出を無効にする
+            ImGui::PushItemFlag(ImGuiItemFlags_AllowDuplicateId, true);
+
+            // 既存カテゴリーをループし、フィルターを通過したものだけを表示
+            int32_t swap_a = -1, swap_b = -1;
+            for (int32_t j = 0; j < static_cast<int32_t>(std::ssize(m_categories)); ++j) {
+                std::string category_name_with_icon = ICON_MS_DRAG_INDICATOR + std::string{" "} + ICON_MS_FOLDER + std::string{" "} + m_categories[j];
+
+                if (filter.PassFilter(category_name_with_icon.c_str())) {
+                    bool selected = (selected_index == j);
+
+                    ImGui::Selectable(category_name_with_icon.c_str(), selected, ImGuiSelectableFlags_DontClosePopups);
+                    static std::string category_name{};
+
+                    // スワップ
+                    if (ImGui::IsItemActive() && !ImGui::IsItemHovered()) {
+                        int32_t j_next = j + (ImGui::GetMouseDragDelta(0).y < 0.0f ? -1 : 1);
+                        if (j_next >= 0 && j_next < std::ssize(m_categories)) {
+                            swap_a = j;
+                            swap_b = j_next;
+                            ImGui::ResetMouseDragDelta();
                         }
                     }
 
-                    if ((!contains_same_category && !category_name.empty() && ImGui::IsItemDeactivatedAfterEdit() && ImGui::IsKeyPressed(ImGuiKey_Enter)) || save) {
-                        if (!GradientConfigManager::containsCategory(m_categories, category_name)) {
-                            // カテゴリー名の配列を置き換える
-                            m_categories[j] = category_name;
-                            auto result     = manager.changeCategories(cfg, m_categories);
-                            if (!result.is_success) {
-                                m_logger_wrapper->error("{}", result.error);
-                            }
+                    // 右クリックメニュー
+                    static bool contains_same_category = false;
+                    if (ImGui::BeginPopupContextItem()) {
+                        selected_index = j;
 
-                            // 各プリセットのカテゴリーを置き換える
-                            result = manager.changeCategory(cfg, m_old_category_name, category_name);
-                            if (!result.is_success) {
-                                m_logger_wrapper->error("{}", result.error);
-                            } else {
-                                loadCategories();
-                            }
-
-                            m_old_category_name    = category_name;
+                        if (ImGui::IsWindowAppearing()) {
+                            category_name          = m_categories[j];
+                            m_old_category_name    = m_categories[j];
                             contains_same_category = false;
                         }
-                    }
 
-                    if (ImGui::BeginMenu(m_config_wrapper->tr(L"プリセットをまとめて移動").c_str())) {
-                        ImGui::TextUnformatted(m_config_wrapper->tr(L"移動先").c_str());
-                        ImGui::Separator();
-                        for (const auto& c : m_categories) {
-                            if (c == m_old_category_name) continue;
-                            if (ImGui::MenuItem(c.c_str())) {
-                                auto result = manager.changeCategory(cfg, m_old_category_name, c);
+                        // カテゴリ名変更
+                        ImGui::AlignTextToFramePadding();
+                        ImGui::TextUnformatted(m_config_wrapper->tr(L"名前を変更").c_str());
+                        ImGui::SameLine();
+                        static ImGuiInputTextFlags input_flags = ImGuiInputTextFlags_None;
+                        input_flags |= ImGuiInputTextFlags_CharsNoBlank;   // スペース、タブなし
+                        input_flags |= ImGuiInputTextFlags_AutoSelectAll;  // 最初にマウスフォーカスが当たったときにテキスト全体を選択
+
+                        // カテゴリー名入力欄
+                        if (ImGui::InputText("##edit", &category_name, input_flags)) {
+                            contains_same_category = GradientConfigManager::containsCategory(m_categories, category_name);
+                        }
+                        ImGui::SameLine();
+
+                        if (contains_same_category || category_name.empty()) ImGui::BeginDisabled();
+                        bool save = ImGui::Button(m_config_wrapper->tr(L"保存").c_str());
+                        if (contains_same_category || category_name.empty()) ImGui::EndDisabled();
+
+                        if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNormal | ImGuiHoveredFlags_NoSharedDelay | ImGuiHoveredFlags_AllowWhenDisabled)) {
+                            if (category_name.empty()) {
+                                ImGui::SetTooltip(m_config_wrapper->tr(L"カテゴリ名が空です").c_str(), ImGui::GetStyle().HoverDelayNormal);
+                            } else if (contains_same_category) {
+                                ImGui::SetTooltip(m_config_wrapper->tr(L"すでに同じ名前のカテゴリが存在します").c_str(), ImGui::GetStyle().HoverDelayNormal);
+                            }
+                        }
+
+                        if ((!contains_same_category && !category_name.empty() && ImGui::IsItemDeactivatedAfterEdit() && ImGui::IsKeyPressed(ImGuiKey_Enter)) || save) {
+                            if (!GradientConfigManager::containsCategory(m_categories, category_name)) {
+                                // カテゴリー名の配列を置き換える
+                                m_categories[j] = category_name;
+                                auto result     = manager.changeCategories(cfg, m_categories);
                                 if (!result.is_success) {
                                     m_logger_wrapper->error("{}", result.error);
                                 }
-                            }
-                        }
-                        ImGui::EndMenu();
-                    }
 
-                    bool has_categories = static_cast<int32_t>(std::ssize(m_categories)) <= 1;
-                    if (has_categories) ImGui::BeginDisabled();
-                    if (ImGui::BeginMenu(m_config_wrapper->tr(L"削除").c_str())) {
-                        if (ImGui::MenuItem(m_config_wrapper->tr(L"カテゴリのみ").c_str())) {
-                            int32_t delete_category_index = 0;
-                            for (int32_t del_idx = 0; const auto& c : m_categories) {
-                                if (c == m_old_category_name) {
-                                    delete_category_index = del_idx;
-                                    break;
+                                // 各プリセットのカテゴリーを置き換える
+                                result = manager.changeCategory(cfg, m_old_category_name, category_name);
+                                if (!result.is_success) {
+                                    m_logger_wrapper->error("{}", result.error);
+                                } else {
+                                    loadCategories();
                                 }
-                                ++del_idx;
-                            }
 
-                            // 削除前にコンボボックスのインデックスを変更する
-                            if (delete_category_index != 0 && category_selected_index >= delete_category_index) {
-                                category_selected_index--;
-                            }
-
-                            // デフォルトカテゴリーの作成
-                            auto result = manager.addCategory(cfg, GradientConfigManager::DEFAULT_CATEGORY);
-                            if (!result.is_success) {
-                                m_logger_wrapper->error("{}", result.error);
-                            }
-
-                            // 削除対象のカテゴリーに属していたプリセットのカテゴリーをデフォルトカテゴリーに変更
-                            result = manager.changeCategory(cfg, m_old_category_name, GradientConfigManager::DEFAULT_CATEGORY);
-                            if (!result.is_success) {
-                                m_logger_wrapper->error("{}", result.error);
-                            }
-
-                            // カテゴリー名のみを削除
-                            result = manager.deleteOnlyCategory(cfg, m_old_category_name);
-                            if (!result.is_success) {
-                                m_logger_wrapper->error("{}", result.error);
-                            } else {
-                                loadCategories();
+                                m_old_category_name    = category_name;
+                                contains_same_category = false;
                             }
                         }
 
-                        if (ImGui::MenuItem(m_config_wrapper->tr(L"プリセットごと").c_str())) {
-                            int32_t delete_category_index = 0;
-                            for (int32_t del_idx = 0; const auto& c : m_categories) {
-                                if (c == m_old_category_name) {
-                                    delete_category_index = del_idx;
-                                    break;
-                                }
-                                ++del_idx;
-                            }
-
-                            // 削除前にコンボボックスのインデックスを変更する
-                            if (delete_category_index != 0 && category_selected_index >= delete_category_index) {
-                                category_selected_index--;
-                            }
-
-                            auto result = manager.deleteCategoryAndPresets(cfg, m_old_category_name);
-                            if (!result.is_success) {
-                                m_logger_wrapper->error("{}", result.error);
-                            } else {
-                                loadCategories();
-                            }
-                        }
-                        ImGui::EndMenu();
-                    }
-                    if (has_categories) ImGui::EndDisabled();
-
-                    if (ImGui::MenuItem(m_config_wrapper->tr(L"出力").c_str())) {
-                        auto open_file_dialog_result = writeFile(gradient_editor::g_app_state.host_app_hwnd);
-                        switch (open_file_dialog_result.result) {
-                            case FileDialogResult::FD_OKAY: {
-                                auto path = std::get<static_cast<int32_t>(FileDialogResult::FD_OKAY)>(open_file_dialog_result.value);
-
-                                // 選択したカテゴリのプリセットを取得
-                                std::vector<GradientPreset> presets;
-                                for (const auto& [i, preset] : cfg.presets | std::views::enumerate) {
-                                    if (preset.category == category_name) {
-                                        presets.push_back(preset);
+                        if (ImGui::BeginMenu(m_config_wrapper->tr(L"プリセットをまとめて移動").c_str())) {
+                            ImGui::TextUnformatted(m_config_wrapper->tr(L"移動先").c_str());
+                            ImGui::Separator();
+                            for (const auto& c : m_categories) {
+                                if (c == m_old_category_name) continue;
+                                if (ImGui::MenuItem(c.c_str())) {
+                                    auto result = manager.changeCategory(cfg, m_old_category_name, c);
+                                    if (!result.is_success) {
+                                        m_logger_wrapper->error("{}", result.error);
                                     }
                                 }
+                            }
+                            ImGui::EndMenu();
+                        }
 
-                                // グラデーションプリセット → GRD 形式
-                                const auto grd = GradientConfigManager::presets2grd(presets);
-                                if (!grd) {
-                                    m_logger_wrapper->error("{}", grd.error());
+                        bool has_categories = static_cast<int32_t>(std::ssize(m_categories)) <= 1;
+                        if (has_categories) ImGui::BeginDisabled();
+                        if (ImGui::BeginMenu(m_config_wrapper->tr(L"削除").c_str())) {
+                            if (ImGui::MenuItem(m_config_wrapper->tr(L"カテゴリのみ").c_str())) {
+                                int32_t delete_category_index = 0;
+                                for (int32_t del_idx = 0; const auto& c : m_categories) {
+                                    if (c == m_old_category_name) {
+                                        delete_category_index = del_idx;
+                                        break;
+                                    }
+                                    ++del_idx;
+                                }
+
+                                // 削除前にコンボボックスのインデックスを変更する
+                                if (delete_category_index != 0 && category_selected_index >= delete_category_index) {
+                                    category_selected_index--;
+                                }
+
+                                // デフォルトカテゴリーの作成
+                                auto result = manager.addCategory(cfg, GradientConfigManager::DEFAULT_CATEGORY);
+                                if (!result.is_success) {
+                                    m_logger_wrapper->error("{}", result.error);
+                                }
+
+                                // 削除対象のカテゴリーに属していたプリセットのカテゴリーをデフォルトカテゴリーに変更
+                                result = manager.changeCategory(cfg, m_old_category_name, GradientConfigManager::DEFAULT_CATEGORY);
+                                if (!result.is_success) {
+                                    m_logger_wrapper->error("{}", result.error);
+                                }
+
+                                // カテゴリー名のみを削除
+                                result = manager.deleteOnlyCategory(cfg, m_old_category_name);
+                                if (!result.is_success) {
+                                    m_logger_wrapper->error("{}", result.error);
+                                } else {
+                                    loadCategories();
+                                }
+                            }
+
+                            if (ImGui::MenuItem(m_config_wrapper->tr(L"プリセットごと").c_str())) {
+                                int32_t delete_category_index = 0;
+                                for (int32_t del_idx = 0; const auto& c : m_categories) {
+                                    if (c == m_old_category_name) {
+                                        delete_category_index = del_idx;
+                                        break;
+                                    }
+                                    ++del_idx;
+                                }
+
+                                // 削除前にコンボボックスのインデックスを変更する
+                                if (delete_category_index != 0 && category_selected_index >= delete_category_index) {
+                                    category_selected_index--;
+                                }
+
+                                auto result = manager.deleteCategoryAndPresets(cfg, m_old_category_name);
+                                if (!result.is_success) {
+                                    m_logger_wrapper->error("{}", result.error);
+                                } else {
+                                    loadCategories();
+                                }
+                            }
+                            ImGui::EndMenu();
+                        }
+                        if (has_categories) ImGui::EndDisabled();
+
+                        if (ImGui::MenuItem(m_config_wrapper->tr(L"出力").c_str())) {
+                            auto open_file_dialog_result = writeFile(gradient_editor::g_app_state.host_app_hwnd);
+                            switch (open_file_dialog_result.result) {
+                                case FileDialogResult::FD_OKAY: {
+                                    auto path = std::get<static_cast<int32_t>(FileDialogResult::FD_OKAY)>(open_file_dialog_result.value);
+
+                                    // 選択したカテゴリのプリセットを取得
+                                    std::vector<GradientPreset> presets;
+                                    for (const auto& [i, preset] : cfg.presets | std::views::enumerate) {
+                                        if (preset.category == category_name) {
+                                            presets.push_back(preset);
+                                        }
+                                    }
+
+                                    // グラデーションプリセット → GRD 形式
+                                    const auto grd = GradientConfigManager::presets2grd(presets);
+                                    if (!grd) {
+                                        m_logger_wrapper->error("{}", grd.error());
+                                        break;
+                                    }
+
+                                    const auto write_grd_result = writeGRD(grd.value(), path);
+                                    if (!write_grd_result) {
+                                        m_logger_wrapper->error("{}", write_grd_result.error());
+                                    }
+
+                                    m_logger_wrapper->log("Successfully exported GRD file: {}", path.string());
                                     break;
                                 }
-
-                                const auto write_grd_result = writeGRD(grd.value(), path);
-                                if (!write_grd_result) {
-                                    m_logger_wrapper->error("{}", write_grd_result.error());
+                                case FileDialogResult::FD_CANCEL: {
+                                    break;
                                 }
-
-                                m_logger_wrapper->log("Successfully exported GRD file: {}", path.string());
-                                break;
-                            }
-                            case FileDialogResult::FD_CANCEL: {
-                                break;
-                            }
-                            case FileDialogResult::FD_ERROR: {
-                                auto error_msg = std::get<static_cast<int32_t>(FileDialogResult::FD_ERROR)>(open_file_dialog_result.value);
-                                m_logger_wrapper->error(L"{}", error_msg);
-                                break;
+                                case FileDialogResult::FD_ERROR: {
+                                    auto error_msg = std::get<static_cast<int32_t>(FileDialogResult::FD_ERROR)>(open_file_dialog_result.value);
+                                    m_logger_wrapper->error(L"{}", error_msg);
+                                    break;
+                                }
                             }
                         }
-                    }
 
-                    if (ImGui::Button(m_config_wrapper->tr(L"閉じる").c_str())) {
-                        contains_same_category = false;
-                        selected_index         = -1;
-                        ImGui::CloseCurrentPopup();
+                        if (ImGui::Button(m_config_wrapper->tr(L"閉じる").c_str())) {
+                            contains_same_category = false;
+                            selected_index         = -1;
+                            ImGui::CloseCurrentPopup();
+                        }
+                        ImGui::EndPopup();
                     }
-                    ImGui::EndPopup();
                 }
             }
-        }
 
-        // スワップ
-        if (swap_a != -1 && swap_b != -1) {
-            std::swap(m_categories[swap_a], m_categories[swap_b]);
-            manager.swapCategory(cfg, swap_a, swap_b);
-        }
+            // スワップ
+            if (swap_a != -1 && swap_b != -1) {
+                std::swap(m_categories[swap_a], m_categories[swap_b]);
+                manager.swapCategory(cfg, swap_a, swap_b);
+            }
 
-        // カテゴリーを作成
-        bool exist_same_name = (std::find(category_names.begin(), category_names.end(), input_text) != category_names.end());
-        if (!exist_same_name && input_text != "") {
-            std::string new_category_label = ICON_MS_ADD + std::string{" "} + input_text;
-            if (ImGui::Selectable(new_category_label.c_str())) {
-                if (!manager.containsCategory(cfg.categories, input_text)) {
-                    auto result = manager.addCategory(cfg, input_text);
+            // カテゴリーを作成
+            bool exist_same_name = (std::find(category_names.begin(), category_names.end(), input_text) != category_names.end());
+            if (!exist_same_name && input_text != "") {
+                std::string new_category_label = ICON_MS_ADD + std::string{" "} + input_text;
+                if (ImGui::Selectable(new_category_label.c_str())) {
+                    if (!manager.containsCategory(cfg.categories, input_text)) {
+                        auto result = manager.addCategory(cfg, input_text);
+                        if (!result.is_success) {
+                            m_logger_wrapper->error("{}", result.error);
+                        } else {
+                            loadCategories();
+                        }
+                    }
+                    ImGui::CloseCurrentPopup();
+                }
+            }
+            ImGui::PopItemFlag();
+            ImGui::EndPopup();
+        }
+        ImGui::PopStyleVar();
+
+        // プリセット名入力欄
+        ImGui::PushStyleVar(ImGuiStyleVar_CellPadding, ImVec2(item_spacing_x, 0));
+        if (ImGui::BeginTable("##align_table2", 5)) {
+            std::string input_text = (m_config_wrapper->tr(L"プリセット名") + ":");
+            float text_width       = ImGui::CalcTextSize(input_text.c_str()).x;
+
+            ImGui::TableSetupColumn("##text1", ImGuiTableColumnFlags_WidthFixed, text_width);
+            ImGui::TableSetupColumn("##text2", ImGuiTableColumnFlags_WidthStretch);
+            ImGui::TableSetupColumn("##button1", ImGuiTableColumnFlags_WidthFixed, ImGui::GetFrameHeight());
+            ImGui::TableSetupColumn("##button2", ImGuiTableColumnFlags_WidthFixed, ImGui::GetFrameHeight());
+            ImGui::TableSetupColumn("##button3", ImGuiTableColumnFlags_WidthFixed, ImGui::GetFrameHeight());
+
+            ImGui::TableNextRow();
+            ImGui::TableNextColumn();
+
+            // ラベル
+            ImGui::AlignTextToFramePadding();
+            ImGui::TextUnformatted(input_text.c_str());
+
+            // 最後に選択されたプリセット名を表示
+            ImGui::TableNextColumn();
+            ImGui::SetNextItemWidth(-FLT_MIN);
+            ImGui::AlignTextToFramePadding();
+            ImGui::TextUnformatted(m_preset_name.c_str());
+
+            // 名前変更ボタン
+            ImGui::TableNextColumn();
+            if (m_selected_preset_index == -1) ImGui::BeginDisabled();
+            if (imgui_utils::squareIconButton(ICON_MS_EDIT, "##edit_name")) {
+                ImGui::OpenPopup((m_config_wrapper->tr(L"名前を変更") + "###edit_name_popup").c_str());
+            }
+            if (m_selected_preset_index == -1) ImGui::EndDisabled();
+
+            if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNormal | ImGuiHoveredFlags_NoSharedDelay | ImGuiHoveredFlags_AllowWhenDisabled)) {
+                if (m_selected_preset_index == -1) {
+                    ImGui::SetTooltip(m_config_wrapper->tr(L"プリセットが未選択です").c_str(), ImGui::GetStyle().HoverDelayNormal);
+                } else {
+                    ImGui::SetTooltip(m_config_wrapper->tr(L"名前を変更").c_str(), ImGui::GetStyle().HoverDelayNormal);
+                }
+            }
+
+            // 名前編集ポップアップ
+            static ImGuiWindowFlags modal_flags = ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoMove;
+            ImVec2 center                       = ImGui::GetMainViewport()->GetCenter();
+            ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
+            if (ImGui::BeginPopupModal((m_config_wrapper->tr(L"名前を変更") + "###edit_name_popup").c_str(), nullptr, modal_flags)) {
+                static std::string original_preset_name = cfg.presets[m_selected_preset_index].name;
+                static std::string input_preset_name    = original_preset_name;
+                if (ImGui::IsWindowAppearing()) {
+                    original_preset_name = cfg.presets[m_selected_preset_index].name;
+                    input_preset_name    = original_preset_name;
+                }
+
+                ImGui::TextUnformatted(m_config_wrapper->tr(L"元の名前").c_str());
+                ImGui::SameLine();
+                ImGui::Text(": \"%s\"", original_preset_name.c_str());
+
+                ImGui::Dummy(ImVec2(0, ImGui::GetFrameHeight() * ITEM_SPACING_SCALE_Y));
+
+                ImGui::InputTextWithHint("##preset_name", original_preset_name.c_str(), &input_preset_name, ImGuiInputTextFlags_CharsNoBlank | ImGuiInputTextFlags_AutoSelectAll);
+                bool is_empty = input_preset_name == "";
+
+                ImGui::Dummy(ImVec2(0, ImGui::GetFrameHeight() * ITEM_SPACING_SCALE_Y));
+
+                // 2つのボタンを中央に配置
+                float btn_width = MODAL_WINDOW_WIDTH * 2 + ImGui::GetStyle().ItemSpacing.x * 1;
+                float avail     = ImGui::GetContentRegionAvail().x;
+                float off       = (avail - btn_width) * 0.5f;
+                if (off > 0.0f) ImGui::SetCursorPosX(ImGui::GetCursorPosX() + off);
+
+                if (ImGui::Button((m_config_wrapper->tr(L"キャンセル") + "###cancel").c_str(), ImVec2(MODAL_WINDOW_WIDTH, 0))) {
+                    ImGui::CloseCurrentPopup();
+                }
+                ImGui::SetItemDefaultFocus();
+                ImGui::SameLine();
+
+                // 同じ名前のプリセットが存在するか確認
+                bool exist_same_preset_name = false;
+                for (const auto& p : cfg.presets) {
+                    if (p.name == input_preset_name) {
+                        exist_same_preset_name = true;
+                        break;
+                    }
+                }
+
+                if (is_empty || exist_same_preset_name) ImGui::BeginDisabled();
+                if (ImGui::Button((m_config_wrapper->tr(L"上書き") + "###overwrite").c_str(), ImVec2(MODAL_WINDOW_WIDTH, 0))) {
+                    auto result = manager.overwritePreset(cfg, cfg.presets[m_selected_preset_index], m_selected_preset_index, input_preset_name, selected_category_name);
+                    if (!result.is_success) {
+                        auto error_msg = result.error + "\n";
+                        m_logger_wrapper->error("{}", error_msg);
+                        OutputDebugStringA(error_msg.c_str());
+                    } else {
+                        loadCategories();
+                    }
+                    m_preset_name = input_preset_name;
+
+                    ImGui::CloseCurrentPopup();
+                }
+                if (is_empty || exist_same_preset_name) ImGui::EndDisabled();
+
+                if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNormal | ImGuiHoveredFlags_NoSharedDelay | ImGuiHoveredFlags_AllowWhenDisabled)) {
+                    if (is_empty) {
+                        ImGui::SetTooltip(m_config_wrapper->tr(L"プリセット名が空です").c_str(), ImGui::GetStyle().HoverDelayNormal);
+                    } else if (exist_same_preset_name) {
+                        ImGui::SetTooltip(m_config_wrapper->tr(L"すでに同じ名前のプリセットが存在します").c_str(), ImGui::GetStyle().HoverDelayNormal);
+                    }
+                }
+
+                ImGui::EndPopup();
+            }
+
+            // 上書き保存ボタン
+            ImGui::TableNextColumn();
+            if (m_selected_preset_index == -1) ImGui::BeginDisabled();
+            if (imgui_utils::squareIconButton(ICON_MS_SAVE, "##overwrite")) {
+                ImGui::OpenPopup((m_config_wrapper->tr(L"上書き保存") + "###overwrite_confirmation").c_str());
+            }
+            if (m_selected_preset_index == -1) ImGui::EndDisabled();
+
+            if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNormal | ImGuiHoveredFlags_NoSharedDelay | ImGuiHoveredFlags_AllowWhenDisabled)) {
+                if (m_selected_preset_index == -1) {
+                    ImGui::SetTooltip(m_config_wrapper->tr(L"プリセットが未選択です").c_str(), ImGui::GetStyle().HoverDelayNormal);
+                } else {
+                    ImGui::SetTooltip(m_config_wrapper->tr(L"上書き保存").c_str(), ImGui::GetStyle().HoverDelayNormal);
+                }
+            }
+
+            center = ImGui::GetMainViewport()->GetCenter();
+            ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
+            if (ImGui::BeginPopupModal((m_config_wrapper->tr(L"上書き保存") + "###overwrite_confirmation").c_str(), nullptr, modal_flags)) {
+                static std::string original_preset_name = cfg.presets[m_selected_preset_index].name;
+                if (ImGui::IsWindowAppearing()) {
+                    original_preset_name = cfg.presets[m_selected_preset_index].name;
+                }
+
+                ImGui::Text(m_config_wrapper->tr(L"選択中のプリセット \"%s\" を現在のグラデーションで上書きしますか?").c_str(), original_preset_name.c_str());
+
+                ImGui::Dummy(ImVec2(0, ImGui::GetFrameHeight() * ITEM_SPACING_SCALE_Y));
+
+                // 2つのボタンを中央に配置
+                float button_width          = ImGui::GetFrameHeight() * 4;
+                float combined_button_width = button_width * 2 + ImGui::GetStyle().ItemSpacing.x * 1;
+                float avail                 = ImGui::GetContentRegionAvail().x;
+                float off                   = (avail - combined_button_width) * 0.5f;
+                if (off > 0.0f) ImGui::SetCursorPosX(ImGui::GetCursorPosX() + off);
+
+                if (ImGui::Button((m_config_wrapper->tr(L"キャンセル") + "###cancel").c_str(), ImVec2(button_width, 0))) {
+                    ImGui::CloseCurrentPopup();
+                }
+                ImGui::SetItemDefaultFocus();
+                ImGui::SameLine();
+
+                if (ImGui::Button((m_config_wrapper->tr(L"上書き保存") + "###overwrite").c_str(), ImVec2(button_width, 0))) {
+                    auto preset = manager.gradient2preset(m_target_gradient_data);
+                    auto result = manager.overwritePreset(cfg, preset, m_selected_preset_index, original_preset_name, selected_category_name);
+                    if (!result.is_success) {
+                        auto error_msg = result.error + "\n";
+                        m_logger_wrapper->error("{}", error_msg);
+                        OutputDebugStringA(error_msg.c_str());
+                    } else {
+                        loadCategories();
+                    }
+
+                    ImGui::CloseCurrentPopup();
+                }
+
+                ImGui::EndPopup();
+            }
+
+            // 新規保存ボタン
+            ImGui::TableNextColumn();
+            if (imgui_utils::squareIconButton(ICON_MS_SAVE_AS, "##save_as")) {
+                ImGui::OpenPopup((m_config_wrapper->tr(L"新規保存") + "###save_as_confirmation").c_str());
+            }
+
+            if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNormal | ImGuiHoveredFlags_NoSharedDelay | ImGuiHoveredFlags_AllowWhenDisabled)) {
+                ImGui::SetTooltip(m_config_wrapper->tr(L"新規保存").c_str(), ImGui::GetStyle().HoverDelayNormal);
+            }
+
+            ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
+            if (ImGui::BeginPopupModal((m_config_wrapper->tr(L"新規保存") + "###save_as_confirmation").c_str(), nullptr, modal_flags)) {
+                static std::string input_preset_name = m_preset_name;
+                if (ImGui::IsWindowAppearing()) {
+                    input_preset_name = m_preset_name;
+                }
+
+                ImGui::InputTextWithHint("##preset_name", m_config_wrapper->tr(L"プリセット名").c_str(), &input_preset_name, ImGuiInputTextFlags_CharsNoBlank | ImGuiInputTextFlags_AutoSelectAll);
+                bool is_empty               = input_preset_name == "";
+                bool exist_same_preset_name = false;
+                for (const auto& p : cfg.presets) {
+                    if (p.name == input_preset_name) {
+                        exist_same_preset_name = true;
+                        break;
+                    }
+                }
+
+                ImGui::Dummy(ImVec2(0, ImGui::GetFrameHeight() * ITEM_SPACING_SCALE_Y));
+
+                float button_width          = ImGui::GetFrameHeight() * 4;
+                float combined_button_width = button_width * 2 + ImGui::GetStyle().ItemSpacing.x * 1;
+                float avail                 = ImGui::GetContentRegionAvail().x;
+                float off                   = (avail - combined_button_width) * 0.5f;
+                if (off > 0.0f) ImGui::SetCursorPosX(ImGui::GetCursorPosX() + off);
+
+                if (ImGui::Button((m_config_wrapper->tr(L"キャンセル") + "###cancel").c_str(), ImVec2(button_width, 0))) {
+                    ImGui::CloseCurrentPopup();
+                }
+                ImGui::SameLine();
+
+                if (is_empty || exist_same_preset_name) ImGui::BeginDisabled(true);
+                if (ImGui::Button((m_config_wrapper->tr(L"保存") + "###save").c_str(), ImVec2(button_width, 0))) {
+                    auto preset = manager.gradient2preset(m_target_gradient_data);
+                    auto result = manager.addPreset(cfg, preset, input_preset_name, selected_category_name);
                     if (!result.is_success) {
                         m_logger_wrapper->error("{}", result.error);
                     } else {
                         loadCategories();
+                        // 追加されたプリセットを選択状態にする
+                        m_selected_preset_index = static_cast<int32_t>(cfg.presets.size()) - 1;
+                        m_selected_gradient     = manager.preset2gradient(cfg.presets.back());
+                    }
+                    m_preset_name = input_preset_name;
+
+                    ImGui::CloseCurrentPopup();
+                }
+                ImGui::SetItemDefaultFocus();
+                if (is_empty || exist_same_preset_name) ImGui::EndDisabled();
+
+                if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNormal | ImGuiHoveredFlags_NoSharedDelay | ImGuiHoveredFlags_AllowWhenDisabled)) {
+                    if (is_empty) {
+                        ImGui::SetTooltip(m_config_wrapper->tr(L"プリセット名が空です").c_str(), ImGui::GetStyle().HoverDelayNormal);
+                    } else if (exist_same_preset_name) {
+                        ImGui::SetTooltip(m_config_wrapper->tr(L"すでに同じ名前のプリセットが存在します").c_str(), ImGui::GetStyle().HoverDelayNormal);
                     }
                 }
-                ImGui::CloseCurrentPopup();
+
+                ImGui::EndPopup();
             }
+
+            m_is_clicked_preset = false;
+
+            ImGui::EndTable();
         }
-        ImGui::PopItemFlag();
-        ImGui::EndPopup();
+        ImGui::PopStyleVar();
+
+        ImGui::Dummy(ImVec2(0, ImGui::GetFrameHeight() * ITEM_SPACING_SCALE_Y));
+
+        // プリセット一覧を描画
+        renderPresetList(manager, cfg, selected_category_name);
     }
-    ImGui::PopStyleVar();
-
-    // プリセット名入力欄
-    ImGui::PushStyleVar(ImGuiStyleVar_CellPadding, ImVec2(item_spacing_x, 0));
-    if (ImGui::BeginTable("##align_table2", 5)) {
-        std::string input_text = (m_config_wrapper->tr(L"プリセット名") + ":");
-        float text_width       = ImGui::CalcTextSize(input_text.c_str()).x;
-
-        ImGui::TableSetupColumn("##text1", ImGuiTableColumnFlags_WidthFixed, text_width);
-        ImGui::TableSetupColumn("##text2", ImGuiTableColumnFlags_WidthStretch);
-        ImGui::TableSetupColumn("##button1", ImGuiTableColumnFlags_WidthFixed, ImGui::GetFrameHeight());
-        ImGui::TableSetupColumn("##button2", ImGuiTableColumnFlags_WidthFixed, ImGui::GetFrameHeight());
-        ImGui::TableSetupColumn("##button3", ImGuiTableColumnFlags_WidthFixed, ImGui::GetFrameHeight());
-
-        ImGui::TableNextRow();
-        ImGui::TableNextColumn();
-
-        // ラベル
-        ImGui::AlignTextToFramePadding();
-        ImGui::TextUnformatted(input_text.c_str());
-
-        // 最後に選択されたプリセット名を表示
-        ImGui::TableNextColumn();
-        ImGui::SetNextItemWidth(-FLT_MIN);
-        ImGui::AlignTextToFramePadding();
-        ImGui::TextUnformatted(m_preset_name.c_str());
-
-        // 名前変更ボタン
-        ImGui::TableNextColumn();
-        if (m_selected_preset_index == -1) ImGui::BeginDisabled();
-        if (imgui_utils::squareIconButton(ICON_MS_EDIT, "##edit_name")) {
-            ImGui::OpenPopup((m_config_wrapper->tr(L"名前を変更") + "###edit_name_popup").c_str());
-        }
-        if (m_selected_preset_index == -1) ImGui::EndDisabled();
-
-        if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNormal | ImGuiHoveredFlags_NoSharedDelay | ImGuiHoveredFlags_AllowWhenDisabled)) {
-            if (m_selected_preset_index == -1) {
-                ImGui::SetTooltip(m_config_wrapper->tr(L"プリセットが未選択です").c_str(), ImGui::GetStyle().HoverDelayNormal);
-            } else {
-                ImGui::SetTooltip(m_config_wrapper->tr(L"名前を変更").c_str(), ImGui::GetStyle().HoverDelayNormal);
-            }
-        }
-
-        // 名前編集ポップアップ
-        static ImGuiWindowFlags modal_flags = ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoMove;
-        ImVec2 center                       = ImGui::GetMainViewport()->GetCenter();
-        ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
-        if (ImGui::BeginPopupModal((m_config_wrapper->tr(L"名前を変更") + "###edit_name_popup").c_str(), nullptr, modal_flags)) {
-            static std::string original_preset_name = cfg.presets[m_selected_preset_index].name;
-            static std::string input_preset_name    = original_preset_name;
-            if (ImGui::IsWindowAppearing()) {
-                original_preset_name = cfg.presets[m_selected_preset_index].name;
-                input_preset_name    = original_preset_name;
-            }
-
-            ImGui::TextUnformatted(m_config_wrapper->tr(L"元の名前").c_str());
-            ImGui::SameLine();
-            ImGui::Text(": \"%s\"", original_preset_name.c_str());
-
-            ImGui::Dummy(ImVec2(0, ImGui::GetFrameHeight() * ITEM_SPACING_SCALE_Y));
-
-            ImGui::InputTextWithHint("##preset_name", original_preset_name.c_str(), &input_preset_name, ImGuiInputTextFlags_CharsNoBlank | ImGuiInputTextFlags_AutoSelectAll);
-            bool is_empty = input_preset_name == "";
-
-            ImGui::Dummy(ImVec2(0, ImGui::GetFrameHeight() * ITEM_SPACING_SCALE_Y));
-
-            // 2つのボタンを中央に配置
-            float btn_width = MODAL_WINDOW_WIDTH * 2 + ImGui::GetStyle().ItemSpacing.x * 1;
-            float avail     = ImGui::GetContentRegionAvail().x;
-            float off       = (avail - btn_width) * 0.5f;
-            if (off > 0.0f) ImGui::SetCursorPosX(ImGui::GetCursorPosX() + off);
-
-            if (ImGui::Button((m_config_wrapper->tr(L"キャンセル") + "###cancel").c_str(), ImVec2(MODAL_WINDOW_WIDTH, 0))) {
-                ImGui::CloseCurrentPopup();
-            }
-            ImGui::SetItemDefaultFocus();
-            ImGui::SameLine();
-
-            // 同じ名前のプリセットが存在するか確認
-            bool exist_same_preset_name = false;
-            for (const auto& p : cfg.presets) {
-                if (p.name == input_preset_name) {
-                    exist_same_preset_name = true;
-                    break;
-                }
-            }
-
-            if (is_empty || exist_same_preset_name) ImGui::BeginDisabled();
-            if (ImGui::Button((m_config_wrapper->tr(L"上書き") + "###overwrite").c_str(), ImVec2(MODAL_WINDOW_WIDTH, 0))) {
-                auto result = manager.overwritePreset(cfg, cfg.presets[m_selected_preset_index], m_selected_preset_index, input_preset_name, selected_category_name);
-                if (!result.is_success) {
-                    auto error_msg = result.error + "\n";
-                    m_logger_wrapper->error("{}", error_msg);
-                    OutputDebugStringA(error_msg.c_str());
-                } else {
-                    loadCategories();
-                }
-                m_preset_name = input_preset_name;
-
-                ImGui::CloseCurrentPopup();
-            }
-            if (is_empty || exist_same_preset_name) ImGui::EndDisabled();
-
-            if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNormal | ImGuiHoveredFlags_NoSharedDelay | ImGuiHoveredFlags_AllowWhenDisabled)) {
-                if (is_empty) {
-                    ImGui::SetTooltip(m_config_wrapper->tr(L"プリセット名が空です").c_str(), ImGui::GetStyle().HoverDelayNormal);
-                } else if (exist_same_preset_name) {
-                    ImGui::SetTooltip(m_config_wrapper->tr(L"すでに同じ名前のプリセットが存在します").c_str(), ImGui::GetStyle().HoverDelayNormal);
-                }
-            }
-
-            ImGui::EndPopup();
-        }
-
-        // 上書き保存ボタン
-        ImGui::TableNextColumn();
-        if (m_selected_preset_index == -1) ImGui::BeginDisabled();
-        if (imgui_utils::squareIconButton(ICON_MS_SAVE, "##overwrite")) {
-            ImGui::OpenPopup((m_config_wrapper->tr(L"上書き保存") + "###overwrite_confirmation").c_str());
-        }
-        if (m_selected_preset_index == -1) ImGui::EndDisabled();
-
-        if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNormal | ImGuiHoveredFlags_NoSharedDelay | ImGuiHoveredFlags_AllowWhenDisabled)) {
-            if (m_selected_preset_index == -1) {
-                ImGui::SetTooltip(m_config_wrapper->tr(L"プリセットが未選択です").c_str(), ImGui::GetStyle().HoverDelayNormal);
-            } else {
-                ImGui::SetTooltip(m_config_wrapper->tr(L"上書き保存").c_str(), ImGui::GetStyle().HoverDelayNormal);
-            }
-        }
-
-        center = ImGui::GetMainViewport()->GetCenter();
-        ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
-        if (ImGui::BeginPopupModal((m_config_wrapper->tr(L"上書き保存") + "###overwrite_confirmation").c_str(), nullptr, modal_flags)) {
-            static std::string original_preset_name = cfg.presets[m_selected_preset_index].name;
-            if (ImGui::IsWindowAppearing()) {
-                original_preset_name = cfg.presets[m_selected_preset_index].name;
-            }
-
-            ImGui::Text(m_config_wrapper->tr(L"選択中のプリセット \"%s\" を現在のグラデーションで上書きしますか?").c_str(), original_preset_name.c_str());
-
-            ImGui::Dummy(ImVec2(0, ImGui::GetFrameHeight() * ITEM_SPACING_SCALE_Y));
-
-            // 2つのボタンを中央に配置
-            float button_width          = ImGui::GetFrameHeight() * 4;
-            float combined_button_width = button_width * 2 + ImGui::GetStyle().ItemSpacing.x * 1;
-            float avail                 = ImGui::GetContentRegionAvail().x;
-            float off                   = (avail - combined_button_width) * 0.5f;
-            if (off > 0.0f) ImGui::SetCursorPosX(ImGui::GetCursorPosX() + off);
-
-            if (ImGui::Button((m_config_wrapper->tr(L"キャンセル") + "###cancel").c_str(), ImVec2(button_width, 0))) {
-                ImGui::CloseCurrentPopup();
-            }
-            ImGui::SetItemDefaultFocus();
-            ImGui::SameLine();
-
-            if (ImGui::Button((m_config_wrapper->tr(L"上書き保存") + "###overwrite").c_str(), ImVec2(button_width, 0))) {
-                auto preset = manager.gradient2preset(m_target_gradient_data);
-                auto result = manager.overwritePreset(cfg, preset, m_selected_preset_index, original_preset_name, selected_category_name);
-                if (!result.is_success) {
-                    auto error_msg = result.error + "\n";
-                    m_logger_wrapper->error("{}", error_msg);
-                    OutputDebugStringA(error_msg.c_str());
-                } else {
-                    loadCategories();
-                }
-
-                ImGui::CloseCurrentPopup();
-            }
-
-            ImGui::EndPopup();
-        }
-
-        // 新規保存ボタン
-        ImGui::TableNextColumn();
-        if (imgui_utils::squareIconButton(ICON_MS_SAVE_AS, "##save_as")) {
-            ImGui::OpenPopup((m_config_wrapper->tr(L"新規保存") + "###save_as_confirmation").c_str());
-        }
-
-        if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNormal | ImGuiHoveredFlags_NoSharedDelay | ImGuiHoveredFlags_AllowWhenDisabled)) {
-            ImGui::SetTooltip(m_config_wrapper->tr(L"新規保存").c_str(), ImGui::GetStyle().HoverDelayNormal);
-        }
-
-        ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
-        if (ImGui::BeginPopupModal((m_config_wrapper->tr(L"新規保存") + "###save_as_confirmation").c_str(), nullptr, modal_flags)) {
-            static std::string input_preset_name = m_preset_name;
-            if (ImGui::IsWindowAppearing()) {
-                input_preset_name = m_preset_name;
-            }
-
-            ImGui::InputTextWithHint("##preset_name", m_config_wrapper->tr(L"プリセット名").c_str(), &input_preset_name, ImGuiInputTextFlags_CharsNoBlank | ImGuiInputTextFlags_AutoSelectAll);
-            bool is_empty               = input_preset_name == "";
-            bool exist_same_preset_name = false;
-            for (const auto& p : cfg.presets) {
-                if (p.name == input_preset_name) {
-                    exist_same_preset_name = true;
-                    break;
-                }
-            }
-
-            ImGui::Dummy(ImVec2(0, ImGui::GetFrameHeight() * ITEM_SPACING_SCALE_Y));
-
-            float button_width          = ImGui::GetFrameHeight() * 4;
-            float combined_button_width = button_width * 2 + ImGui::GetStyle().ItemSpacing.x * 1;
-            float avail                 = ImGui::GetContentRegionAvail().x;
-            float off                   = (avail - combined_button_width) * 0.5f;
-            if (off > 0.0f) ImGui::SetCursorPosX(ImGui::GetCursorPosX() + off);
-
-            if (ImGui::Button((m_config_wrapper->tr(L"キャンセル") + "###cancel").c_str(), ImVec2(button_width, 0))) {
-                ImGui::CloseCurrentPopup();
-            }
-            ImGui::SameLine();
-
-            if (is_empty || exist_same_preset_name) ImGui::BeginDisabled(true);
-            if (ImGui::Button((m_config_wrapper->tr(L"保存") + "###save").c_str(), ImVec2(button_width, 0))) {
-                auto preset = manager.gradient2preset(m_target_gradient_data);
-                auto result = manager.addPreset(cfg, preset, input_preset_name, selected_category_name);
-                if (!result.is_success) {
-                    m_logger_wrapper->error("{}", result.error);
-                } else {
-                    loadCategories();
-                    // 追加されたプリセットを選択状態にする
-                    m_selected_preset_index = static_cast<int32_t>(cfg.presets.size()) - 1;
-                    m_selected_gradient     = manager.preset2gradient(cfg.presets.back());
-                }
-                m_preset_name = input_preset_name;
-
-                ImGui::CloseCurrentPopup();
-            }
-            ImGui::SetItemDefaultFocus();
-            if (is_empty || exist_same_preset_name) ImGui::EndDisabled();
-
-            if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNormal | ImGuiHoveredFlags_NoSharedDelay | ImGuiHoveredFlags_AllowWhenDisabled)) {
-                if (is_empty) {
-                    ImGui::SetTooltip(m_config_wrapper->tr(L"プリセット名が空です").c_str(), ImGui::GetStyle().HoverDelayNormal);
-                } else if (exist_same_preset_name) {
-                    ImGui::SetTooltip(m_config_wrapper->tr(L"すでに同じ名前のプリセットが存在します").c_str(), ImGui::GetStyle().HoverDelayNormal);
-                }
-            }
-
-            ImGui::EndPopup();
-        }
-
-        m_is_clicked_preset = false;
-
-        ImGui::EndTable();
-    }
-    ImGui::PopStyleVar();
-
-    ImGui::Dummy(ImVec2(0, ImGui::GetFrameHeight() * ITEM_SPACING_SCALE_Y));
-
-    // プリセット一覧を描画
-    renderPresetList(manager, cfg, selected_category_name);
-
     ImGui::End();
 }
 
