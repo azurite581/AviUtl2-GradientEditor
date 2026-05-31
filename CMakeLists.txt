@@ -12,7 +12,9 @@ project(GradientEditor LANGUAGES C CXX)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(IMGUI_SOURCE third_party/imgui)
-set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+if(MSVC)
+    set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+endif()
 
 # .cpp font file generation
 include(${CMAKE_SOURCE_DIR}/src/fonts/ImGuiFontCodegen.cmake)
@@ -102,25 +104,43 @@ target_include_directories(${PROJECT_NAME} PRIVATE third_party/json/single_inclu
 target_include_directories(${PROJECT_NAME} PRIVATE third_party/IconFontCppHeaders)
 
 if(WIN32)
-    target_compile_definitions(${PROJECT_NAME} PRIVATE UNICODE _UNICODE)
+    target_compile_definitions(${PROJECT_NAME} PRIVATE
+    UNICODE
+    _UNICODE
+
+    $<$<CONFIG:Debug>:_DEBUG>
+    $<$<CONFIG:Release>:NDEBUG>
+)
 endif()
 
 # Compiler Options ------------------------------------------------------------------
-if("${CMAKE_CXX_COMPILER_ID}" MATCHES "MSVC")
+if(MSVC)
     target_compile_options(${PROJECT_NAME} PRIVATE
         /utf-8
         /W4
+        /sdl
+
+        /permissive-
+        $<$<CONFIG:Debug>:/Zi>
+
         $<IF:$<CONFIG:Debug>,/Od,/O2>
+        $<$<CONFIG:Release>:/Oi>
+
         $<IF:$<CONFIG:Debug>,/GL-,/GL>
         $<IF:$<CONFIG:Debug>,/Gy-,/Gy>
-        $<$<CONFIG:Debug>:/Zi>
         /EHsc
     )
     target_link_options(${PROJECT_NAME} PRIVATE
         $<$<CONFIG:Release>:/LTCG>
+
+        $<$<CONFIG:Release>:/OPT:REF>
+        $<$<CONFIG:Release>:/OPT:ICF>
+
         # Hybrid CRT
-        /NODEFAULTLIB:$<IF:$<CONFIG:Debug>,libucrtd.lib,libucrt.lib>
-        /DEFAULTLIB:$<IF:$<CONFIG:Debug>,ucrtd.lib,ucrt.lib>
+       	$<$<CONFIG:Debug>:/NODEFAULTLIB:libucrtd.lib>
+        $<$<CONFIG:Debug>:/DEFAULTLIB:ucrtd.lib>
+        $<$<NOT:$<CONFIG:Debug>>:/NODEFAULTLIB:libucrt.lib>
+        $<$<NOT:$<CONFIG:Debug>>:/DEFAULTLIB:ucrt.lib>
     )
 endif()
 
