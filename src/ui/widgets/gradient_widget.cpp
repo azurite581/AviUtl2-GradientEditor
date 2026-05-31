@@ -161,8 +161,8 @@ GradientData* drawGradientEditor(
     if (!(flags & GradientEditorFlags_NoMarker)) {
         ImVec2 marker_region_size_ = ImVec2(dsize.x, color_markers->getMarkerRegionHeight());
 
-        ImVec2 cursor = ImGui::GetCursorScreenPos();
-        ImGui::SetCursorScreenPos(ImVec2(cursor.x + marker_half_width, cursor.y));
+        ImVec2 screen_cursor = ImGui::GetCursorScreenPos();
+        ImGui::SetCursorScreenPos(ImVec2(screen_cursor.x + marker_half_width, screen_cursor.y));
         marker_region_size_.x -= marker_half_width + window_padding_x;
         marker_region_size = marker_region_size_;
 

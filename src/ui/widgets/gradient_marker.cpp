@@ -14,7 +14,7 @@
 
 void MarkerData::drawMarker(
     const char* label,
-    const int64_t id,
+    const int64_t marker_id,
     const ImVec2 rect_p0,
     const ImVec2 rect_p1,
     const ImVec4& rect_color,
@@ -53,7 +53,7 @@ void MarkerData::drawMarker(
     }
 
     // カラーボタンを描画
-    ImGui::PushID(std::format("{}", id).c_str());  // int64_t 型に対応していないため、文字列に変換して渡す
+    ImGui::PushID(std::format("{}", marker_id).c_str());  // int64_t 型に対応していないため、文字列に変換して渡す
     {
         ImVec2 backup = ImGui::GetCursorScreenPos();
         ImGui::SetCursorScreenPos(p0);
