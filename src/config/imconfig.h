@@ -1,0 +1,6 @@
+#ifndef IMGUI_USER_CONFIG_H
+#define IMGUI_USER_CONFIG_H
+
+#define IMGUI_DISABLE_DEFAULT_FONT
+
+#endif
