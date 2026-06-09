@@ -2,7 +2,6 @@
 #define FONT_LOADER_H
 
 // clang-format off
-#include <format>
 #define WIN32_LEAN_AND_MEAN
 #define NOMINMAX
 #include <windows.h>
