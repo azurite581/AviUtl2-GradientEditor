@@ -205,7 +205,6 @@ void App::run(std::promise<HWND>&& hwnd_promise)
     ::UpdateWindow(hwnd);
 
     // メインビューの初期化
-    // コンストラクタ内でプリセットの初期化を行う
     m_main_view = std::make_unique<MainView>(
         get_logger_wrapper_interface(gradient_editor::g_app_state.log_handle),
         get_config_wrapper_interface(gradient_editor::g_app_state.config_handle));

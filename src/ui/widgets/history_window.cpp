@@ -9,6 +9,24 @@
 #include "imgui.h"
 #include "imgui_utils.h"
 
+void HistoryWindow::init(LoggerWrapperInterface* logger_wrapper, ConfigWrapperInterface* config_wrapper, GradientConfigManager& manager, History& cfg)
+{
+    m_logger_wrapper = logger_wrapper;
+    m_config_wrapper = config_wrapper;
+    loadHistories(manager, cfg);
+}
+
+void HistoryWindow::loadHistories(GradientConfigManager& manager, History& cfg)
+{
+    m_history_data.clear();
+    for (const auto& history : cfg.histories) {
+        m_history_data.push_back({history.name, manager.history2gradient(history)});
+        if (static_cast<int32_t>(std::ssize(m_history_data)) > HISTORY_MAX_COUNT) {
+            m_history_data.pop_front();
+        }
+    }
+}
+
 void HistoryWindow::pushHistory(const GradientData& gradient_data)
 {
     auto now       = std::chrono::system_clock::now();
@@ -34,24 +52,6 @@ void HistoryWindow::render(GradientConfigManager& manager, History& cfg)
     static ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse;
     bool history_window_visible = ImGui::Begin((m_config_wrapper->tr(L"履歴") + "###history_window").c_str(), nullptr, window_flags);
     if (history_window_visible) {
-        // 履歴を読み込む
-        auto loadHistory = [&]() {
-            m_history_data.clear();
-
-            for (const auto& history : cfg.histories) {
-                m_history_data.push_back({history.name, manager.history2gradient(history)});
-                if (static_cast<int32_t>(std::ssize(m_history_data)) > HISTORY_MAX_COUNT) {
-                    m_history_data.pop_front();
-                }
-            }
-        };
-
-        // 初回のみ履歴を読み込む
-        if (!m_is_initialized) {
-            m_is_initialized = true;
-            loadHistory();
-        }
-
         imgui_utils::alignForWidth(ImGui::GetFrameHeight(), 1.0f);  // 右揃え
         if (imgui_utils::squareIconButton(ICON_MS_DELETE_HISTORY, "##delete_history")) {
             ImGui::OpenPopup((m_config_wrapper->tr(L"すべての履歴を削除") + "###delete_history").c_str());
@@ -83,7 +83,7 @@ void HistoryWindow::render(GradientConfigManager& manager, History& cfg)
 
             if (ImGui::Button((m_config_wrapper->tr(L"削除") + "###delete_history").c_str(), ImVec2(button_width, 0))) {
                 manager.deleteHistory(cfg);
-                loadHistory();
+                loadHistories(manager, cfg);
                 ImGui::CloseCurrentPopup();
             }
 
