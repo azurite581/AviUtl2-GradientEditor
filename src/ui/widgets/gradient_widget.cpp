@@ -149,11 +149,6 @@ GradientData* drawGradientEditor(
     color_markers->setGradientRegion(p0, p1);
     alpha_markers->setGradientRegion(p0, p1);
 
-    // ボーダー
-    if (ImGui::GetStyle().FrameBorderSize == 1.0f) {
-        ImVec4 border_color = ImGui::GetStyle().Colors[ImGuiCol_Border];
-        draw_list->AddRect(p0, p1, ImGui::ColorConvertFloat4ToU32(border_color), 0, 1.0f, 0);
-    }
     if (!(flags & GradientEditorFlags_NoMarker)) ImGui::PopStyleVar();
 
     // マーカーの描画
@@ -226,6 +221,12 @@ GradientData* drawGradientEditor(
 
     ImGui::SetCursorScreenPos(gradient_cursor);
     ImGui::Image((ImTextureID)(intptr_t)gradient_data->getOutputSrv(), gradient_region_size);
+    p0 = ImGui::GetItemRectMin();
+    p1 = ImGui::GetItemRectMax();
+    // ボーダー
+    ImU32 border_color = ImGui::ColorConvertFloat4ToU32(ImGui::GetStyle().Colors[ImGuiCol_Border]);
+    draw_list->AddRect(p0, p1, border_color, 0, 1.0f, 0);
+
     if (!(flags & GradientEditorFlags_NoMarker)) {
         ImGui::InvisibleButton("markers_draw_region", marker_region_size);
     }

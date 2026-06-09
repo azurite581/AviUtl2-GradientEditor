@@ -135,12 +135,17 @@ inline bool pushToggleButton(const char* label, bool* v, bool* is_pressed, const
     if (*v) {
         ImVec4 active_color = ImGui::GetStyle().Colors[ImGuiCol_ButtonActive];
         ImGui::PushStyleColor(ImGuiCol_Button, active_color);
+        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, active_color);
     }
 
     bool pressed = ImGui::Button(label, size);
 
-    if (*v) ImGui::PopStyleColor();
-    if (pressed) *v = !(*v);
+    if (*v) {
+        ImGui::PopStyleColor(2);
+    }
+    if (pressed) {
+        *v = !(*v);
+    }
 
     return pressed;
 }

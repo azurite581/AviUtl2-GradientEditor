@@ -28,10 +28,6 @@ MainView::MainView(LoggerWrapperInterface* logger_wrapper, ConfigWrapperInterfac
     // std::ofstream file("log.txt");
     // std::cout.rdbuf(file.rdbuf());
 
-    m_preset_window.setLoggerWrapper(m_logger_wrapper);
-    m_preset_window.setConfigWrapper(m_config_wrapper);
-    m_history_window.setLoggerWrapper(m_logger_wrapper);
-    m_history_window.setConfigWrapper(m_config_wrapper);
     m_script_bridge.setLoggerWrapper(m_logger_wrapper);
 
     std::filesystem::path data_path          = gradient_editor::g_app_state.config_handle->app_data_path;
@@ -79,6 +75,10 @@ MainView::MainView(LoggerWrapperInterface* logger_wrapper, ConfigWrapperInterfac
         m_logger_wrapper->error("{}", history_load_result.error.c_str());
     }
     m_history_config = history_load_result.config;
+
+    // 各ウィンドウを初期化
+    m_preset_window.init(m_logger_wrapper, m_config_wrapper, m_config_manager, m_preset_config);
+    m_history_window.init(m_logger_wrapper, m_config_wrapper, m_config_manager, m_history_config);
 
     m_object_video_color_start = color_conv::u32Rgba2u32Abgr(color_conv::u32Rgb2u32Rgba(gradient_editor::g_app_state.config_handle->get_color_code_index(gradient_editor::g_app_state.config_handle, "ObjectVideo", 0), 0xFF));
     m_object_video_color_stop  = color_conv::u32Rgba2u32Abgr(color_conv::u32Rgb2u32Rgba(gradient_editor::g_app_state.config_handle->get_color_code_index(gradient_editor::g_app_state.config_handle, "ObjectVideo", 1), 0xFF));
@@ -163,7 +163,7 @@ void MainView::render()
                     switch (open_file_dialog_result.result) {
                         case FileDialogResult::FD_OKAY: {
                             auto paths = std::get<static_cast<int32_t>(FileDialogResult::FD_OKAY)>(open_file_dialog_result.value);
-                            for (const auto& path : paths) {
+                            for (int32_t i = 0; const auto& path : paths) {
                                 auto grd = parseGRD(path);
                                 if (!grd) {
                                     m_logger_wrapper->error("{}", grd.error());
@@ -176,15 +176,24 @@ void MainView::render()
                                     m_logger_wrapper->log("{}", msg);
                                 }
 
-                                // プリセットをプリセットウィンドウに読み込む
+                                // ファイル名を名前にしたカテゴリーを新規作成
+                                std::string file_name = str_conv::wideCharToMultiByte(path.stem().wstring());
+                                m_config_manager.addCategory(m_preset_config, file_name);
+                                auto categories = m_config_manager.loadCategories(m_preset_config);
+                                m_preset_window.setCategories(categories);
+
+                                // プリセットを作成したカテゴリーに読み込む
                                 for (const auto& preset : presets) {
-                                    // ファイル名をカテゴリー名にする
-                                    std::string file_name = str_conv::wideCharToMultiByte(path.stem().wstring());
-                                    m_config_manager.addCategory(m_preset_config, file_name);
-                                    auto categories = m_config_manager.loadCategories(m_preset_config);
-                                    m_preset_window.setCategories(categories);
                                     m_config_manager.addPreset(m_preset_config, preset, preset.name, file_name);
                                 }
+
+                                // 最後に作成したカテゴリーを選択状態にする
+                                if (i == static_cast<int32_t>(std::ssize(paths)) - 1) {
+                                    int32_t new_category_index = ImMax(static_cast<int32_t>(std::ssize(categories)) - 1, 0);
+                                    m_preset_window.setSelectedCategoryIndex(new_category_index);
+                                }
+
+                                ++i;
                             }
                             break;
                         }
@@ -371,7 +380,7 @@ void MainView::render()
         }
 
         // 初回はプリセットウィンドウにフォーカスを合わせる
-        if (!m_is_init) {
+        if (m_window_visible.preset_window && !m_is_init) {
             ImGui::SetWindowFocus("###preset_window");
         }
 
@@ -404,14 +413,12 @@ void MainView::renderGradientEditor()
         return res;
     }();
 
-    bool is_changed_section_effect = false;
     ImGui::AlignTextToFramePadding();
     ImGui::TextUnformatted(m_config_wrapper->tr(L"対象").c_str());
     ImGui::SameLine();
     if (ImGui::BeginCombo("##スクリプト", effect_names_vec[m_effect_name_index].c_str(), ImGuiComboFlags_WidthFitPreview)) {
         for (uint32_t i = 0; i < effect_names_vec.size(); ++i) {
             if (ImGui::Selectable(effect_names_vec[i].c_str(), m_effect_name_index == i)) {
-                is_changed_section_effect = true;
                 m_effect_name_index       = i;
             }
         }
@@ -769,7 +776,6 @@ void MainView::renderGradientEditor()
         (m_apply && (                                          // または「反映」ON の状態で、
                         m_preset_window.isPresetClicked() ||   // プリセットがクリックされた
                         is_refresh ||                          // 更新ボタンが押された
-                        is_changed_section_effect ||           // 対象とするスクリプトが変更された
                         is_changed_effect_index ||             // 同じスクリプトが複数ある際、対象とするスクリプトのインデックスが変更された
                         is_reverse || is_reverse_alpha_marker  // マーカー反転のボタンが押された
                         ));

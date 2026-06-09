@@ -1,8 +1,6 @@
 #include "preset_window.h"
 
 #include <algorithm>
-#include <cstdio>
-#include <iostream>
 #include <ranges>
 
 #include "IconsMaterialSymbols.h"
@@ -13,36 +11,36 @@
 #include "imgui_utils.h"
 #include "misc/cpp/imgui_stdlib.h"
 
+void PresetWindow::init(LoggerWrapperInterface* logger_wrapper, ConfigWrapperInterface* config_wrapper, [[maybe_unused]] GradientConfigManager& manager, Preset& cfg)
+{
+    m_logger_wrapper = logger_wrapper;
+    m_config_wrapper = config_wrapper;
+
+    // カテゴリーの初期化
+    loadCategories(cfg);
+    m_selected_category_name = GradientConfigManager::DEFAULT_CATEGORY;
+    m_selected_category_index   = std::clamp(cfg.selected_category, 0, static_cast<int32_t>(std::ssize(m_categories) - 1));
+    m_old_category_name = m_categories[m_selected_category_index];  // 起動時に読み込まれるカテゴリー
+}
+
+void PresetWindow::loadCategories(Preset& cfg)
+{
+    // 重複なしでカテゴリーを読み込む
+    m_categories.clear();
+    std::unordered_set<std::string> seen;
+    if (!cfg.categories.empty()) {
+        for (const auto& [i, category] : cfg.categories | std::views::enumerate) {
+            if (seen.insert(category).second) {  // 新規なら true を返す
+                m_categories.push_back(category);
+            }
+        }
+    } else {
+        m_categories.push_back(GradientConfigManager::DEFAULT_CATEGORY);
+    }
+}
+
 void PresetWindow::render(GradientConfigManager& manager, Preset& cfg)
 {
-    static std::vector<std::string> categories;
-    static int32_t category_selected_index = m_selected_category_index = cfg.selected_category;
-    static std::string selected_category_name                          = GradientConfigManager::DEFAULT_CATEGORY;
-
-    // 重複なしでカテゴリーを読み込む
-    auto loadCategories = [&]() {
-        m_categories.clear();
-        std::unordered_set<std::string> seen;
-        if (!cfg.categories.empty()) {
-            for (const auto& [i, category] : cfg.categories | std::views::enumerate) {
-                if (seen.insert(category).second) {  // 新規なら true を返す
-                    m_categories.push_back(category);
-                }
-            }
-        } else {
-            m_categories.push_back(GradientConfigManager::DEFAULT_CATEGORY);
-        }
-    };
-
-    if (!m_is_initialized) {
-        m_is_initialized = true;
-        loadCategories();
-        category_selected_index   = std::clamp(category_selected_index, 0, static_cast<int32_t>(std::ssize(m_categories) - 1));
-        m_selected_category_index = category_selected_index;
-
-        m_old_category_name = m_categories[category_selected_index];  // 起動時に読み込まれるカテゴリー
-    }
-
     //
     // プリセットウィンドウ
     //
@@ -70,19 +68,20 @@ void PresetWindow::render(GradientConfigManager& manager, Preset& cfg)
             static ImGuiComboFlags combo_flags = 0;
 
             // カテゴリーコンボボックス
-            const char* combo_preview_value = m_categories[category_selected_index].c_str();
+            const char* combo_preview_value = m_categories[m_selected_category_index].c_str();
             ImGui::SetNextItemWidth(-FLT_MIN);
             if (ImGui::BeginCombo("##category_combo", combo_preview_value, combo_flags)) {
                 for (int i = 0; i < std::ssize(m_categories); ++i) {
-                    const bool is_selected = (category_selected_index == i);
-                    if (ImGui::Selectable(m_categories[i].c_str(), is_selected))
-                        category_selected_index = m_selected_category_index = i;
+                    const bool is_selected = (m_selected_category_index == i);
+                    if (ImGui::Selectable(m_categories[i].c_str(), is_selected)) {
+                        m_selected_category_index = i;
+                    }
 
                     if (is_selected) ImGui::SetItemDefaultFocus();
                 }
                 ImGui::EndCombo();
             }
-            selected_category_name = m_categories[category_selected_index];
+            m_selected_category_name = m_categories[m_selected_category_index];
 
             // カテゴリー編集ボタン
             ImGui::TableNextColumn();
@@ -208,7 +207,7 @@ void PresetWindow::render(GradientConfigManager& manager, Preset& cfg)
                                 if (!result.is_success) {
                                     m_logger_wrapper->error("{}", result.error);
                                 } else {
-                                    loadCategories();
+                                    loadCategories(cfg);
                                 }
 
                                 m_old_category_name    = category_name;
@@ -245,8 +244,8 @@ void PresetWindow::render(GradientConfigManager& manager, Preset& cfg)
                                 }
 
                                 // 削除前にコンボボックスのインデックスを変更する
-                                if (delete_category_index != 0 && category_selected_index >= delete_category_index) {
-                                    category_selected_index--;
+                                if (delete_category_index != 0 && m_selected_category_index >= delete_category_index) {
+                                    m_selected_category_index--;
                                 }
 
                                 // デフォルトカテゴリーの作成
@@ -266,7 +265,7 @@ void PresetWindow::render(GradientConfigManager& manager, Preset& cfg)
                                 if (!result.is_success) {
                                     m_logger_wrapper->error("{}", result.error);
                                 } else {
-                                    loadCategories();
+                                    loadCategories(cfg);
                                 }
                             }
 
@@ -281,15 +280,15 @@ void PresetWindow::render(GradientConfigManager& manager, Preset& cfg)
                                 }
 
                                 // 削除前にコンボボックスのインデックスを変更する
-                                if (delete_category_index != 0 && category_selected_index >= delete_category_index) {
-                                    category_selected_index--;
+                                if (delete_category_index != 0 && m_selected_category_index >= delete_category_index) {
+                                    m_selected_category_index--;
                                 }
 
                                 auto result = manager.deleteCategoryAndPresets(cfg, m_old_category_name);
                                 if (!result.is_success) {
                                     m_logger_wrapper->error("{}", result.error);
                                 } else {
-                                    loadCategories();
+                                    loadCategories(cfg);
                                 }
                             }
                             ImGui::EndMenu();
@@ -362,7 +361,7 @@ void PresetWindow::render(GradientConfigManager& manager, Preset& cfg)
                         if (!result.is_success) {
                             m_logger_wrapper->error("{}", result.error);
                         } else {
-                            loadCategories();
+                            loadCategories(cfg);
                         }
                     }
                     ImGui::CloseCurrentPopup();
@@ -460,13 +459,13 @@ void PresetWindow::render(GradientConfigManager& manager, Preset& cfg)
 
                 if (is_empty || exist_same_preset_name) ImGui::BeginDisabled();
                 if (ImGui::Button((m_config_wrapper->tr(L"上書き") + "###overwrite").c_str(), ImVec2(MODAL_WINDOW_WIDTH, 0))) {
-                    auto result = manager.overwritePreset(cfg, cfg.presets[m_selected_preset_index], m_selected_preset_index, input_preset_name, selected_category_name);
+                    auto result = manager.overwritePreset(cfg, cfg.presets[m_selected_preset_index], m_selected_preset_index, input_preset_name, m_selected_category_name);
                     if (!result.is_success) {
                         auto error_msg = result.error + "\n";
                         m_logger_wrapper->error("{}", error_msg);
                         OutputDebugStringA(error_msg.c_str());
                     } else {
-                        loadCategories();
+                        loadCategories(cfg);
                     }
                     m_preset_name = input_preset_name;
 
@@ -528,13 +527,13 @@ void PresetWindow::render(GradientConfigManager& manager, Preset& cfg)
 
                 if (ImGui::Button((m_config_wrapper->tr(L"上書き保存") + "###overwrite").c_str(), ImVec2(button_width, 0))) {
                     auto preset = manager.gradient2preset(m_target_gradient_data);
-                    auto result = manager.overwritePreset(cfg, preset, m_selected_preset_index, original_preset_name, selected_category_name);
+                    auto result = manager.overwritePreset(cfg, preset, m_selected_preset_index, original_preset_name, m_selected_category_name);
                     if (!result.is_success) {
                         auto error_msg = result.error + "\n";
                         m_logger_wrapper->error("{}", error_msg);
                         OutputDebugStringA(error_msg.c_str());
                     } else {
-                        loadCategories();
+                        loadCategories(cfg);
                     }
 
                     ImGui::CloseCurrentPopup();
@@ -586,11 +585,11 @@ void PresetWindow::render(GradientConfigManager& manager, Preset& cfg)
                 if (is_empty || exist_same_preset_name) ImGui::BeginDisabled(true);
                 if (ImGui::Button((m_config_wrapper->tr(L"保存") + "###save").c_str(), ImVec2(button_width, 0))) {
                     auto preset = manager.gradient2preset(m_target_gradient_data);
-                    auto result = manager.addPreset(cfg, preset, input_preset_name, selected_category_name);
+                    auto result = manager.addPreset(cfg, preset, input_preset_name, m_selected_category_name);
                     if (!result.is_success) {
                         m_logger_wrapper->error("{}", result.error);
                     } else {
-                        loadCategories();
+                        loadCategories(cfg);
                         // 追加されたプリセットを選択状態にする
                         m_selected_preset_index = static_cast<int32_t>(cfg.presets.size()) - 1;
                         m_selected_gradient     = manager.preset2gradient(cfg.presets.back());
@@ -622,7 +621,7 @@ void PresetWindow::render(GradientConfigManager& manager, Preset& cfg)
         ImGui::Dummy(ImVec2(0, ImGui::GetFrameHeight() * ITEM_SPACING_SCALE_Y));
 
         // プリセット一覧を描画
-        renderPresetList(manager, cfg, selected_category_name);
+        renderPresetList(manager, cfg, m_selected_category_name);
     }
     ImGui::End();
 }
@@ -630,22 +629,6 @@ void PresetWindow::render(GradientConfigManager& manager, Preset& cfg)
 void PresetWindow::renderPresetList(GradientConfigManager& manager, Preset& cfg, std::string_view category)
 {
     bool is_delete               = false;
-    static uint32_t delete_index = 0;
-
-    auto loadCategories = [&]() {
-        m_categories.clear();
-        std::unordered_set<std::string> seen;
-        if (!cfg.categories.empty()) {
-            for (const auto& [i, category] : cfg.categories | std::views::enumerate) {
-                if (seen.insert(category).second) {  // 新規なら true を返す
-                    m_categories.push_back(category);
-                }
-            }
-        } else {
-            m_categories.push_back(GradientConfigManager::DEFAULT_CATEGORY);
-        }
-    };
-
     ImVec2 gradient_size = ImVec2(ImGui::GetContentRegionAvail().x, ImGui::GetFrameHeight() * PRESET_GRADIENT_HEIGHT);
     gradient_size.x      = ImMax(1.0f, gradient_size.x);
     gradient_size.y      = ImMax(1.0f, gradient_size.y);
@@ -773,7 +756,7 @@ void PresetWindow::renderPresetList(GradientConfigManager& manager, Preset& cfg,
 
                 if (ImGui::Selectable(m_config_wrapper->tr(L"削除").c_str())) {
                     is_delete    = true;
-                    delete_index = static_cast<uint32_t>(i);
+                    m_delete_index = static_cast<uint32_t>(i);
                     ImGui::CloseCurrentPopup();
                 }
                 ImGui::EndPopup();
@@ -822,7 +805,7 @@ void PresetWindow::renderPresetList(GradientConfigManager& manager, Preset& cfg,
                             if (!result.is_success) {
                                 m_logger_wrapper->error("{}", result.error);
                             } else {
-                                loadCategories();
+                                loadCategories(cfg);
                             }
                         }
                         ImGui::SameLine();
@@ -847,7 +830,7 @@ void PresetWindow::renderPresetList(GradientConfigManager& manager, Preset& cfg,
                             if (!result.is_success) {
                                 m_logger_wrapper->error("{}", result.error);
                             } else {
-                                loadCategories();
+                                loadCategories(cfg);
                             }
                         }
 
@@ -856,7 +839,7 @@ void PresetWindow::renderPresetList(GradientConfigManager& manager, Preset& cfg,
                         if (!result.is_success) {
                             m_logger_wrapper->error("{}", result.error);
                         } else {
-                            loadCategories();
+                            loadCategories(cfg);
                         }
 
                         ImGui::CloseCurrentPopup();
@@ -909,7 +892,7 @@ void PresetWindow::renderPresetList(GradientConfigManager& manager, Preset& cfg,
     ImGuiWindowFlags modal_flags = ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoMove;
 
     if (ImGui::BeginPopupModal((m_config_wrapper->tr(L"削除") + "###delete_confirmation").c_str(), nullptr, modal_flags)) {
-        std::string replace_preset_name = cfg.presets[delete_index].name;
+        std::string replace_preset_name = cfg.presets[m_delete_index].name;
         ImGui::Text(m_config_wrapper->tr(L"プリセット \"%s\" を削除しますか?").c_str(), replace_preset_name.c_str(), m_preset_name.c_str());
 
         ImGui::Dummy(ImVec2(0, ImGui::GetFrameHeight() * ITEM_SPACING_SCALE_Y));
@@ -923,7 +906,7 @@ void PresetWindow::renderPresetList(GradientConfigManager& manager, Preset& cfg,
         if (off > 0.0f) ImGui::SetCursorPosX(ImGui::GetCursorPosX() + off);
 
         if (ImGui::Button((m_config_wrapper->tr(L"はい") + "###yes").c_str(), ImVec2(MODAL_WINDOW_WIDTH, 0))) {
-            auto result = manager.deletePreset(cfg, delete_index);
+            auto result = manager.deletePreset(cfg, m_delete_index);
             if (!result.is_success) {
                 m_logger_wrapper->error("{}", result.error);
             }
