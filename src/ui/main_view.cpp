@@ -404,14 +404,12 @@ void MainView::renderGradientEditor()
         return res;
     }();
 
-    bool is_changed_section_effect = false;
     ImGui::AlignTextToFramePadding();
     ImGui::TextUnformatted(m_config_wrapper->tr(L"対象").c_str());
     ImGui::SameLine();
     if (ImGui::BeginCombo("##スクリプト", effect_names_vec[m_effect_name_index].c_str(), ImGuiComboFlags_WidthFitPreview)) {
         for (uint32_t i = 0; i < effect_names_vec.size(); ++i) {
             if (ImGui::Selectable(effect_names_vec[i].c_str(), m_effect_name_index == i)) {
-                is_changed_section_effect = true;
                 m_effect_name_index       = i;
             }
         }
@@ -769,7 +767,6 @@ void MainView::renderGradientEditor()
         (m_apply && (                                          // または「反映」ON の状態で、
                         m_preset_window.isPresetClicked() ||   // プリセットがクリックされた
                         is_refresh ||                          // 更新ボタンが押された
-                        is_changed_section_effect ||           // 対象とするスクリプトが変更された
                         is_changed_effect_index ||             // 同じスクリプトが複数ある際、対象とするスクリプトのインデックスが変更された
                         is_reverse || is_reverse_alpha_marker  // マーカー反転のボタンが押された
                         ));
