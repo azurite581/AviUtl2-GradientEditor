@@ -6,7 +6,10 @@ indent_style = space
 trim_trailing_whitespace = true
 insert_final_newline = true
 
-[*.{yml,yaml,clangd}]
+[*.{yml,yaml,cmake,clangd}]
+indent_size = 2
+
+[CMakeLists.txt]
 indent_size = 2
 
 [*.md]
