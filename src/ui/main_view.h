@@ -23,7 +23,7 @@ public:
     WindowVisible getWindowVisible() const noexcept { return m_window_visible; }
 
 private:
-    bool colorPickerPopup(const char* label, ImVec4& current_color, ImVec4& previous_color);
+    bool colorPickerPopup(const char* label, ImVec4& current_color, ImVec4& previous_color, const PALETTE_INFO& palette_info);
     void renderGradientEditor();
     void renderColorPropertyEditor(GradientData* data);
     void renderAlphaPropertyEditor(GradientData* data);
@@ -48,6 +48,7 @@ private:
     int32_t m_target_move_index      = 0;
     int32_t m_frame_count            = 2;
     OBJECT_LAYER_FRAME m_layer_frame = {0, 0, 0};
+    PALETTE_INFO m_palette_info{};
 
     bool m_apply   = false;
     bool m_load    = false;

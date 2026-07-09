@@ -85,11 +85,11 @@ MainView::MainView(LoggerWrapperInterface* logger_wrapper, ConfigWrapperInterfac
     m_frame_cursor_color       = color_conv::u32Rgba2u32Abgr(color_conv::u32Rgb2u32Rgba(gradient_editor::g_app_state.config_handle->get_color_code(gradient_editor::g_app_state.config_handle, "FrameCursor"), 0xFF));
 }
 
-bool MainView::colorPickerPopup(const char* label, ImVec4& current_color, ImVec4& previous_color)
+bool MainView::colorPickerPopup(const char* label, ImVec4& current_color, ImVec4& previous_color, const PALETTE_INFO& palette_info)
 {
     bool changed = false;
-    ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(10, 2));
-    ImGui::PushStyleVarX(ImGuiStyleVar_ItemInnerSpacing, 2);
+    ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(10.0f, 2.0f));
+    ImGui::PushStyleVarX(ImGuiStyleVar_ItemInnerSpacing, 2.0f);
 
     if (ImGui::BeginPopup(label)) {
         changed |= ImGui::ColorPicker4("##marker_color_picker", (float*)&current_color, ImGuiColorEditFlags_NoSidePreview | ImGuiColorEditFlags_NoSmallPreview | ImGuiColorEditFlags_AlphaBar);
@@ -99,18 +99,50 @@ bool MainView::colorPickerPopup(const char* label, ImVec4& current_color, ImVec4
         {
             ImGui::TextUnformatted(m_config_wrapper->tr(L"現在の色").c_str());
             ImGuiColorEditFlags color_button_flags = ImGuiColorEditFlags_NoPicker | ImGuiColorEditFlags_AlphaPreviewHalf;
-            ImVec2 color_button_size               = ImVec2(ImGui::GetContentRegionAvail().x, ImGui::GetContentRegionAvail().x * 0.6f);
+            ImVec2 color_button_size               = ImVec2(ImGui::GetFrameHeight() * 2.5f, ImGui::GetFrameHeight() * 1.75f);
             changed |= ImGui::ColorButton("##current_color", current_color, color_button_flags, color_button_size);
 
+            ImVec2 space_y = ImVec2(0.0f, ImGui::GetFrameHeight() * 0.25f);
+            ImGui::Dummy(space_y);
             ImGui::TextUnformatted(m_config_wrapper->tr(L"以前の色").c_str());
             if (ImGui::ColorButton("##previous_color", previous_color, color_button_flags, color_button_size)) {
-                changed |= true;
+                changed = true;
                 current_color = previous_color;
             }
 
+            // パレット
+            ImGui::Dummy(space_y);
+            auto normColor = [](unsigned char r, unsigned char g, unsigned char b, unsigned char a) {
+                return ImVec4{ r / 255.0f, g / 255.0f, b / 255.0f, a / 255.0f };
+            };
+            const ImVec2 palette_button_size = { ImGui::GetFrameHeight() * 0.8f, ImGui::GetFrameHeight() * 0.8f };
+            ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, {0.0f, 0.0f});
+            ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 0.0f);
+            for (int i = 0; i< IM_COUNTOF(palette_info.color); ++i) {
+                ImGui::PushID(i);
+                if ((i % 8) != 0) {
+                    ImGui::SameLine(0.0f, 0.0f);
+                }
+                ImGuiColorEditFlags palette_button_flags = ImGuiColorEditFlags_NoAlpha | ImGuiColorEditFlags_NoPicker | ImGuiColorEditFlags_NoTooltip;
+                if (ImGui::ColorButton("##palette",
+                    normColor(palette_info.color[i].r, palette_info.color[i].g, palette_info.color[i].b, palette_info.color[i].a),
+                    palette_button_flags,
+                    palette_button_size)
+                ) {
+                    current_color = normColor(palette_info.color[i].r, palette_info.color[i].g, palette_info.color[i].b, palette_info.color[i].a);
+                    changed = true;
+                }
+                ImGui::PopID();
+            }
+            ImGui::PopStyleVar(2);
+
+            ImGui::Dummy(space_y);
+            ImVec2 button_sz = ImVec2(ImGui::GetFrameHeight() * 4.0f, ImGui::GetFrameHeight());
             ImVec2 avail = ImGui::GetContentRegionAvail();
-            ImGui::Dummy(ImVec2(avail.x, avail.y - ImGui::GetFrameHeightWithSpacing()));
-            if (ImGui::Button(m_config_wrapper->tr(L"閉じる").c_str(), ImVec2(avail.x, ImGui::GetFrameHeight()))) {
+            ImGui::Dummy(ImVec2(0, avail.y - ImGui::GetFrameHeightWithSpacing()));
+            float off = (avail.x - button_sz.x);
+            if (off > 0.0f) ImGui::SetCursorPosX(ImGui::GetCursorPosX() + off);
+            if (ImGui::Button(m_config_wrapper->tr(L"閉じる").c_str(), button_sz)) {
                 ImGui::CloseCurrentPopup();
             }
         }
@@ -614,11 +646,19 @@ void MainView::renderGradientEditor()
 
     // カラーピッカーポップアップ
     if (m_data->getColorMarkers()->isDoubleClickedMarker(ImGui::GetIO().MousePos)) {
+        // パレット情報を取得
+        if (gradient_editor::g_app_state.m_project_loaded.load()) {
+            plugin2_utils::call_section(gradient_editor::g_app_state.edit_handle->call_read_section_param, [&](EDIT_SECTION* edit) {
+                auto palette_name = edit->get_palette_name();
+                edit->get_palette_info(palette_name, &m_palette_info, sizeof(PALETTE_INFO));
+            });
+        }
         m_popup_previous_color = m_popup_current_color;
         m_popup_current_color  = m_data->getColorMarkers()->getSelectedMarkerValue();
         ImGui::OpenPopup(COLOR_PICKER_POPUP_ID);
     }
-    if (colorPickerPopup(COLOR_PICKER_POPUP_ID, m_popup_current_color, m_popup_previous_color)) {
+
+    if (colorPickerPopup(COLOR_PICKER_POPUP_ID, m_popup_current_color, m_popup_previous_color, m_palette_info)) {
         m_data->getColorMarkers()->setSelectedMarkerValue(m_popup_current_color);
         m_redraw = true;
     }
@@ -859,6 +899,12 @@ void MainView::renderColorPropertyEditor(GradientData* data)
             m_data->getColorMarkers()->setSelectedMarkerValue(new_col);
         }
         if (click_btn) {
+            if (gradient_editor::g_app_state.m_project_loaded.load()) {
+                plugin2_utils::call_section(gradient_editor::g_app_state.edit_handle->call_read_section_param, [&](EDIT_SECTION* edit) {
+                    auto palette_name = edit->get_palette_name();
+                    edit->get_palette_info(palette_name, &m_palette_info, sizeof(PALETTE_INFO));
+                });
+            }
             m_popup_previous_color = m_popup_current_color;
             m_popup_current_color  = m_data->getColorMarkers()->getSelectedMarkerValue();
             ImGui::OpenPopup(COLOR_PICKER_POPUP_ID);

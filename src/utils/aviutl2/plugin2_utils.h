@@ -102,4 +102,14 @@ bool call_edit_lambda(bool (*api_func)(void*, void (*)(void*, EDIT_SECTION*)), F
     return api_func((void*)&lambda, callback_shim);
 }
 
+template <typename F>
+bool call_section(bool (*api_func)(void*, void (*)(void*, EDIT_SECTION*)), F&& lambda)
+{
+    auto callback_shim = [](void* param, EDIT_SECTION* edit) {
+        auto* func = static_cast<std::remove_reference_t<F>*>(param);
+        (*func)(edit);
+    };
+    return api_func((void*)&lambda, callback_shim);
+}
+
 }  // namespace plugin2_utils
