@@ -78,6 +78,7 @@ local blur_width = 100
 ---LCh=5
 ---Oklab=6
 ---Oklch=7
+---Kubelka-Munk=8
 local color_space = 0
 
 ---$select:補間経路
@@ -107,7 +108,9 @@ local alpha_blur_width = 100
 --group
 
 --[[pixelshader@psmain:
----$include "color.hlsl"
+---$include "../src/shaders/spectral.hlsli"
+---$include "../src/shaders/color.hlsli"
+---$include "gradient.hlsli"
 ---$include "gradient_map.hlsl"
 ]]
 

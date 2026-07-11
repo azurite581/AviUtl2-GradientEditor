@@ -125,6 +125,11 @@ EXTERN_C __declspec(dllexport) void RegisterPlugin(HOST_APP_TABLE* host)
     if (gradient_editor::g_app_state.version < 2003500) {
         host->set_plugin_information(PLUGIN_INFO);
     }
+
+    host->register_project_load_handler([](PROJECT_FILE*) {
+        gradient_editor::g_app_state.m_project_loaded.store(true);
+    });
+
     gradient_editor::g_app_state.edit_handle   = host->create_edit_handle();
     gradient_editor::g_app_state.host_app_hwnd = gradient_editor::g_app_state.edit_handle->get_host_app_window();
 

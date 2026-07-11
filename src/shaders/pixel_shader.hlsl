@@ -1,4 +1,5 @@
 #include "color.hlsli"
+#include "spectral.hlsli"
 
 struct VS_OUTPUT
 {
@@ -50,6 +51,23 @@ cbuffer pixelBuffer : register(b0)
 Texture2D src : register(t0);
 SamplerState samp : register(s0);
 
+#define EPS 1e-6
+
+// 黒付近は通常のlerpにフォールバックする
+bool isNearBlack(float3 srgb)
+{
+    float luma = dot(srgb, float3(0.2126, 0.7152, 0.0722));
+    return luma < EPS;
+}
+
+float3 safeSpectralMix(float3 col1, float3 col2, float t)
+{
+    if (isNearBlack(col1) || isNearBlack(col2)) {
+        return lerp(col1, col2, t);
+    }
+    return spectral_mix(col1, col2, t);
+}
+
 float smoothPulse(float t, float mid, float width)
 {
     float half_width = width * 0.5;
@@ -95,7 +113,7 @@ float4 makeGradient(float4 color1, float4 color2, float t, float mid, float widt
         float3 hsv1 = srgb2hsv(col1);
         float3 hsv2 = srgb2hsv(col2);
 
-        // 片方が透明であってもその色が持っているHueを維持してグラデーションを作るために、
+        // 片方が透明であってもその色が持っているHueを維持してグラデーションを作るために
         // アルファを掛ける前の彩度で無彩色かどうかを判定する
         bool has_valid_hue1 = hsv1.y > SATURATION_THRESHOLD;
         bool has_valid_hue2 = hsv2.y > SATURATION_THRESHOLD;
@@ -194,6 +212,11 @@ float4 makeGradient(float4 color1, float4 color2, float t, float mid, float widt
 
         float3 result_oklch = float3(mixed_lc.x, mixed_lc.y, mixed_hue);
         result = linear2srgb(clamp(oklch2linear(result_oklch), 0.0, 1.0));
+        break;
+    }
+    case 8:  // Kubelka-Munk
+    {
+        result = safeSpectralMix(col1, col2, t);
         break;
     }
     }

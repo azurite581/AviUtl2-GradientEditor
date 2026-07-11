@@ -58,7 +58,7 @@ inline constexpr const wchar_t* EFFECT_NAMES[]    = {
     L"MultiGradient",
     L"GradientMap"};
 
-constexpr const char* COLOR_SPACE_NAMES[] = {"sRGB", "Linear sRGB", "HSV", "HSL", "L*a*b", "LCh", "Oklab", "Oklch"};
+constexpr const char* COLOR_SPACE_NAMES[] = {"sRGB", "Linear sRGB", "HSV", "HSL", "L*a*b", "LCh", "Oklab", "Oklch", "Kubelka-Munk"};
 inline const char* INTERP_DIR_NAMES[]     = {reinterpret_cast<const char*>(u8"短経路"), reinterpret_cast<const char*>(u8"長経路")};
 
 #endif  // CONSTANTS_H
