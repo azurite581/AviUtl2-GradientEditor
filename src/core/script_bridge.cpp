@@ -78,7 +78,7 @@ void ScriptBridge::loadGradientFromScript(EDIT_SECTION* edit,
 
     // 色空間
     std::string color_space_str = plugin2_utils::getObjectItemValue(edit, object_handle, effect_name.c_str(), effect_index, L"色空間", std::string{COLOR_SPACE_NAMES[0]});
-    for (uint32_t i = 0; i < 8; ++i) {
+    for (uint32_t i = 0; i < 9; ++i) {
         if (color_space_str == COLOR_SPACE_NAMES[i]) {
             data.setColorSpace(i);
             break;
@@ -202,7 +202,7 @@ void ScriptBridge::applyGradientToScript(EDIT_SECTION* edit,
 
     // 色空間
     int32_t cs_idx = data.getColorSpace();
-    if (cs_idx >= 0 && cs_idx < 8) {
+    if (cs_idx >= 0 && cs_idx < 9) {
         plugin2_utils::setObjectItemValue(edit, object_handle, effect_name.c_str(), effect_index, L"色空間", std::string(COLOR_SPACE_NAMES[cs_idx]), std::string(COLOR_SPACE_NAMES[0]));
     }
 

@@ -388,12 +388,11 @@ public:
 
     void setSelectedMidpointRatio(const float ratio)
     {
-        //moveMidpoint(m_state.selected_midpoint_id, std::clamp(ratio, 0.0f, 1.0f));
+        // moveMidpoint(m_state.selected_midpoint_id, std::clamp(ratio, 0.0f, 1.0f));
         auto idx = getMarkerIndexById(m_state.selected_midpoint_id);
         if (idx == -1) return;
         m_markers[idx].midpoint.ratio = std::clamp(ratio, 0.0f, 1.0f);
     }
-
 
     void setIOEnable(const bool enable) noexcept { m_io_enable = enable; }
     void setMarkerUpward(const bool upward) noexcept { m_is_upward = upward; }

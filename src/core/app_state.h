@@ -6,6 +6,7 @@
 #include <filesystem>
 #include <functional>
 #include <thread>
+#include <atomic>
 #define WIN32_LEAN_AND_MEAN
 #define NOMINMAX
 #include <windows.h>
@@ -41,6 +42,8 @@ struct ApplicationState {
     std::filesystem::path settings_file_path;
 
     HWND host_app_hwnd = nullptr;
+
+    std::atomic<bool> m_project_loaded = false;
 
     struct Settigs {
         uint32_t ui_scale = 100;

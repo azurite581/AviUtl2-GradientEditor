@@ -1,3 +1,6 @@
+#ifndef COLOR_HLSL
+#define COLOR_HLSL
+
 #define PI 3.14159265358979323846
 #define TAU (2.0 * PI)
 
@@ -382,3 +385,5 @@ float3 oklch2linear(float3 oklch) {
     float3 oklab = lch2lab(oklch);
     return oklab2linear(oklab);
 }
+
+#endif  // COLOR_HLSL
