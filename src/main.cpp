@@ -23,16 +23,16 @@ LRESULT CALLBACK wnd_proc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
         return true;
     switch (msg) {
         case WM_MOUSEACTIVATE:
-            ::SetFocus(g_app.window_manager.getWindowHandle());
+            ::SetFocus(g_app.m_window_manager.getWindowHandle());
             return MA_ACTIVATE;
         case WM_CONTEXTMENU:
             return 0;
         case WM_SIZE:
             if (wparam == SIZE_MINIMIZED) return 0;
-            g_app.d3d_manager.setResizeWidth(static_cast<UINT>(LOWORD(lparam)));
-            g_app.d3d_manager.setResizeHeight(static_cast<UINT>(HIWORD(lparam)));
-            if (!g_app.window_manager.isResizing() && g_app.render) {
-                g_app.render();
+            g_app.m_d3d_manager.setResizeWidth(static_cast<UINT>(LOWORD(lparam)));
+            g_app.m_d3d_manager.setResizeHeight(static_cast<UINT>(HIWORD(lparam)));
+            if (!g_app.m_window_manager.isResizing() && g_app.m_render) {
+                g_app.m_render();
             }
             return 0;
         case WM_SYSCOMMAND:
@@ -42,10 +42,10 @@ LRESULT CALLBACK wnd_proc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
             ::PostQuitMessage(0);
             return 0;
         case WM_ENTERSIZEMOVE:
-            g_app.window_manager.setResizing(true);
+            g_app.m_window_manager.setResizing(true);
             return 0;
         case WM_EXITSIZEMOVE:
-            g_app.window_manager.setResizing(false);
+            g_app.m_window_manager.setResizing(false);
             return 0;
     }
     return ::DefWindowProcW(hwnd, msg, wparam, lparam);
@@ -74,19 +74,19 @@ EXTERN_C __declspec(dllexport) DWORD RequiredVersion()
 
 EXTERN_C __declspec(dllexport) void InitializeLogger(LOG_HANDLE* handle)
 {
-    g_app.log_handle = handle;
+    g_app.m_log_handle = handle;
 }
 
 EXTERN_C __declspec(dllexport) void InitializeConfig(CONFIG_HANDLE* handle)
 {
-    g_app.config_handle = handle;
+    g_app.m_config_handle = handle;
 
     // 設定ファイルの作成
-    std::filesystem::path settings_file_path{g_app.config_handle->app_data_path};
+    std::filesystem::path settings_file_path{g_app.m_config_handle->app_data_path};
     settings_file_path /= L"Plugin";
     settings_file_path /= App::PLUGIN_FILE_NAME;
     settings_file_path.replace_extension("ini");
-    g_app.settings_file_path = settings_file_path;
+    g_app.m_settings_file_path = settings_file_path;
 
     if (!std::filesystem::exists(settings_file_path)) {
         std::ofstream ofs(settings_file_path);
@@ -95,7 +95,7 @@ EXTERN_C __declspec(dllexport) void InitializeConfig(CONFIG_HANDLE* handle)
 
 EXTERN_C __declspec(dllexport) bool InitializePlugin(DWORD version)
 {
-    g_app.version = version;
+    g_app.m_version = version;
     if (version < 2003600) {
         return false;
     }
@@ -114,7 +114,7 @@ EXTERN_C __declspec(dllexport) COMMON_PLUGIN_TABLE* GetCommonPluginTable(void)
 
 EXTERN_C __declspec(dllexport) void RegisterPlugin(HOST_APP_TABLE* host)
 {
-    if (g_app.version < 2003500) {
+    if (g_app.m_version < 2003500) {
         host->set_plugin_information(App::PLUGIN_INFO);
     }
 
@@ -122,13 +122,13 @@ EXTERN_C __declspec(dllexport) void RegisterPlugin(HOST_APP_TABLE* host)
         g_app.m_project_loaded.store(true);
     });
 
-    g_app.edit_handle     = host->create_edit_handle();
-    g_app.m_host_app_hwnd = g_app.edit_handle->get_host_app_window();
+    g_app.m_edit_handle     = host->create_edit_handle();
+    g_app.m_host_app_hwnd = g_app.m_edit_handle->get_host_app_window();
 
     std::promise<HWND> p;
     auto f           = p.get_future();
-    g_app.gui_thread = std::thread(guiThreadMain, std::move(p));
+    g_app.m_gui_thread = std::thread(guiThreadMain, std::move(p));
 
     HWND hwnd = f.get();
-    host->register_window_client(g_app.config_handle->translate(g_app.config_handle, App::WINDOW_NAME), hwnd);
+    host->register_window_client(g_app.m_config_handle->translate(g_app.m_config_handle, App::WINDOW_NAME), hwnd);
 }

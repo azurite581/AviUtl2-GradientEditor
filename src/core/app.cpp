@@ -9,14 +9,13 @@
 #include "imgui_internal.h"
 #include "material_symbols.cpp"
 
-
 extern LRESULT CALLBACK wnd_proc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam);
 
 void App::applyAviutl2Style()
 {
     auto aulColor2imVec4 = [this](const std::string& name) -> ImVec4 {
-        if (!config_handle) return {};
-        auto rgb      = config_handle->get_color_code(config_handle, name.c_str());
+        if (!m_config_handle) return {};
+        auto rgb      = m_config_handle->get_color_code(m_config_handle, name.c_str());
         float inv_255 = 1.0f / 255.0f;
         float r       = static_cast<float>((rgb >> 16) & 0xFF) * inv_255;
         float g       = static_cast<float>((rgb >> 8) & 0xFF) * inv_255;
@@ -96,20 +95,20 @@ void App::run(std::promise<HWND>&& hwnd_promise)
     float main_scale = ImGui_ImplWin32_GetDpiScaleForMonitor(::MonitorFromPoint(POINT{0, 0}, MONITOR_DEFAULTTOPRIMARY));
 
     // ウィンドウの作成
-    if (!g_app.window_manager.createPluginWindow(WINDOW_NAME, main_scale, wnd_proc)) {
+    if (!m_window_manager.createPluginWindow(WINDOW_NAME, main_scale, wnd_proc)) {
         hwnd_promise.set_exception(std::make_exception_ptr(std::runtime_error("Failed to create window")));
         return;
     }
 
-    HWND hwnd = g_app.window_manager.getWindowHandle();
+    HWND hwnd = m_window_manager.getWindowHandle();
     hwnd_promise.set_value(hwnd);
 
     //
     // D3D の初期化
     //
-    if (!g_app.d3d_manager.initialize(hwnd)) {
-        g_app.d3d_manager.cleanup();
-        g_app.window_manager.unregisterClass();
+    if (!m_d3d_manager.initialize(hwnd)) {
+        m_d3d_manager.cleanup();
+        m_window_manager.unregisterClass();
         return;
     }
 
@@ -122,15 +121,7 @@ void App::run(std::promise<HWND>&& hwnd_promise)
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard | ImGuiConfigFlags_DockingEnable | ImGuiConfigFlags_ViewportsEnable;
 
     ImGui::StyleColorsDark();
-    ImGuiStyle& style          = ImGui::GetStyle();
-    style.FrameRounding        = Scale::Absolute::FRAME_ROUNDING;
-    style.GrabMinSize          = Scale::Absolute::GRAB_MIN_SIZE;
-    style.FrameBorderSize      = Scale::Absolute::FRAME_BORDER_SIZE;
-    style.TabRounding          = Scale::Absolute::TAB_ROUNDING;
-    style.DockingSeparatorSize = Scale::Absolute::DOCKING_SEPARATOR_SIZE;
-    style.ItemSpacing          = ImVec2(Scale::Absolute::ITEM_SPACING_X, Scale::Absolute::ITEM_SPACING_Y);
-    style.ItemInnerSpacing     = ImVec2(Scale::Absolute::ITEM_INNER_SPACING_X, style.ItemInnerSpacing.y);
-    style.ScrollbarRounding    = Scale::Absolute::SCROLLBAR_ROUNDING;
+    ImGuiStyle& style = ImGui::GetStyle();
 
     style.ScaleAllSizes(main_scale);
     style.FontScaleDpi         = main_scale;
@@ -145,10 +136,10 @@ void App::run(std::promise<HWND>&& hwnd_promise)
     // imgui.ini を自動生成しないようにする
     io.IniFilename = nullptr;
     readSettings();  // 設定を読み込む
-    style.FontScaleMain = g_app.settings.ui_scale / 100.0f;
+    style.FontScaleMain = m_settings.ui_scale / 100.0f;
 
     ImGui_ImplWin32_Init(hwnd);
-    ImGui_ImplDX11_Init(g_app.d3d_manager.getDevice().Get(), g_app.d3d_manager.getDeviceContext().Get());
+    ImGui_ImplDX11_Init(m_d3d_manager.getDevice().Get(), m_d3d_manager.getDeviceContext().Get());
 
     //
     // フォントの設定
@@ -158,7 +149,7 @@ void App::run(std::promise<HWND>&& hwnd_promise)
     config1.GlyphExcludeRanges = exclude_ranges;
 
     // sytle.conf からフォント名を取得
-    FONT_INFO* font_info = g_app.config_handle->get_font_info(g_app.config_handle, "DefaultFamily");
+    FONT_INFO* font_info = m_config_handle->get_font_info(m_config_handle, "DefaultFamily");
     // フォント名からフォントデータを取得
     auto font_data = getFontDataByName(font_info->name);
 
@@ -195,24 +186,31 @@ void App::run(std::promise<HWND>&& hwnd_promise)
     //
     applyAviutl2Style();
 
+    style.FrameRounding        = Scale::Absolute::FRAME_ROUNDING;
+    style.GrabMinSize          = Scale::Absolute::GRAB_MIN_SIZE;
+    style.FrameBorderSize      = Scale::Absolute::FRAME_BORDER_SIZE;
+    style.TabRounding          = Scale::Absolute::TAB_ROUNDING;
+    style.DockingSeparatorSize = Scale::Absolute::DOCKING_SEPARATOR_SIZE;
+    style.ScrollbarRounding    = Scale::Absolute::SCROLLBAR_ROUNDING;
+
     //
     // グラデーションエディター用の D3D を初期化
     //
-    custom_ui::initDX11(g_app.d3d_manager.getDevice(), g_app.d3d_manager.getDeviceContext());
+    custom_ui::initDX11(m_d3d_manager.getDevice(), m_d3d_manager.getDeviceContext());
 
     ::ShowWindow(hwnd, SW_SHOWDEFAULT);
     ::UpdateWindow(hwnd);
 
     // メインビューの初期化
     m_main_view = std::make_unique<MainView>(
-        get_logger_wrapper_interface(g_app.log_handle),
-        get_config_wrapper_interface(g_app.config_handle));
+        get_logger_wrapper_interface(m_log_handle),
+        get_config_wrapper_interface(m_config_handle));
 
-    m_main_view->setWindowVisible({static_cast<bool>(g_app.settings.preset_tab),
-                                   static_cast<bool>(g_app.settings.history_tab)});
+    m_main_view->setWindowVisible({static_cast<bool>(m_settings.preset_tab),
+                                   static_cast<bool>(m_settings.history_tab)});
 
     // WM_SIZE で ImGui のレンダリング処理を呼び出すために保存する
-    g_app.render = [this]() {
+    m_render = [this]() {
         renderFrame();
     };
 
@@ -228,7 +226,7 @@ void App::run(std::promise<HWND>&& hwnd_promise)
         if (done) break;
 
         // ウィンドウの表示状態を取得する
-        g_app.is_window_visible = (::IsWindowVisible(g_app.window_manager.getWindowHandle()) != 0);
+        m_is_window_visible = (::IsWindowVisible(m_window_manager.getWindowHandle()) != 0);
 
         renderFrame();
     }
@@ -237,18 +235,18 @@ void App::run(std::promise<HWND>&& hwnd_promise)
 void App::renderFrame()
 {
     static bool was_visible = true;
-    bool is_visible         = g_app.is_window_visible;
+    bool is_visible         = m_is_window_visible;
     bool just_hidden        = (was_visible && !is_visible);
     was_visible             = is_visible;
 
     // 非表示になった瞬間だけはオクルージョン判定を無視
-    if (!just_hidden && g_app.d3d_manager.isSwapChainOccluded() && g_app.d3d_manager.getSwapChain()->Present(0, DXGI_PRESENT_TEST) == DXGI_STATUS_OCCLUDED) {
+    if (!just_hidden && m_d3d_manager.isSwapChainOccluded() && m_d3d_manager.getSwapChain()->Present(0, DXGI_PRESENT_TEST) == DXGI_STATUS_OCCLUDED) {
         ::Sleep(10);
         return;
     }
 
-    g_app.d3d_manager.setSwapChainOccluded(false);
-    g_app.d3d_manager.handleWindowResize();
+    m_d3d_manager.setSwapChainOccluded(false);
+    m_d3d_manager.handleWindowResize();
 
     // 再入を防ぐ（WM_SIZE 等で renderFrame が再帰的に呼ばれる可能性がある）
     static thread_local bool s_in_render = false;
@@ -282,18 +280,23 @@ void App::renderFrame()
         ImGui::ClosePopupsOverWindow(nullptr, false);
     }
 
+    // 相対スケールを適用
+    ImGuiStyle& style      = ImGui::GetStyle();
+    style.ItemSpacing      = ImVec2(ImGui::GetFrameHeight() * Scale::Relative::ITEM_SPACING_X, ImGui::GetFrameHeight() * Scale::Relative::ITEM_SPACING_Y);
+    style.ItemInnerSpacing = ImVec2(ImGui::GetFrameHeight() * Scale::Relative::ITEM_INNER_SPACING_X, style.ItemInnerSpacing.y);
+
     // 非表示の時でもウィンドウ等の状態を維持するために描画処理を呼び出す
     m_main_view->render();
 
     ImGui::Render();
 
-    ImVec4 clear_color                    = color_conv::u32Rgb2Vec4Rgba<ImVec4>(g_app.config_handle->get_color_code(g_app.config_handle, "Background"));
+    ImVec4 clear_color                    = color_conv::u32Rgb2Vec4Rgba<ImVec4>(m_config_handle->get_color_code(m_config_handle, "Background"));
     const float clear_color_with_alpha[4] = {clear_color.x * clear_color.w, clear_color.y * clear_color.w, clear_color.z * clear_color.w, clear_color.w};
 
-    auto rtv = g_app.d3d_manager.getRenderTargetView();
+    auto rtv = m_d3d_manager.getRenderTargetView();
     if (rtv) {
-        g_app.d3d_manager.getDeviceContext()->OMSetRenderTargets(1, rtv.GetAddressOf(), nullptr);
-        g_app.d3d_manager.getDeviceContext()->ClearRenderTargetView(rtv.Get(), clear_color_with_alpha);
+        m_d3d_manager.getDeviceContext()->OMSetRenderTargets(1, rtv.GetAddressOf(), nullptr);
+        m_d3d_manager.getDeviceContext()->ClearRenderTargetView(rtv.Get(), clear_color_with_alpha);
     }
 
     ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
@@ -303,8 +306,8 @@ void App::renderFrame()
         ImGui::RenderPlatformWindowsDefault();
     }
 
-    HRESULT hr = g_app.d3d_manager.getSwapChain()->Present(1, 0);
-    g_app.d3d_manager.setSwapChainOccluded(hr == DXGI_STATUS_OCCLUDED);
+    HRESULT hr = m_d3d_manager.getSwapChain()->Present(1, 0);
+    m_d3d_manager.setSwapChainOccluded(hr == DXGI_STATUS_OCCLUDED);
 
     // 再入フラグを解除
     s_in_render = false;
@@ -314,14 +317,14 @@ void App::cleanup()
 {
     // タブの表示状態を保存
     auto visible               = m_main_view->getWindowVisible();
-    g_app.settings.preset_tab  = static_cast<uint32_t>(visible.preset_window);
-    g_app.settings.history_tab = static_cast<uint32_t>(visible.history_window);
+    m_settings.preset_tab  = static_cast<uint32_t>(visible.preset_window);
+    m_settings.history_tab = static_cast<uint32_t>(visible.history_window);
 
     writeSettings();                      // ウィンドウのレイアウト等の設定をファイルに書き込む
     m_main_view.get()->writeHistories();  // グラデーションの履歴をファイルに書き込む
 
     // ビューを解放
-    g_app.render = nullptr;
+    m_render = nullptr;
     m_main_view.reset();
     custom_ui::cleanup();
 
@@ -331,17 +334,17 @@ void App::cleanup()
     ImGui::DestroyContext();
 
     // グラデーション描画用の D3D を解放
-    g_app.d3d_manager.cleanup();
+    m_d3d_manager.cleanup();
 
     // WM_QUIT を App::run() 内のメッセージループに通知
-    HWND hwnd = window_manager.getWindowHandle();
+    HWND hwnd = m_window_manager.getWindowHandle();
     if (hwnd) {
         ::PostMessage(hwnd, WM_QUIT, 0, 0);
     }
 
     // GUI スレッドを停止
-    if (gui_thread.joinable()) {
-        gui_thread.join();
+    if (m_gui_thread.joinable()) {
+        m_gui_thread.join();
     }
 }
 
@@ -362,15 +365,15 @@ void App::readSettings()
     };
 
     // 設定ファイル全体を読み込む
-    std::ifstream ifs(g_app.settings_file_path);
+    std::ifstream ifs(m_settings_file_path);
     std::string settings_content((std::istreambuf_iterator<char>(ifs)), std::istreambuf_iterator<char>());
 
-    auto ui_scale              = getConfigInt(g_app.settings_file_path, "settings", "ui_scale", 100);
-    g_app.settings.ui_scale    = std::clamp(ui_scale, 50u, 400u);
-    auto preset_tab            = getConfigInt(g_app.settings_file_path, "settings", "preset_tab", 0);
-    g_app.settings.preset_tab  = std::clamp(preset_tab, 0u, 1u);
-    auto history_tab           = getConfigInt(g_app.settings_file_path, "settings", "history_tab", 0);
-    g_app.settings.history_tab = std::clamp(history_tab, 0u, 1u);
+    auto ui_scale              = getConfigInt(m_settings_file_path, "settings", "ui_scale", 100);
+    m_settings.ui_scale    = std::clamp(ui_scale, 50u, 400u);
+    auto preset_tab            = getConfigInt(m_settings_file_path, "settings", "preset_tab", 0);
+    m_settings.preset_tab  = std::clamp(preset_tab, 0u, 1u);
+    auto history_tab           = getConfigInt(m_settings_file_path, "settings", "history_tab", 0);
+    m_settings.history_tab = std::clamp(history_tab, 0u, 1u);
 
     // [imgui] セクション以下全体を抽出
     size_t imgui_start = settings_content.find("[imgui]");
@@ -393,7 +396,7 @@ void App::readSettings()
 void App::writeSettings()
 {
     {
-        std::ofstream ofs(g_app.settings_file_path);
+        std::ofstream ofs(m_settings_file_path);
         ofs.clear();
     }
 
@@ -405,15 +408,15 @@ void App::writeSettings()
     // 再書き込み
     std::string settings_data_str{};
     settings_data_str += "[settings]\n";
-    settings_data_str += std::format("ui_scale={}\n", g_app.settings.ui_scale);
-    settings_data_str += std::format("preset_tab={}\n", g_app.settings.preset_tab);
-    settings_data_str += std::format("history_tab={}\n", g_app.settings.history_tab);
+    settings_data_str += std::format("ui_scale={}\n", m_settings.ui_scale);
+    settings_data_str += std::format("preset_tab={}\n", m_settings.preset_tab);
+    settings_data_str += std::format("history_tab={}\n", m_settings.history_tab);
 
     settings_data_str += "\n";
 
     settings_data_str += "[imgui]\n";
     settings_data_str += imgui_data_str;
-    std::ofstream ofs(g_app.settings_file_path);
+    std::ofstream ofs(m_settings_file_path);
     ofs << settings_data_str;
 }
 
