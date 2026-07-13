@@ -184,7 +184,7 @@ void App::run(std::promise<HWND>&& hwnd_promise)
     // テキストカーソル
     style.Colors[ImGuiCol_InputTextCursor] = aulColor2imVec4("Text");
     // タブ
-    style.Colors[ImGuiCol_TabHovered]          = aulColor2imVec4("GroupingHover");
+    style.Colors[ImGuiCol_TabHovered]          = aulColor2imVec4("ButtonBodySelect");
     style.Colors[ImGuiCol_Tab]                 = aulColor2imVec4("Grouping");
     style.Colors[ImGuiCol_TabSelected]         = aulColor2imVec4("GroupingSelect");
     style.Colors[ImGuiCol_TabSelectedOverline] = aulColor2imVec4("BorderFocus");
