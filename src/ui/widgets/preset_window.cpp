@@ -4,7 +4,7 @@
 #include <ranges>
 
 #include "IconsMaterialSymbols.h"
-#include "app_state.h"
+#include "app.h"
 #include "file_dialog.h"
 #include "gradient_widget.h"
 #include "imgui.h"
@@ -296,7 +296,7 @@ void PresetWindow::render(GradientConfigManager& manager, Preset& cfg)
                         if (has_categories) ImGui::EndDisabled();
 
                         if (ImGui::MenuItem(m_config_wrapper->tr(L"出力").c_str())) {
-                            auto open_file_dialog_result = writeFile(gradient_editor::g_app_state.host_app_hwnd);
+                            auto open_file_dialog_result = writeFile(g_app.m_host_app_hwnd);
                             switch (open_file_dialog_result.result) {
                                 case FileDialogResult::FD_OKAY: {
                                     auto path = std::get<static_cast<int32_t>(FileDialogResult::FD_OKAY)>(open_file_dialog_result.value);
@@ -722,7 +722,7 @@ void PresetWindow::renderPresetList(GradientConfigManager& manager, Preset& cfg,
                 }
 
                 if (ImGui::Selectable(m_config_wrapper->tr(L"出力").c_str())) {
-                    auto open_file_dialog_result = writeFile(gradient_editor::g_app_state.host_app_hwnd);
+                    auto open_file_dialog_result = writeFile(g_app.m_host_app_hwnd);
                     switch (open_file_dialog_result.result) {
                         case FileDialogResult::FD_OKAY: {
                             auto path             = std::get<static_cast<int32_t>(FileDialogResult::FD_OKAY)>(open_file_dialog_result.value);

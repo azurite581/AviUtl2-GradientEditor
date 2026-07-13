@@ -9,9 +9,8 @@
 
 #include "IconsMaterialSymbols.h"
 #include "alias_parser.h"
-#include "app_state.h"
+#include "app.h"
 #include "color_conv.h"
-#include "constants.h"
 #include "file_dialog.h"
 #include "gradient_data.h"
 #include "gradient_widget.h"
@@ -31,7 +30,7 @@ MainView::MainView(LoggerWrapperInterface* logger_wrapper, ConfigWrapperInterfac
 
     m_script_bridge.setLoggerWrapper(m_logger_wrapper);
 
-    std::filesystem::path data_path          = gradient_editor::g_app_state.config_handle->app_data_path;
+    std::filesystem::path data_path          = g_app.config_handle->app_data_path;
     std::filesystem::path config_folder_path = data_path / L"Plugin" / CONFIG_FOLDER_NAME;
 
     // プリセットフォルダがなければ作成
@@ -81,9 +80,9 @@ MainView::MainView(LoggerWrapperInterface* logger_wrapper, ConfigWrapperInterfac
     m_preset_window.init(m_logger_wrapper, m_config_wrapper, m_config_manager, m_preset_config);
     m_history_window.init(m_logger_wrapper, m_config_wrapper, m_config_manager, m_history_config);
 
-    m_object_video_color_start = color_conv::u32Rgba2u32Abgr(color_conv::u32Rgb2u32Rgba(gradient_editor::g_app_state.config_handle->get_color_code_index(gradient_editor::g_app_state.config_handle, "ObjectVideo", 0), 0xFF));
-    m_object_video_color_stop  = color_conv::u32Rgba2u32Abgr(color_conv::u32Rgb2u32Rgba(gradient_editor::g_app_state.config_handle->get_color_code_index(gradient_editor::g_app_state.config_handle, "ObjectVideo", 1), 0xFF));
-    m_frame_cursor_color       = color_conv::u32Rgba2u32Abgr(color_conv::u32Rgb2u32Rgba(gradient_editor::g_app_state.config_handle->get_color_code(gradient_editor::g_app_state.config_handle, "FrameCursor"), 0xFF));
+    m_object_video_color_start = color_conv::u32Rgba2u32Abgr(color_conv::u32Rgb2u32Rgba(g_app.config_handle->get_color_code_index(g_app.config_handle, "ObjectVideo", 0), 0xFF));
+    m_object_video_color_stop  = color_conv::u32Rgba2u32Abgr(color_conv::u32Rgb2u32Rgba(g_app.config_handle->get_color_code_index(g_app.config_handle, "ObjectVideo", 1), 0xFF));
+    m_frame_cursor_color       = color_conv::u32Rgba2u32Abgr(color_conv::u32Rgb2u32Rgba(g_app.config_handle->get_color_code(g_app.config_handle, "FrameCursor"), 0xFF));
 }
 
 bool MainView::colorPickerPopup(const char* label, ImVec4& current_color, ImVec4& previous_color, const PALETTE_INFO& palette_info)
@@ -168,7 +167,7 @@ void MainView::render()
         ImGui::DockBuilderSetNodeSize(dockspace_id, viewport->Size);
         ImGuiID dock_id_right = 0;
         ImGuiID dock_id_main  = dockspace_id;
-        ImGui::DockBuilderSplitNode(dock_id_main, ImGuiDir_Right, PRESET_WINDOW_RATIO, &dock_id_right, &dock_id_main);
+        ImGui::DockBuilderSplitNode(dock_id_main, ImGuiDir_Right, Scale::Absolute::PRESET_WINDOW_RATIO, &dock_id_right, &dock_id_main);
         ImGui::DockBuilderDockWindow("###gradient_editor_window", dock_id_main);
         ImGui::DockBuilderDockWindow("###preset_window", dock_id_right);
         ImGui::DockBuilderDockWindow("###history_window", dock_id_right);
@@ -192,7 +191,7 @@ void MainView::render()
         if (ImGui::BeginMenuBar()) {
             if (ImGui::BeginMenu(m_config_wrapper->tr(L"ファイル").c_str())) {
                 if (ImGui::MenuItem(m_config_wrapper->tr(L"プリセットを読み込む").c_str(), nullptr)) {
-                    auto open_file_dialog_result = openFiles(gradient_editor::g_app_state.host_app_hwnd);
+                    auto open_file_dialog_result = openFiles(g_app.m_host_app_hwnd);
                     switch (open_file_dialog_result.result) {
                         case FileDialogResult::FD_OKAY: {
                             auto paths = std::get<static_cast<int32_t>(FileDialogResult::FD_OKAY)>(open_file_dialog_result.value);
@@ -244,7 +243,7 @@ void MainView::render()
                 if (ImGui::BeginMenu(m_config_wrapper->tr(L"プリセットを出力").c_str())) {
                     // 現在のグラデーションのみを GRD ファイルとして出力
                     if (ImGui::MenuItem(m_config_wrapper->tr(L"現在のグラデーション").c_str(), nullptr)) {
-                        auto open_file_dialog_result = writeFile(gradient_editor::g_app_state.host_app_hwnd);
+                        auto open_file_dialog_result = writeFile(g_app.m_host_app_hwnd);
                         switch (open_file_dialog_result.result) {
                             case FileDialogResult::FD_OKAY: {
                                 auto path             = std::get<static_cast<int32_t>(FileDialogResult::FD_OKAY)>(open_file_dialog_result.value);
@@ -286,7 +285,7 @@ void MainView::render()
                         auto categories = m_config_manager.loadCategories(m_preset_config);
                         for (const auto& category : categories) {
                             if (ImGui::MenuItem(category.c_str(), nullptr)) {
-                                auto open_file_dialog_result = writeFile(gradient_editor::g_app_state.host_app_hwnd);
+                                auto open_file_dialog_result = writeFile(g_app.m_host_app_hwnd);
                                 switch (open_file_dialog_result.result) {
                                     case FileDialogResult::FD_OKAY: {
                                         auto path = std::get<static_cast<int32_t>(FileDialogResult::FD_OKAY)>(open_file_dialog_result.value);
@@ -390,7 +389,7 @@ void MainView::render()
             ImGui::SetItemDefaultFocus();
             ImGui::SameLine();
             if (ImGui::Button(m_config_wrapper->tr(L"OK").c_str(), ImVec2(button_width, 0))) {
-                gradient_editor::g_app_state.settings.ui_scale = static_cast<uint32_t>(font_scale_main * 100);
+                g_app.settings.ui_scale = static_cast<uint32_t>(font_scale_main * 100);
                 ImGui::CloseCurrentPopup();
             }
 
@@ -462,11 +461,11 @@ void MainView::renderGradientEditor()
 
     bool is_changed_effect_index = false;
     ImGui::SameLine();
-    ImGui::PushItemWidth(frame_height * scale::relative::EFFECT_INDEX_SPIN_WIDTH);
+    ImGui::PushItemWidth(frame_height * Scale::Relative::EFFECT_INDEX_SPIN_WIDTH);
     if (imgui_utils::spinInt("##effect_index", &m_effect_index)) {
         is_changed_effect_index = true;
         int32_t count           = 0;
-        plugin2_utils::call_edit_lambda(gradient_editor::g_app_state.edit_handle->call_edit_section_param, [&](EDIT_SECTION* edit) {
+        plugin2_utils::call_edit_lambda(g_app.edit_handle->call_edit_section_param, [&](EDIT_SECTION* edit) {
             if (auto obj = edit->get_focus_object()) count = edit->count_object_effect(obj, effect_full_name.c_str());
         });
         m_effect_index = std::clamp(m_effect_index, 0, count == 0 ? 0 : count - 1);
@@ -477,26 +476,28 @@ void MainView::renderGradientEditor()
     //
     // 各種データ操作ボタン
     //
-    bool create_new_object = false;
     if (ImGui::Button(m_config_wrapper->tr(L"新規").c_str())) {
         const char* alias = reinterpret_cast<const char*>(NEW_OBJECT_ALIAS_TAMPLATES[m_effect_name_index]);
-        plugin2_utils::call_edit_lambda(gradient_editor::g_app_state.edit_handle->call_edit_section_param, [&](EDIT_SECTION* edit) {
+        plugin2_utils::call_edit_lambda(g_app.edit_handle->call_edit_section_param, [&](EDIT_SECTION* edit) {
             auto obj = edit->create_object_from_alias(alias, edit->info->layer, edit->info->frame, NEW_OBJECT_LENGTH);
             if (!obj) {
                 return;
             }
 
             edit->set_focus_object(obj);
-            create_new_object = true;
+            m_object_created = true;
         });
     }
 
     // スクリプトへ反映
     ImGui::SameLine();
     bool off_to_on          = false;
-    bool create_new_object_ = create_new_object;
-    if (imgui_utils::pushToggleButton(m_config_wrapper->tr(L"反映").c_str(), &m_apply, &create_new_object_)) {
-        plugin2_utils::call_edit_lambda(gradient_editor::g_app_state.edit_handle->call_edit_section_param, [&](EDIT_SECTION* edit) {
+    if (m_object_created) {
+        m_force_apply_state.store(true);
+    }
+    bool force_apply_state = m_force_apply_state.load();
+    if (imgui_utils::pushToggleButton(m_config_wrapper->tr(L"反映").c_str(), &m_apply, &force_apply_state)) {
+        plugin2_utils::call_edit_lambda(g_app.edit_handle->call_edit_section_param, [&](EDIT_SECTION* edit) {
             auto focus_obj = edit->get_focus_object();
             if (!focus_obj) return;
             m_layer_frame = edit->get_object_layer_frame(focus_obj);
@@ -516,7 +517,7 @@ void MainView::renderGradientEditor()
     ImGui::SameLine();
     bool is_refresh = imgui_utils::squareIconButton(ICON_MS_REFRESH, "##refresh");
     if (is_refresh) {
-        plugin2_utils::call_edit_lambda(gradient_editor::g_app_state.edit_handle->call_edit_section_param, [&](EDIT_SECTION* edit) {
+        plugin2_utils::call_edit_lambda(g_app.edit_handle->call_edit_section_param, [&](EDIT_SECTION* edit) {
             if (auto obj = edit->get_focus_object()) m_layer_frame = edit->get_object_layer_frame(obj);
         });
     }
@@ -555,7 +556,7 @@ void MainView::renderGradientEditor()
     if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNormal)) ImGui::SetTooltip("%s", m_config_wrapper->tr(L"選択中のマーカーを削除").c_str());
 
     if (off_to_on || (m_apply && is_refresh)) {
-        plugin2_utils::call_edit_lambda(gradient_editor::g_app_state.edit_handle->call_edit_section_param, [&](EDIT_SECTION* edit) {
+        plugin2_utils::call_edit_lambda(g_app.edit_handle->call_edit_section_param, [&](EDIT_SECTION* edit) {
             auto focus_obj = edit->get_focus_object();
             if (!focus_obj) return;
 
@@ -609,13 +610,13 @@ void MainView::renderGradientEditor()
     //
     // グラデーションエディターの描画
     //
-    ImGui::Dummy(ImVec2(0, frame_height * scale::relative::GRADIENT_MARGIN_Y));
+    ImGui::Dummy(ImVec2(0, frame_height * Scale::Relative::GRADIENT_MARGIN_Y));
 
     // 描画設定
     static custom_ui::GradientEditorConfig config;
-    config.max_marker_count = MAX_MARKER_COUNT;
-    config.marker_size      = {frame_height * scale::relative::GRADIENT_MARKER_WIDTH, frame_height * scale::relative::GRADIENT_MARKER_HEIGHT};
-    config.midpoint_size    = {frame_height * scale::relative::GRADIENT_MIDPOINT_WIDTH, frame_height * scale::relative::GRADIENT_MIDPOINT_WIDTH};
+    config.max_marker_count = 100; //MAX_MARKER_COUNT;
+    config.marker_size      = {frame_height * Scale::Relative::GRADIENT_MARKER_WIDTH, frame_height * Scale::Relative::GRADIENT_MARKER_HEIGHT};
+    config.midpoint_size    = {frame_height * Scale::Relative::GRADIENT_MIDPOINT_WIDTH, frame_height * Scale::Relative::GRADIENT_MIDPOINT_WIDTH};
 
     // プリセット、履歴がクリックされたときはそのグラデーションを使用する
     if (m_preset_window.isPresetClicked()) {
@@ -630,7 +631,7 @@ void MainView::renderGradientEditor()
     bool should_replace = m_preset_window.isPresetClicked() || m_history_window.isHistoryClicked() || (!m_is_init && !m_history_window.m_history_data.empty());
     m_data = custom_ui::drawGradientEditor(
         "gradient",
-        ImVec2(std::clamp(ImGui::GetContentRegionAvail().x, 1.0f, 4096.0f), frame_height * scale::relative::GRADIENT_HEIGHT),
+        ImVec2(std::clamp(ImGui::GetContentRegionAvail().x, 1.0f, 4096.0f), frame_height * Scale::Relative::GRADIENT_HEIGHT),
         gradient_data,
         m_redraw,
         should_replace,
@@ -639,7 +640,7 @@ void MainView::renderGradientEditor()
     );
     m_redraw = false;
 
-    ImGui::Dummy(ImVec2(0, frame_height * scale::relative::GRADIENT_MARGIN_Y));
+    ImGui::Dummy(ImVec2(0, frame_height * Scale::Relative::GRADIENT_MARGIN_Y));
     m_preset_window.setTargetGradientData(*m_data);
 
     // 更新
@@ -648,8 +649,8 @@ void MainView::renderGradientEditor()
     // カラーピッカーポップアップ
     if (m_data->getColorMarkers()->isDoubleClickedMarker(ImGui::GetIO().MousePos)) {
         // パレット情報を取得
-        if (gradient_editor::g_app_state.m_project_loaded.load()) {
-            plugin2_utils::call_section(gradient_editor::g_app_state.edit_handle->call_read_section_param, [&](EDIT_SECTION* edit) {
+        if (g_app.m_project_loaded.load()) {
+            plugin2_utils::call_section(g_app.edit_handle->call_read_section_param, [&](EDIT_SECTION* edit) {
                 auto palette_name = edit->get_palette_name();
                 edit->get_palette_info(palette_name, &m_palette_info, sizeof(PALETTE_INFO));
             });
@@ -813,7 +814,7 @@ void MainView::renderGradientEditor()
         m_load = false;
         m_history_window.pushHistory(*m_data);  // 置き換える前のグラデーションデータを履歴に保存
 
-        plugin2_utils::call_edit_lambda(gradient_editor::g_app_state.edit_handle->call_edit_section_param, [&](EDIT_SECTION* edit) {
+        plugin2_utils::call_edit_lambda(g_app.edit_handle->call_edit_section_param, [&](EDIT_SECTION* edit) {
             OBJECT_HANDLE object_handle = edit->get_focus_object();
             if (!object_handle) return;
 
@@ -829,7 +830,7 @@ void MainView::renderGradientEditor()
     // グラデーションエディターからスクリプトへ値を反映するかどうかのフラグ
     bool is_changed_apply =
         off_to_on ||                                           // 「反映」が OFF から ON に切り替わった
-        create_new_object ||                                   // オブジェクトが新たに作成された
+        m_object_created ||
         (m_apply && (                                          // または「反映」ON の状態で、
                         m_preset_window.isPresetClicked() ||   // プリセットがクリックされた
                         is_refresh ||                          // 更新ボタンが押された
@@ -839,11 +840,11 @@ void MainView::renderGradientEditor()
     // または各値がグラデーションエディター側で変更された
     // マーカーの削除、リセット、均等配置による変更は isChangedValues() で検知できる
     if (is_changed_apply || (m_apply && m_script_bridge.getIsChangedValues())) {
-        plugin2_utils::call_edit_lambda(gradient_editor::g_app_state.edit_handle->call_edit_section_param, [&](EDIT_SECTION* edit) {
+        plugin2_utils::call_edit_lambda(g_app.edit_handle->call_edit_section_param, [&](EDIT_SECTION* edit) {
             m_script_bridge.applyGradientToScript(edit, *m_data, effect_full_name, m_effect_index, m_target_move_index);
         });
     }
-
+    m_object_created = false;
 
     static GradientData::MarkerType last_clicked_marker_type = GradientData::MarkerType::Color;
     bool last_clicked_marker_type_changed = false;
@@ -894,7 +895,7 @@ void MainView::renderColorPropertyEditor(GradientData* data)
     ImGui::PushStyleColor(ImGuiCol_SeparatorActive, ImVec4(0, 0, 0, 0));
 
     float height      = ImGui::GetFrameHeight() * 6 + ImGui::GetStyle().ItemSpacing.y * 5;
-    float label_width = ImGui::GetFrameHeight() * scale::relative::ITEM_NAME_BUTTON_WIDTH;
+    float label_width = ImGui::GetFrameHeight() * Scale::Relative::ITEM_NAME_BUTTON_WIDTH;
 
     ImGui::BeginChild("##color_item_labels", ImVec2(label_width, height), ImGuiChildFlags_ResizeX, ImGuiWindowFlags_NoScrollbar);
     {
@@ -933,8 +934,8 @@ void MainView::renderColorPropertyEditor(GradientData* data)
             m_data->getColorMarkers()->setSelectedMarkerValue(new_col);
         }
         if (click_btn) {
-            if (gradient_editor::g_app_state.m_project_loaded.load()) {
-                plugin2_utils::call_section(gradient_editor::g_app_state.edit_handle->call_read_section_param, [&](EDIT_SECTION* edit) {
+            if (g_app.m_project_loaded.load()) {
+                plugin2_utils::call_section(g_app.edit_handle->call_read_section_param, [&](EDIT_SECTION* edit) {
                     auto palette_name = edit->get_palette_name();
                     edit->get_palette_info(palette_name, &m_palette_info, sizeof(PALETTE_INFO));
                 });
@@ -1001,7 +1002,7 @@ void MainView::renderAlphaPropertyEditor(GradientData* data)
     ImGui::PushStyleColor(ImGuiCol_SeparatorActive, ImVec4(0, 0, 0, 0));
 
     float height      = ImGui::GetFrameHeight() * 4 + ImGui::GetStyle().ItemSpacing.y * 3;
-    float label_width = ImGui::GetFrameHeight() * scale::relative::ITEM_NAME_BUTTON_WIDTH;
+    float label_width = ImGui::GetFrameHeight() * Scale::Relative::ITEM_NAME_BUTTON_WIDTH;
 
     ImGui::BeginChild("##alpha_item_labels", ImVec2(label_width, height), ImGuiChildFlags_ResizeX, ImGuiWindowFlags_NoScrollbar);
     {

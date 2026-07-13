@@ -1,13 +1,14 @@
 #ifndef MAIN_VIEW_H
 #define MAIN_VIEW_H
 
-#include "app_state.h"
 #include "config2_wrapper_interface.h"
 #include "gradient_config.h"
 #include "history_window.h"
 #include "logger_wrapper_interface.h"
 #include "preset_window.h"
 #include "script_bridge.h"
+
+#include <atomic>
 
 class MainView {
 public:
@@ -21,8 +22,38 @@ public:
     void writeHistories();
     void setWindowVisible(const WindowVisible& visible) noexcept { m_window_visible = visible; }
     WindowVisible getWindowVisible() const noexcept { return m_window_visible; }
+    void setApplyState(bool state) { m_force_apply_state.store(state); }
 
 private:
+    static constexpr const char* COLOR_SPACE_NAMES[] = {"sRGB", "Linear sRGB", "HSV", "HSL", "L*a*b", "LCh", "Oklab", "Oklch", "Kubelka-Munk"};
+    static constexpr const char* INTERP_DIR_NAMES[]     = {"短経路", "長経路"};
+    static constexpr const wchar_t* EFFECT_GROUP_NAME = L"@GradientEditor";
+    static constexpr const wchar_t* EFFECT_NAMES[]    = {
+        L"MultiGradient",
+        L"GradientMap"
+    };
+    static constexpr const wchar_t* CONFIG_FOLDER_NAME = L"GradientEditorPreset";
+    static constexpr const wchar_t* PRESET_FILE_NAME   = L"gradient_editor_preset.json";
+    static constexpr const wchar_t* HISTORY_FILE_NAME  = L"gradient_editor_history.json";
+
+    struct Scale {
+        // ImGui::GetFrameHeight() を基準とした相対スケール
+        struct Relative {
+            static constexpr float GRADIENT_HEIGHT          = 1.5f;
+            static constexpr float GRADIENT_MARGIN_Y        = 0.25f;
+            static constexpr float GRADIENT_MARKER_WIDTH    = 0.5f;
+            static constexpr float GRADIENT_MARKER_HEIGHT   = 0.5f;
+            static constexpr float GRADIENT_MIDPOINT_WIDTH  = 0.5f;
+            static constexpr float GRADIENT_MIDPOINT_HEIGHT = 0.5f;
+            static constexpr float ITEM_NAME_BUTTON_WIDTH   = 5.0f;
+            static constexpr float EFFECT_INDEX_SPIN_WIDTH  = 4.0f;
+        };
+
+        struct Absolute {
+            static constexpr float PRESET_WINDOW_RATIO     = 0.35f;
+        };
+    };
+
     bool colorPickerPopup(const char* label, ImVec4& current_color, ImVec4& previous_color, const PALETTE_INFO& palette_info);
     void renderGradientEditor();
     void renderColorPropertyEditor(GradientData* data);
@@ -54,6 +85,8 @@ private:
     bool m_load    = false;
     bool m_is_init = false;
     bool m_redraw  = false;
+    bool m_object_created = false;
+    std::atomic<bool> m_force_apply_state = false;
 
     ImU32 m_object_video_color_start = 0;
     ImU32 m_object_video_color_stop  = 0;

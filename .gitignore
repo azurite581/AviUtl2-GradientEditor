@@ -95,3 +95,7 @@ compile_commands.json
 
 # MegaLinter
 megalinter-reports/
+
+# Doxygen
+Doxyfile
+out_doxygen
