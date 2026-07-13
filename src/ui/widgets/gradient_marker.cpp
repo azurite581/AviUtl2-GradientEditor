@@ -406,9 +406,9 @@ void MarkerManager::changeMarkerCount(const uint32_t marker_count)
 //
 // 更新
 //
-void MarkerManager::updateMarkerAndMidpointPosition(const ImVec2& mouse_pos)
+bool MarkerManager::updateMarkerAndMidpointPosition(const ImVec2& mouse_pos)
 {
-    if (!m_io_enable || ImGui::IsPopupOpen(nullptr, ImGuiPopupFlags_AnyPopup)) return;
+    if (!m_io_enable || ImGui::IsPopupOpen(nullptr, ImGuiPopupFlags_AnyPopup)) return false;
 
     // クリックされた位置にあるマーカー/中間点のIDを取得
     if (ImGui::IsMouseClicked(ImGuiMouseButton_Left)) {
@@ -417,9 +417,11 @@ void MarkerManager::updateMarkerAndMidpointPosition(const ImVec2& mouse_pos)
         if (m_state.clicked == Clicked::Marker) {
             m_state.selected_marker_id = id;
             m_state.selected_midpoint_id = id;
+            return true;
         } else if (m_state.clicked == Clicked::Midpoint) {
             m_state.selected_marker_id   = id;  // 中間点はマーカーに紐づいているため、選択マーカーも変更
             m_state.selected_midpoint_id = id;
+            return true;
         }
     }
 
@@ -428,13 +430,15 @@ void MarkerManager::updateMarkerAndMidpointPosition(const ImVec2& mouse_pos)
         if (m_state.clicked == Clicked::Marker && m_state.selected_marker_id >= 0) {
             // クリック位置にマーカーを移動
             moveMarker(m_state.selected_marker_id, marker_pos);
+            return true;
         } else if (m_state.clicked == Clicked::Midpoint && m_state.selected_midpoint_id >= 0) {
             // クリック位置に中間点を移動
             moveMidpoint(m_state.selected_midpoint_id, marker_pos);
+            return true;
         }
-    } else if (ImGui::IsMouseClicked(ImGuiMouseButton_Left) &&  // 左クリックされた
-               m_state.clicked == Clicked::MarkerRegion &&      // クリックされた位置がマーカー領域
-               std::ssize(m_markers) < m_marker_max_count       // 現在のマーカー数がマーカーの最大数未満
+    } else if (ImGui::IsMouseClicked(ImGuiMouseButton_Left) &&  // 左クリックされて
+               m_state.clicked == Clicked::MarkerRegion &&  // クリックされた位置がマーカー領域内で
+               std::ssize(m_markers) < m_marker_max_count  // 現在のマーカー数がマーカーの最大数未満なら
     ) {
         // クリック位置にマーカーを作成
         float marker_pos = getMarkerPosFromMousePos(mouse_pos);
@@ -445,9 +449,10 @@ void MarkerManager::updateMarkerAndMidpointPosition(const ImVec2& mouse_pos)
         m_state.clicked            = Clicked::Marker;
 
         ++m_state.marker_id_counter;
+        return true;
     }
 
-    return;
+    return false;
 }
 
 // 比率に基づいて中間点の絶対座標を再計算する

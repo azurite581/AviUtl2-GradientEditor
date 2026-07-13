@@ -439,7 +439,7 @@ public:
     //
     // 更新
     //
-    void updateMarkerAndMidpointPosition(const ImVec2& mouse_pos);
+    bool updateMarkerAndMidpointPosition(const ImVec2& mouse_pos);
     void updateMidpointsPos();
     void reassignMarkerID();
 

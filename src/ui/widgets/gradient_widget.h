@@ -61,7 +61,8 @@ GradientData* drawGradientEditor(
     bool redraw                 = false,
     bool replace_data           = false,
     GradientEditorFlags flags   = GradientEditorFlags_None,
-    GradientEditorConfig config = GradientEditorConfig());
+    GradientEditorConfig config = GradientEditorConfig()
+);
 
 }  // namespace custom_ui
 

@@ -13,6 +13,7 @@
 #include "color_conv.h"
 #include "constants.h"
 #include "file_dialog.h"
+#include "gradient_data.h"
 #include "gradient_widget.h"
 #include "grd_codec.h"
 #include "imgui.h"
@@ -726,8 +727,16 @@ void MainView::renderGradientEditor()
             m_history_window.writeHistoryToConfig(m_config_manager, m_history_config);
         }
     }
-    if (select_back_marker) m_data->getColorMarkers()->selectBackMarker();
-    if (select_next_marker) m_data->getColorMarkers()->selectNextMarker();
+    if (select_back_marker) {
+        m_data->getColorMarkers()->selectBackMarker();
+        m_data->m_clicked = true;
+        m_data->m_last_clicked_marker_type = GradientData::MarkerType::Color;
+    }
+    if (select_next_marker) {
+        m_data->getColorMarkers()->selectNextMarker();
+        m_data->m_clicked = true;
+        m_data->m_last_clicked_marker_type = GradientData::MarkerType::Color;
+    }
     if (is_distribute_marker) {
         m_data->getColorMarkers()->distributeMarkersEvenly();
         m_redraw = true;
@@ -762,8 +771,16 @@ void MainView::renderGradientEditor()
             m_history_window.writeHistoryToConfig(m_config_manager, m_history_config);
         }
     }
-    if (select_back_alpha_marker) m_data->getAlphaMarkers()->selectBackMarker();
-    if (select_next_alpha_marker) m_data->getAlphaMarkers()->selectNextMarker();
+    if (select_back_alpha_marker) {
+        m_data->getAlphaMarkers()->selectBackMarker();
+        m_data->m_clicked = true;
+        m_data->m_last_clicked_marker_type = GradientData::MarkerType::Alpha;
+    }
+    if (select_next_alpha_marker) {
+        m_data->getAlphaMarkers()->selectNextMarker();
+        m_data->m_clicked = true;
+        m_data->m_last_clicked_marker_type = GradientData::MarkerType::Alpha;
+    }
     if (is_distribute_alpha_marker) {
         m_data->getAlphaMarkers()->distributeMarkersEvenly();
         m_redraw = true;
@@ -827,18 +844,35 @@ void MainView::renderGradientEditor()
         });
     }
 
+
+    static GradientData::MarkerType last_clicked_marker_type = GradientData::MarkerType::Color;
+    bool last_clicked_marker_type_changed = false;
+    if (m_data->m_clicked) {
+        last_clicked_marker_type_changed = true;
+        last_clicked_marker_type = m_data->m_last_clicked_marker_type;
+    }
+
     // プロパティエディタを描画する
     bool draw_color_peditor        = false;
     ImGuiTabBarFlags tab_bar_flags = ImGuiTabBarFlags_None;
     if (ImGui::BeginTabBar("##PropertyEditorTabBar", tab_bar_flags)) {
-        if (ImGui::BeginTabItem(m_config_wrapper->tr(L"色設定").c_str())) {
+        ImGuiTabItemFlags tab_item_flag = ImGuiTabItemFlags_None;
+        if (last_clicked_marker_type_changed) {
+            tab_item_flag = (last_clicked_marker_type == GradientData::MarkerType::Color) ? ImGuiTabItemFlags_SetSelected : ImGuiTabItemFlags_None;
+        }
+        if (ImGui::BeginTabItem(m_config_wrapper->tr(L"色設定").c_str(), nullptr, tab_item_flag)) {
             draw_color_peditor = true;
             ImGui::EndTabItem();
         }
-        if (ImGui::BeginTabItem(m_config_wrapper->tr(L"アルファ設定").c_str())) {
+
+        if (last_clicked_marker_type_changed) {
+            tab_item_flag = (last_clicked_marker_type == GradientData::MarkerType::Alpha) ? ImGuiTabItemFlags_SetSelected : ImGuiTabItemFlags_None;
+        }
+        if (ImGui::BeginTabItem(m_config_wrapper->tr(L"アルファ設定").c_str(), nullptr, tab_item_flag)) {
             renderAlphaPropertyEditor(m_data);
             ImGui::EndTabItem();
         }
+
         ImGui::EndTabBar();
     }
 
