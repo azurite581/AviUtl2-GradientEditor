@@ -96,7 +96,7 @@ EXTERN_C __declspec(dllexport) void InitializeConfig(CONFIG_HANDLE* handle)
 EXTERN_C __declspec(dllexport) bool InitializePlugin(DWORD version)
 {
     g_app.m_version = version;
-    if (version < 2003600) {
+    if (version < 2005000) {
         return false;
     }
     return true;
@@ -114,21 +114,20 @@ EXTERN_C __declspec(dllexport) COMMON_PLUGIN_TABLE* GetCommonPluginTable(void)
 
 EXTERN_C __declspec(dllexport) void RegisterPlugin(HOST_APP_TABLE* host)
 {
-    if (g_app.m_version < 2003500) {
-        host->set_plugin_information(App::PLUGIN_INFO);
-    }
-
-    host->register_project_load_handler([](PROJECT_FILE*) {
-        g_app.m_project_loaded.store(true);
-    });
-
     g_app.m_edit_handle     = host->create_edit_handle();
     g_app.m_host_app_hwnd = g_app.m_edit_handle->get_host_app_window();
 
     std::promise<HWND> p;
     auto f           = p.get_future();
     g_app.m_gui_thread = std::thread(guiThreadMain, std::move(p));
-
     HWND hwnd = f.get();
+
     host->register_window_client(g_app.m_config_handle->translate(g_app.m_config_handle, App::WINDOW_NAME), hwnd);
+    host->register_project_load_handler([](PROJECT_FILE*) {
+        g_app.m_project_loaded.store(true);
+    });
+    host->register_event_listener(EVENT_TYPE::CHANGE_FOCUS_OBJECT, &g_app, [](void* param){
+        auto* app = reinterpret_cast<App*>(param);
+        app->m_main_view->onChangeFocusObject();
+    });
 }
