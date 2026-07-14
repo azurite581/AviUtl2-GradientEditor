@@ -196,12 +196,14 @@ void App::run(std::promise<HWND>&& hwnd_promise)
     //
     // グラデーションエディター用の D3D を初期化
     //
-    custom_ui::initDX11(m_d3d_manager.getDevice(), m_d3d_manager.getDeviceContext());
+    custom_ui::initD3D11(m_d3d_manager.getDevice(), m_d3d_manager.getDeviceContext());
 
     ::ShowWindow(hwnd, SW_SHOWDEFAULT);
     ::UpdateWindow(hwnd);
 
+    //
     // メインビューの初期化
+    //
     m_main_view = std::make_unique<MainView>(
         get_logger_wrapper_interface(m_log_handle),
         get_config_wrapper_interface(m_config_handle));
@@ -271,7 +273,7 @@ void App::renderFrame()
         (GetAsyncKeyState(VK_XBUTTON1) & 0x8000) ||
         (GetAsyncKeyState(VK_XBUTTON2) & 0x8000);
 
-    // 今フレームで新しくクリックされたかどうかを判定
+    // 現在フレームで新しくクリックされたかどうかを判定
     bool mouse_clicked_this_frame = any_mouse_pressed && !last_mouse_pressed;
     last_mouse_pressed            = any_mouse_pressed;
 
@@ -328,7 +330,7 @@ void App::cleanup()
     m_main_view.reset();
     custom_ui::cleanup();
 
-    // ImGui のバックエンド
+    // ImGui のバックエンドを解放
     ImGui_ImplDX11_Shutdown();
     ImGui_ImplWin32_Shutdown();
     ImGui::DestroyContext();

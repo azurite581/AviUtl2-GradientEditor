@@ -50,7 +50,7 @@ public:
 
     MarkerManager m_color_markers{};
     MarkerManager m_alpha_markers{};
-
+    
     int32_t m_color_space{0};
     int32_t m_interp_dir{0};
     float m_blur_width{1.0f};

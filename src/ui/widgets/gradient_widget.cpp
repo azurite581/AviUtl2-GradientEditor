@@ -12,7 +12,7 @@ GradientRenderer::RenderResources g_resources;
 std::unordered_map<std::string, std::unique_ptr<GradientData>> g_editor_gradients;
 std::unordered_map<std::string, std::unique_ptr<GradientData>> g_button_gradients;
 
-void initDX11(Microsoft::WRL::ComPtr<ID3D11Device> device, Microsoft::WRL::ComPtr<ID3D11DeviceContext> context)
+void initD3D11(Microsoft::WRL::ComPtr<ID3D11Device> device, Microsoft::WRL::ComPtr<ID3D11DeviceContext> context)
 {
     g_d3d_device         = device;
     g_d3d_device_context = context;
