@@ -25,6 +25,12 @@ public:
     void writeHistories();
     void setWindowVisible(const WindowVisible& visible) noexcept { m_window_visible = visible; }
     WindowVisible getWindowVisible() const noexcept { return m_window_visible; }
+    void setPluginInfo(const std::string& name, const std::string& version, const std::string& author)
+    {
+        m_plugin_name = name;
+        m_plugin_version = version;
+        m_plugin_author = author;
+    }
 
     void onChangeFocusObject();
     void updateObjectInfo() { m_force_update_obj_info.store(true); }
@@ -44,6 +50,7 @@ private:
     static constexpr const wchar_t* CONFIG_FOLDER_NAME = L"GradientEditorPreset";
     static constexpr const wchar_t* PRESET_FILE_NAME   = L"gradient_editor_preset.json";
     static constexpr const wchar_t* HISTORY_FILE_NAME  = L"gradient_editor_history.json";
+    static constexpr const char* COLOR_PICKER_POPUP_ID = "color_picker_popup";
 
     struct Scale {
         // ImGui::GetFrameHeight() を基準とした相対スケール
@@ -64,6 +71,8 @@ private:
     };
 
     bool colorPickerPopup(const char* label, ImVec4& current_color, ImVec4& previous_color, const PALETTE_INFO& palette_info);
+    void showAboutPopup(const char* name, bool* p_open, ImGuiWindowFlags flags = 0);
+    void showUISettingsPopup(const char* name, bool* p_open, ImGuiWindowFlags flags = 0);
     void renderGradientEditor();
     void renderColorPropertyEditor(GradientData* data);
     void renderAlphaPropertyEditor(GradientData* data);
@@ -71,7 +80,7 @@ private:
     LoggerWrapperInterface* m_logger_wrapper;
     ConfigWrapperInterface* m_config_wrapper;
 
-    static constexpr const char* COLOR_PICKER_POPUP_ID = "color_picker_popup";
+    std::string m_plugin_name{}, m_plugin_version{}, m_plugin_author{};
 
     GradientData* m_data = nullptr;
     GradientData m_replacement_gradient_data;
@@ -93,7 +102,7 @@ private:
 
     bool m_apply                                                 = false;
     bool m_load                                                  = false;
-    bool m_is_initialized                                               = false;
+    bool m_is_initialized                                        = false;
     bool m_redraw                                                = false;
     bool m_object_created                                        = false;
     std::atomic<bool> m_force_update_obj_info                    = false;

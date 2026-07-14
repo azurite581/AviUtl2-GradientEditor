@@ -151,6 +151,70 @@ bool MainView::colorPickerPopup(const char* label, ImVec4& current_color, ImVec4
     return changed;
 }
 
+void MainView::showAboutPopup(const char* name, bool* p_open, ImGuiWindowFlags flags)
+{
+    if (ImGui::BeginPopupModal(name, p_open, flags)) {
+        ImGui::Text("%s v%s", m_plugin_name.c_str(), m_plugin_version.c_str());
+
+        ImGui::Separator();
+        ImGui::Text("(c) 2026 %s", m_plugin_author.c_str());
+
+        ImGui::TextLinkOpenURL("Wiki", "https://github.com/azurite581/AviUtl2-GradientEditor/wiki");
+        ImGui::SameLine();
+        ImGui::TextLinkOpenURL("GitHub", "https://github.com/azurite581/AviUtl2-GradientEditor");
+
+        constexpr float ITEM_SPACING_SCALE_Y = 0.25f;
+        ImGui::Dummy(ImVec2(0, ImGui::GetFrameHeight() * ITEM_SPACING_SCALE_Y));
+        if (ImGui::Button(m_config_wrapper->tr(L"閉じる").c_str())) {
+            ImGui::CloseCurrentPopup();
+        }
+
+        ImGui::EndPopup();
+    }
+}
+
+void MainView::showUISettingsPopup(const char* name, bool* p_open, ImGuiWindowFlags flags)
+{
+    static float old_font_scale_main = ImGui::GetStyle().FontScaleMain;
+    if (ImGui::BeginPopupModal(name, nullptr, flags)) {
+        if (ImGui::IsWindowAppearing()) {
+            old_font_scale_main = ImGui::GetStyle().FontScaleMain;
+        }
+
+        constexpr float ITEM_SPACING_SCALE_Y = 0.25f;
+        ImGui::AlignTextToFramePadding();
+        ImGui::TextUnformatted(m_config_wrapper->tr(L"UIのサイズ").c_str());
+        ImGui::SameLine();
+        static float font_scale_main = old_font_scale_main;
+        int32_t font_scale           = static_cast<int32_t>(font_scale_main * 100.0f);
+        if (ImGui::DragInt("##ui_size", &font_scale, 1.0f, 50, 400, "%d%%", ImGuiSliderFlags_AlwaysClamp)) {
+            ImGui::GetStyle().FontScaleMain = font_scale_main = std::clamp(font_scale, 50, 400) / 100.0f;
+        }
+
+        ImGui::Dummy(ImVec2(0, ImGui::GetFrameHeight() * ITEM_SPACING_SCALE_Y));
+
+        float button_width          = ImGui::GetFrameHeight() * 4;
+        float combined_button_width = button_width * 2 + ImGui::GetStyle().ItemSpacing.x * 1;
+        float avail                 = ImGui::GetContentRegionAvail().x;
+        float off                   = (avail - combined_button_width) * 0.5f;
+        if (off > 0.0f) ImGui::SetCursorPosX(ImGui::GetCursorPosX() + off);
+
+        if (ImGui::Button(m_config_wrapper->tr(L"キャンセル").c_str(), ImVec2(button_width, 0))) {
+            font_scale_main                 = old_font_scale_main;
+            ImGui::GetStyle().FontScaleMain = old_font_scale_main;
+            ImGui::CloseCurrentPopup();
+        }
+        ImGui::SetItemDefaultFocus();
+        ImGui::SameLine();
+        if (ImGui::Button(m_config_wrapper->tr(L"OK").c_str(), ImVec2(button_width, 0))) {
+            g_app.m_settings.ui_scale = static_cast<uint32_t>(font_scale_main * 100);
+            ImGui::CloseCurrentPopup();
+        }
+
+        ImGui::EndPopup();
+    }
+}
+
 void MainView::render()
 {
     // ドッキングスペースの設定
@@ -181,7 +245,8 @@ void MainView::render()
     if (gradient_editor_window_visible) {
         // メニューバーの描画
         std::string settings_popup_name = m_config_wrapper->tr(L"UIの設定") + "###style_settings";
-        bool open_style_settings_popup  = false;
+        std::string plugin_info_popup_name = m_config_wrapper->tr(L"バージョン情報") + "###plugin_info";
+        bool open_style_settings_popup  = false, open_plugin_info_popup = false;
 
         if (ImGui::BeginMenuBar()) {
             if (ImGui::BeginMenu(m_config_wrapper->tr(L"ファイル").c_str())) {
@@ -340,56 +405,34 @@ void MainView::render()
                 ImGui::EndMenu();
             }
 
+            if (ImGui::BeginMenu(m_config_wrapper->tr(L"ヘルプ").c_str())) {
+                if (ImGui::MenuItem(m_config_wrapper->tr(L"バージョン情報").c_str(), nullptr)) {
+                    open_plugin_info_popup = true;
+                }
+                ImGui::EndMenu();
+            }
+
             ImGui::EndMenuBar();
         }
 
         if (open_style_settings_popup) {
             ImGui::OpenPopup(settings_popup_name.c_str());
         }
+        if (open_plugin_info_popup) {
+            ImGui::OpenPopup(plugin_info_popup_name.c_str());
+        }
 
+        // モーダルウィンドウの設定
         static ImGuiWindowFlags modal_flags = ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoMove;
         ImVec2 center                       = ImGui::GetMainViewport()->GetCenter();
+
+        // UIのサイズ設定モーダル
         ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
+        showUISettingsPopup(settings_popup_name.c_str(), nullptr, modal_flags);
 
-        static float old_font_scale_main = ImGui::GetStyle().FontScaleMain;
-
-        if (ImGui::BeginPopupModal(settings_popup_name.c_str(), nullptr, modal_flags)) {
-            if (ImGui::IsWindowAppearing()) {
-                old_font_scale_main = ImGui::GetStyle().FontScaleMain;
-            }
-
-            static constexpr float ITEM_SPACING_SCALE_Y = 0.25f;
-            ImGui::AlignTextToFramePadding();
-            ImGui::TextUnformatted(m_config_wrapper->tr(L"UIのサイズ").c_str());
-            ImGui::SameLine();
-            static float font_scale_main = old_font_scale_main;
-            int32_t font_scale           = static_cast<int32_t>(font_scale_main * 100.0f);
-            if (ImGui::DragInt("##ui_size", &font_scale, 1.0f, 50, 400, "%d%%", ImGuiSliderFlags_AlwaysClamp)) {
-                ImGui::GetStyle().FontScaleMain = font_scale_main = std::clamp(font_scale, 50, 400) / 100.0f;
-            }
-
-            ImGui::Dummy(ImVec2(0, ImGui::GetFrameHeight() * ITEM_SPACING_SCALE_Y));
-
-            float button_width          = ImGui::GetFrameHeight() * 4;
-            float combined_button_width = button_width * 2 + ImGui::GetStyle().ItemSpacing.x * 1;
-            float avail                 = ImGui::GetContentRegionAvail().x;
-            float off                   = (avail - combined_button_width) * 0.5f;
-            if (off > 0.0f) ImGui::SetCursorPosX(ImGui::GetCursorPosX() + off);
-
-            if (ImGui::Button(m_config_wrapper->tr(L"キャンセル").c_str(), ImVec2(button_width, 0))) {
-                font_scale_main                 = old_font_scale_main;
-                ImGui::GetStyle().FontScaleMain = old_font_scale_main;
-                ImGui::CloseCurrentPopup();
-            }
-            ImGui::SetItemDefaultFocus();
-            ImGui::SameLine();
-            if (ImGui::Button(m_config_wrapper->tr(L"OK").c_str(), ImVec2(button_width, 0))) {
-                g_app.m_settings.ui_scale = static_cast<uint32_t>(font_scale_main * 100);
-                ImGui::CloseCurrentPopup();
-            }
-
-            ImGui::EndPopup();
-        }
+        // プラグイン情報モーダル
+        ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
+        showAboutPopup(plugin_info_popup_name.c_str(), nullptr, modal_flags);
 
         static ImGuiWindowClass side_window_class;
         side_window_class.DockNodeFlagsOverrideSet = ImGuiDockNodeFlags_NoCloseButton | ImGuiDockNodeFlags_NoWindowMenuButton | ImGuiDockNodeFlags_NoUndocking;
@@ -487,11 +530,11 @@ void MainView::renderGradientEditor()
             m_object_created = true;
         });
     }
-
-    static bool effect_added = false;
+    if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNormal)) ImGui::SetTooltip("%s", m_config_wrapper->tr(L"現在フレームにオブジェクトを作成").c_str());
 
     // スクリプトへ反映
     ImGui::SameLine();
+    static bool effect_added                  = false;
     bool apply_just_enabled                   = false;
     static bool prev_apply_state              = false;
     imgui_utils::ForceState force_apply_state = m_force_apply_state_off.load();

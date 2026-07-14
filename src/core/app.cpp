@@ -3,6 +3,7 @@
 #include "IconsMaterialSymbols.h"
 #include "font_loader.h"
 #include "gradient_widget.h"
+#include "str_conv.h"
 #include "imgui.h"
 #include "imgui_impl_dx11.h"
 #include "imgui_impl_win32.h"
@@ -208,6 +209,7 @@ void App::run(std::promise<HWND>&& hwnd_promise)
         get_logger_wrapper_interface(m_log_handle),
         get_config_wrapper_interface(m_config_handle));
 
+    m_main_view->setPluginInfo(str_conv::wideCharToMultiByte(PLUGIN_NAME), PLUGIN_VERSION, "azurite");
     m_main_view->setWindowVisible({static_cast<bool>(m_settings.preset_tab),
                                    static_cast<bool>(m_settings.history_tab)});
 
