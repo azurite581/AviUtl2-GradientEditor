@@ -28,7 +28,6 @@ target_compile_features(compiler_flags INTERFACE cxx_std_${CMAKE_CXX_STANDARD})
 
 add_library(${PROJECT_NAME} SHARED
   ${CMAKE_SOURCE_DIR}/src/core/app.cpp
-  ${CMAKE_SOURCE_DIR}/src/core/app_state.cpp
   ${CMAKE_SOURCE_DIR}/src/core/d3d_manager.cpp
   ${CMAKE_SOURCE_DIR}/src/core/window_manager.cpp
   ${CMAKE_SOURCE_DIR}/src/core/script_bridge.cpp

@@ -109,6 +109,15 @@ public:
     Values getValues() const noexcept { return m_curr_values; }
 
 private:
+    static constexpr const char* COLOR_SPACE_NAMES[] = {"sRGB", "Linear sRGB", "HSV", "HSL", "L*a*b", "LCh", "Oklab", "Oklch", "Kubelka-Munk"};
+    static constexpr const char* INTERP_DIR_NAMES[]  = {"短経路", "長経路"};
+
+#if defined(MARKER_COUNT)
+    static constexpr uint32_t MAX_MARKER_COUNT = MARKER_COUNT;
+#else
+    static inline constexpr uint32_t MAX_MARKER_COUNT = 30;
+#endif
+
     LoggerWrapperInterface* m_logger_wrapper;
 
     Values m_prev_values;

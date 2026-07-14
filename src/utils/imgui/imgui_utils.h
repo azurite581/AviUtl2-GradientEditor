@@ -1,6 +1,7 @@
 #ifndef IMGUI_UTILS_H
 #define IMGUI_UTILS_H
 
+#include <atomic>
 #include <string>
 #include <vector>
 
@@ -124,13 +125,18 @@ inline bool spinInt(const char* label, int* v, int step = 1, int step_fast = 100
     return spinScalar(label, ImGuiDataType_S32, (void*)v, (void*)(step > 0 ? &step : NULL), (void*)(step_fast > 0 ? &step_fast : NULL), format, flags);
 }
 
-// ボタントグル
-inline bool pushToggleButton(const char* label, bool* v, bool* is_pressed, const ImVec2& size = ImVec2(0, 0))
+enum class ForceState : int { None,
+                              ForceOn,
+                              ForceOff };
+
+inline bool pushToggleButton(const char* label, bool* v, ForceState* force, const ImVec2& size = ImVec2(0, 0))
 {
-    if (*is_pressed) {
-        *v          = true;
-        *is_pressed = false;
-    }
+    // 一度読んだら None に戻す
+    ForceState fs = *force;
+    *force        = ForceState::None;
+
+    if (fs == ForceState::ForceOn) *v = true;
+    if (fs == ForceState::ForceOff) *v = false;
 
     if (*v) {
         ImVec4 active_color = ImGui::GetStyle().Colors[ImGuiCol_ButtonActive];

@@ -8,12 +8,12 @@ bool GradientRenderer::init(
     RenderResources& resources)
 {
     if (!d3d_device) {
-        OutputDebugStringA("DirectX11 device is null");
+        OutputDebugStringA("Direct3D11 device is null");
         return false;
     }
 
     if (!d3d_device_context) {
-        OutputDebugStringA("DirectX11 device context is null");
+        OutputDebugStringA("Direct3D11 device context is null");
         return false;
     }
 

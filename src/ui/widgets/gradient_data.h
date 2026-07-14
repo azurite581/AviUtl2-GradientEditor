@@ -31,6 +31,11 @@ public:
         cleanup();
     }
 
+    enum class MarkerType : uint32_t {
+        Color,
+        Alpha
+    };
+
     std::vector<MarkerData> m_default_color_markers = {
         MarkerData(0, 0.0f, {0.0f, 0.0f, 0.0f, 1.0f}, 0.5f),
         MarkerData(1, 1.0f, {1.0f, 1.0f, 1.0f, 1.0f}, 0.5f),
@@ -50,6 +55,9 @@ public:
     int32_t m_interp_dir{0};
     float m_blur_width{1.0f};
     float m_alpha_blur_width{1.0f};
+
+    bool m_clicked                        = false;
+    MarkerType m_last_clicked_marker_type = MarkerType::Color;
 
     // != は == から導出される
     bool operator==(const GradientData& other) const

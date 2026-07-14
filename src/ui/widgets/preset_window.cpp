@@ -4,7 +4,7 @@
 #include <ranges>
 
 #include "IconsMaterialSymbols.h"
-#include "app_state.h"
+#include "app.h"
 #include "file_dialog.h"
 #include "gradient_widget.h"
 #include "imgui.h"
@@ -18,9 +18,9 @@ void PresetWindow::init(LoggerWrapperInterface* logger_wrapper, ConfigWrapperInt
 
     // カテゴリーの初期化
     loadCategories(cfg);
-    m_selected_category_name = GradientConfigManager::DEFAULT_CATEGORY;
-    m_selected_category_index   = std::clamp(cfg.selected_category, 0, static_cast<int32_t>(std::ssize(m_categories) - 1));
-    m_old_category_name = m_categories[m_selected_category_index];  // 起動時に読み込まれるカテゴリー
+    m_selected_category_name  = GradientConfigManager::DEFAULT_CATEGORY;
+    m_selected_category_index = std::clamp(cfg.selected_category, 0, static_cast<int32_t>(std::ssize(m_categories) - 1));
+    m_old_category_name       = m_categories[m_selected_category_index];  // 起動時に読み込まれるカテゴリー
 }
 
 void PresetWindow::loadCategories(Preset& cfg)
@@ -45,7 +45,7 @@ void PresetWindow::render(GradientConfigManager& manager, Preset& cfg)
     // プリセットウィンドウ
     //
     static ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse;
-    bool preset_window_visible = ImGui::Begin((m_config_wrapper->tr(L"プリセット") + "###preset_window").c_str(), nullptr, window_flags);
+    bool preset_window_visible           = ImGui::Begin((m_config_wrapper->tr(L"プリセット") + "###preset_window").c_str(), nullptr, window_flags);
     if (preset_window_visible) {
         float item_spacing_x = ImGui::GetStyle().ItemSpacing.x * 0.5f;
         ImGui::PushStyleVar(ImGuiStyleVar_CellPadding, ImVec2(item_spacing_x, 0));
@@ -296,7 +296,7 @@ void PresetWindow::render(GradientConfigManager& manager, Preset& cfg)
                         if (has_categories) ImGui::EndDisabled();
 
                         if (ImGui::MenuItem(m_config_wrapper->tr(L"出力").c_str())) {
-                            auto open_file_dialog_result = writeFile(gradient_editor::g_app_state.host_app_hwnd);
+                            auto open_file_dialog_result = writeFile(g_app.m_host_app_hwnd);
                             switch (open_file_dialog_result.result) {
                                 case FileDialogResult::FD_OKAY: {
                                     auto path = std::get<static_cast<int32_t>(FileDialogResult::FD_OKAY)>(open_file_dialog_result.value);
@@ -628,7 +628,7 @@ void PresetWindow::render(GradientConfigManager& manager, Preset& cfg)
 
 void PresetWindow::renderPresetList(GradientConfigManager& manager, Preset& cfg, std::string_view category)
 {
-    bool is_delete               = false;
+    bool is_delete       = false;
     ImVec2 gradient_size = ImVec2(ImGui::GetContentRegionAvail().x, ImGui::GetFrameHeight() * PRESET_GRADIENT_HEIGHT);
     gradient_size.x      = ImMax(1.0f, gradient_size.x);
     gradient_size.y      = ImMax(1.0f, gradient_size.y);
@@ -722,7 +722,7 @@ void PresetWindow::renderPresetList(GradientConfigManager& manager, Preset& cfg,
                 }
 
                 if (ImGui::Selectable(m_config_wrapper->tr(L"出力").c_str())) {
-                    auto open_file_dialog_result = writeFile(gradient_editor::g_app_state.host_app_hwnd);
+                    auto open_file_dialog_result = writeFile(g_app.m_host_app_hwnd);
                     switch (open_file_dialog_result.result) {
                         case FileDialogResult::FD_OKAY: {
                             auto path             = std::get<static_cast<int32_t>(FileDialogResult::FD_OKAY)>(open_file_dialog_result.value);
@@ -755,7 +755,7 @@ void PresetWindow::renderPresetList(GradientConfigManager& manager, Preset& cfg,
                 }
 
                 if (ImGui::Selectable(m_config_wrapper->tr(L"削除").c_str())) {
-                    is_delete    = true;
+                    is_delete      = true;
                     m_delete_index = static_cast<uint32_t>(i);
                     ImGui::CloseCurrentPopup();
                 }

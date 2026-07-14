@@ -23,7 +23,7 @@ enum GradientEditorFlags_ {
 };
 using GradientEditorFlags = int32_t;
 
-void initDX11(Microsoft::WRL::ComPtr<ID3D11Device> device, Microsoft::WRL::ComPtr<ID3D11DeviceContext> context);
+void initD3D11(Microsoft::WRL::ComPtr<ID3D11Device> device, Microsoft::WRL::ComPtr<ID3D11DeviceContext> context);
 
 void cleanup();
 
