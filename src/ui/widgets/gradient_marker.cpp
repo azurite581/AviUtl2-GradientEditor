@@ -415,7 +415,7 @@ bool MarkerManager::updateMarkerAndMidpointPosition(const ImVec2& mouse_pos)
         auto [clicked, id] = getMarkerIdUnderMouse(mouse_pos);
         m_state.clicked    = clicked;
         if (m_state.clicked == Clicked::Marker) {
-            m_state.selected_marker_id = id;
+            m_state.selected_marker_id   = id;
             m_state.selected_midpoint_id = id;
             return true;
         } else if (m_state.clicked == Clicked::Midpoint) {
@@ -437,16 +437,16 @@ bool MarkerManager::updateMarkerAndMidpointPosition(const ImVec2& mouse_pos)
             return true;
         }
     } else if (ImGui::IsMouseClicked(ImGuiMouseButton_Left) &&  // 左クリックされて
-               m_state.clicked == Clicked::MarkerRegion &&  // クリックされた位置がマーカー領域内で
-               std::ssize(m_markers) < m_marker_max_count  // 現在のマーカー数がマーカーの最大数未満なら
+               m_state.clicked == Clicked::MarkerRegion &&      // クリックされた位置がマーカー領域内で
+               std::ssize(m_markers) < m_marker_max_count       // 現在のマーカー数がマーカーの最大数未満なら
     ) {
         // クリック位置にマーカーを作成
         float marker_pos = getMarkerPosFromMousePos(mouse_pos);
         addMarker(m_state.marker_id_counter, marker_pos, m_new_marker_value, m_default_midpoint_ratio);
 
-        m_state.selected_marker_id = m_state.marker_id_counter;  // 追加したマーカーを選択状態にする
+        m_state.selected_marker_id   = m_state.marker_id_counter;  // 追加したマーカーを選択状態にする
         m_state.selected_midpoint_id = m_state.marker_id_counter;
-        m_state.clicked            = Clicked::Marker;
+        m_state.clicked              = Clicked::Marker;
 
         ++m_state.marker_id_counter;
         return true;

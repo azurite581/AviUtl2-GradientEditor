@@ -199,17 +199,16 @@ GradientData* drawGradientEditor(
     clicked_color_marker = color_markers->updateMarkerAndMidpointPosition(mouse_pos);
     clicked_alpha_marker = alpha_markers->updateMarkerAndMidpointPosition(mouse_pos);
     if (clicked_color_marker) {
-        gradient_data->m_clicked = true;
+        gradient_data->m_clicked                  = true;
         gradient_data->m_last_clicked_marker_type = GradientData::MarkerType::Color;
     }
     if (clicked_alpha_marker) {
-        gradient_data->m_clicked = true;
+        gradient_data->m_clicked                  = true;
         gradient_data->m_last_clicked_marker_type = GradientData::MarkerType::Alpha;
     }
     if (!clicked_color_marker && !clicked_alpha_marker) {
         gradient_data->m_clicked = false;
     }
-
 
     if (it != g_editor_gradients.end()) {
         if (old_color_markers != color_markers->getMarkers() ||

@@ -12,7 +12,6 @@
 #include "preset_window.h"
 #include "script_bridge.h"
 
-
 class MainView {
 public:
     struct WindowVisible {
@@ -27,9 +26,9 @@ public:
     WindowVisible getWindowVisible() const noexcept { return m_window_visible; }
     void setPluginInfo(const std::string& name, const std::string& version, const std::string& author)
     {
-        m_plugin_name = name;
+        m_plugin_name    = name;
         m_plugin_version = version;
-        m_plugin_author = author;
+        m_plugin_author  = author;
     }
 
     void onChangeFocusObject();

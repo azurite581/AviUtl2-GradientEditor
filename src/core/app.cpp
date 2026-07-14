@@ -3,12 +3,12 @@
 #include "IconsMaterialSymbols.h"
 #include "font_loader.h"
 #include "gradient_widget.h"
-#include "str_conv.h"
 #include "imgui.h"
 #include "imgui_impl_dx11.h"
 #include "imgui_impl_win32.h"
 #include "imgui_internal.h"
 #include "material_symbols.cpp"
+#include "str_conv.h"
 
 extern LRESULT CALLBACK wnd_proc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam);
 
@@ -320,7 +320,7 @@ void App::renderFrame()
 void App::cleanup()
 {
     // タブの表示状態を保存
-    auto visible               = m_main_view->getWindowVisible();
+    auto visible           = m_main_view->getWindowVisible();
     m_settings.preset_tab  = static_cast<uint32_t>(visible.preset_window);
     m_settings.history_tab = static_cast<uint32_t>(visible.history_window);
 
@@ -372,11 +372,11 @@ void App::readSettings()
     std::ifstream ifs(m_settings_file_path);
     std::string settings_content((std::istreambuf_iterator<char>(ifs)), std::istreambuf_iterator<char>());
 
-    auto ui_scale              = getConfigInt(m_settings_file_path, "settings", "ui_scale", 100);
+    auto ui_scale          = getConfigInt(m_settings_file_path, "settings", "ui_scale", 100);
     m_settings.ui_scale    = std::clamp(ui_scale, 50u, 400u);
-    auto preset_tab            = getConfigInt(m_settings_file_path, "settings", "preset_tab", 0);
+    auto preset_tab        = getConfigInt(m_settings_file_path, "settings", "preset_tab", 0);
     m_settings.preset_tab  = std::clamp(preset_tab, 0u, 1u);
-    auto history_tab           = getConfigInt(m_settings_file_path, "settings", "history_tab", 0);
+    auto history_tab       = getConfigInt(m_settings_file_path, "settings", "history_tab", 0);
     m_settings.history_tab = std::clamp(history_tab, 0u, 1u);
 
     // [imgui] セクション以下全体を抽出

@@ -244,9 +244,9 @@ void MainView::render()
     bool gradient_editor_window_visible = ImGui::Begin("###gradient_editor_window", nullptr, window_flags);
     if (gradient_editor_window_visible) {
         // メニューバーの描画
-        std::string settings_popup_name = m_config_wrapper->tr(L"UIの設定") + "###style_settings";
+        std::string settings_popup_name    = m_config_wrapper->tr(L"UIの設定") + "###style_settings";
         std::string plugin_info_popup_name = m_config_wrapper->tr(L"バージョン情報") + "###plugin_info";
-        bool open_style_settings_popup  = false, open_plugin_info_popup = false;
+        bool open_style_settings_popup = false, open_plugin_info_popup = false;
 
         if (ImGui::BeginMenuBar()) {
             if (ImGui::BeginMenu(m_config_wrapper->tr(L"ファイル").c_str())) {

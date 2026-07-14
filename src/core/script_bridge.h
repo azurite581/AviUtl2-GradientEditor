@@ -110,7 +110,7 @@ public:
 
 private:
     static constexpr const char* COLOR_SPACE_NAMES[] = {"sRGB", "Linear sRGB", "HSV", "HSL", "L*a*b", "LCh", "Oklab", "Oklch", "Kubelka-Munk"};
-    static constexpr const char* INTERP_DIR_NAMES[]     = {"短経路", "長経路"};
+    static constexpr const char* INTERP_DIR_NAMES[]  = {"短経路", "長経路"};
 
 #if defined(MARKER_COUNT)
     static constexpr uint32_t MAX_MARKER_COUNT = MARKER_COUNT;

@@ -125,15 +125,17 @@ inline bool spinInt(const char* label, int* v, int step = 1, int step_fast = 100
     return spinScalar(label, ImGuiDataType_S32, (void*)v, (void*)(step > 0 ? &step : NULL), (void*)(step_fast > 0 ? &step_fast : NULL), format, flags);
 }
 
-enum class ForceState : int { None, ForceOn, ForceOff };
+enum class ForceState : int { None,
+                              ForceOn,
+                              ForceOff };
 
 inline bool pushToggleButton(const char* label, bool* v, ForceState* force, const ImVec2& size = ImVec2(0, 0))
 {
     // 一度読んだら None に戻す
     ForceState fs = *force;
-    *force = ForceState::None;
+    *force        = ForceState::None;
 
-    if (fs == ForceState::ForceOn)  *v = true;
+    if (fs == ForceState::ForceOn) *v = true;
     if (fs == ForceState::ForceOff) *v = false;
 
     if (*v) {

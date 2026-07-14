@@ -50,13 +50,13 @@ public:
 
     MarkerManager m_color_markers{};
     MarkerManager m_alpha_markers{};
-    
+
     int32_t m_color_space{0};
     int32_t m_interp_dir{0};
     float m_blur_width{1.0f};
     float m_alpha_blur_width{1.0f};
 
-    bool m_clicked = false;
+    bool m_clicked                        = false;
     MarkerType m_last_clicked_marker_type = MarkerType::Color;
 
     // != は == から導出される
