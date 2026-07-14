@@ -24,7 +24,7 @@
 #define WIDEN2(x) L##x
 #define WIDEN(x) WIDEN2(x)
 #ifndef PLUGIN_VERSION
-#define PLUGIN_VERSION "0.5.0"
+#define PLUGIN_VERSION "0.7.1"
 #endif
 
 /// @brief アプリケーション全体の状態を管理する構造体
