@@ -319,6 +319,12 @@ void App::renderFrame()
 
 void App::cleanup()
 {
+    // WM_QUIT を App::run() 内のメッセージループに通知
+    HWND hwnd = m_window_manager.getWindowHandle();
+    if (hwnd) {
+        ::PostMessage(hwnd, WM_QUIT, 0, 0);
+    }
+
     // タブの表示状態を保存
     auto visible           = m_main_view->getWindowVisible();
     m_settings.preset_tab  = static_cast<uint32_t>(visible.preset_window);
@@ -339,12 +345,6 @@ void App::cleanup()
 
     // グラデーション描画用の D3D を解放
     m_d3d_manager.cleanup();
-
-    // WM_QUIT を App::run() 内のメッセージループに通知
-    HWND hwnd = m_window_manager.getWindowHandle();
-    if (hwnd) {
-        ::PostMessage(hwnd, WM_QUIT, 0, 0);
-    }
 
     // GUI スレッドを停止
     if (m_gui_thread.joinable()) {
