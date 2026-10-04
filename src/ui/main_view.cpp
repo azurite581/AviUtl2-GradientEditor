@@ -250,7 +250,7 @@ void MainView::render()
 
         if (ImGui::BeginMenuBar()) {
             if (ImGui::BeginMenu(m_config_wrapper->tr(L"ファイル").c_str())) {
-                if (ImGui::MenuItem(m_config_wrapper->tr(L"プリセットを読み込む").c_str(), nullptr)) {
+                if (ImGui::MenuItem(m_config_wrapper->tr(L"GRD ファイルを読み込む").c_str(), nullptr)) {
                     auto open_file_dialog_result = openFiles(g_app.m_host_app_hwnd);
                     switch (open_file_dialog_result.result) {
                         case FileDialogResult::FD_OKAY: {
@@ -300,7 +300,7 @@ void MainView::render()
                     }
                 }
 
-                if (ImGui::BeginMenu(m_config_wrapper->tr(L"プリセットを出力").c_str())) {
+                if (ImGui::BeginMenu(m_config_wrapper->tr(L"GRD ファイルを出力").c_str())) {
                     // 現在のグラデーションのみを GRD ファイルとして出力
                     if (ImGui::MenuItem(m_config_wrapper->tr(L"現在のグラデーション").c_str(), nullptr)) {
                         auto open_file_dialog_result = writeFile(g_app.m_host_app_hwnd);
