@@ -83,7 +83,8 @@ void App::applyAviutl2Style()
     style.Colors[ImGuiCol_TabDimmed]                 = aulColor2imVec4("GroupingHover");
     style.Colors[ImGuiCol_TabDimmedSelected]         = aulColor2imVec4("GroupingSelect");
     style.Colors[ImGuiCol_TabDimmedSelectedOverline] = aulColor2imVec4("GroupingSelect");
-    // テキスト選択
+    // テキスト
+    style.Colors[ImGuiCol_TextLink] = aulColor2imVec4("BorderFocus");
     style.Colors[ImGuiCol_TextSelectedBg] = aulColor2imVec4("TextSelect");
     // ドラッグ&ドロップ時の枠線
     style.Colors[ImGuiCol_DragDropTarget] = aulColor2imVec4("BorderFocus");
