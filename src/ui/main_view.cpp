@@ -183,7 +183,7 @@ void MainView::showUISettingsPopup(const char* name, [[maybe_unused]] bool* p_op
 
         constexpr float ITEM_SPACING_SCALE_Y = 0.25f;
         ImGui::AlignTextToFramePadding();
-        ImGui::TextUnformatted(m_config_wrapper->tr(L"UIのサイズ").c_str());
+        ImGui::TextUnformatted(m_config_wrapper->tr(L"UI のサイズ").c_str());
         ImGui::SameLine();
         static float font_scale_main = old_font_scale_main;
         int32_t font_scale           = static_cast<int32_t>(font_scale_main * 100.0f);
@@ -244,8 +244,8 @@ void MainView::render()
     bool gradient_editor_window_visible = ImGui::Begin("###gradient_editor_window", nullptr, window_flags);
     if (gradient_editor_window_visible) {
         // メニューバーの描画
-        std::string settings_popup_name    = m_config_wrapper->tr(L"UIの設定") + "###style_settings";
-        std::string plugin_info_popup_name = m_config_wrapper->tr(L"バージョン情報") + "###plugin_info";
+        std::string settings_popup_name    = m_config_wrapper->tr(L"UI の設定") + "###style_settings";
+        std::string plugin_info_popup_name = m_config_wrapper->tr(L"情報") + "###plugin_info";
         bool open_style_settings_popup = false, open_plugin_info_popup = false;
 
         if (ImGui::BeginMenuBar()) {
@@ -399,14 +399,14 @@ void MainView::render()
             }
 
             if (ImGui::BeginMenu(m_config_wrapper->tr(L"設定").c_str())) {
-                if (ImGui::MenuItem(m_config_wrapper->tr(L"UIの設定").c_str(), nullptr)) {
+                if (ImGui::MenuItem(m_config_wrapper->tr(L"UI の設定").c_str(), nullptr)) {
                     open_style_settings_popup = true;
                 }
                 ImGui::EndMenu();
             }
 
-            if (ImGui::BeginMenu(m_config_wrapper->tr(L"ヘルプ").c_str())) {
-                if (ImGui::MenuItem(m_config_wrapper->tr(L"バージョン情報").c_str(), nullptr)) {
+            if (ImGui::BeginMenu(m_config_wrapper->tr(L"その他").c_str())) {
+                if (ImGui::MenuItem(m_config_wrapper->tr(L"情報").c_str(), nullptr)) {
                     open_plugin_info_popup = true;
                 }
                 ImGui::EndMenu();
