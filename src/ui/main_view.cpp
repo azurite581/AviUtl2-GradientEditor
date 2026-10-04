@@ -173,7 +173,7 @@ void MainView::showAboutPopup(const char* name, bool* p_open, ImGuiWindowFlags f
     }
 }
 
-void MainView::showUISettingsPopup(const char* name, bool* p_open, ImGuiWindowFlags flags)
+void MainView::showUISettingsPopup(const char* name, [[maybe_unused]] bool* p_open, ImGuiWindowFlags flags)
 {
     static float old_font_scale_main = ImGui::GetStyle().FontScaleMain;
     if (ImGui::BeginPopupModal(name, nullptr, flags)) {
