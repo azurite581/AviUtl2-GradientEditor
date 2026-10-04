@@ -3,6 +3,7 @@ project:
     VERSION: v0.7.2
     AUTHOR: azurite
     LABEL: 色調整
+    REQUIRE_AVIUTL2_VERSION: "2005000"
     MARKER_MAX_COUNT: 100
 build:
   out_dir: ../out_script

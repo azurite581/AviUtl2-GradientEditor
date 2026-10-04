@@ -1,3 +1,4 @@
+--require:${REQUIRE_AVIUTL2_VERSION}
 --filter
 --label:${LABEL}
 --information:${INFO} ${VERSION} by ${AUTHOR}
