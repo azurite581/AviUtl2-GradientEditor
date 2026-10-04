@@ -518,11 +518,46 @@ void MainView::renderGradientEditor()
     // 操作ボタン
     //
     if (ImGui::Button(m_config_wrapper->tr(L"新規").c_str())) {
-        const char* alias = reinterpret_cast<const char*>(alias_templates::NEW_OBJECT_ALIAS_TAMPLATES[m_effect_name_index]);
+        static const char* shape_alias = R"(
+[Object]
+[Object.0]
+effect.name=図形
+図形の種類=背景
+サイズ=100
+縦横比=0.00
+ライン幅=4000
+色=ffffff
+角を丸くする=0
+)";
+        static const char* image_alias = R"(
+[Object]
+[Object.0]
+effect.name=画像ファイル
+ファイル=
+表示番号=0,0,再生範囲,0
+再生速度=100.00
+ループ再生=0
+連番ファイル=0
+)";
+
         plugin2_utils::call_edit_lambda(g_app.m_edit_handle->call_edit_section_param, [&](EDIT_SECTION* edit) {
+            auto alias = (m_effect_name_index == 0) ? shape_alias : image_alias;
             auto obj = edit->create_object_from_alias(alias, edit->info->layer, edit->info->frame, NEW_OBJECT_LENGTH);
             if (!obj) {
                 return;
+            }
+
+            // 作成したオブジェクトにエフェクトを追加し、必要に応じてパラメータを設定する
+            auto effect_handle =edit->create_effect(obj, (std::wstring(EFFECT_NAMES[m_effect_name_index]) + EFFECT_GROUP_NAME).c_str());
+            switch (m_effect_name_index) {
+                case 0:  // 多色グラデーション
+                    edit->set_effect_item_value(effect_handle, L"角度", "90");  // グラデーションエディタ上のグラデーションと同じ向きにする
+                    edit->set_effect_item_value(effect_handle, L"幅の単位", "%");
+                    break;
+                case 1:  // グラデーションマップ
+                    break;
+                default:
+                    break;
             }
 
             edit->set_focus_object(obj);
@@ -615,44 +650,17 @@ void MainView::renderGradientEditor()
             // 反映は ON だが対象のエフェクトが1つも付いていない場合
             auto effect_count = edit->count_object_effect(focus_obj, effect_full_name.c_str());
             if (effect_count == 0 && m_apply) {
-                auto alias   = edit->get_object_alias(focus_obj);
-                auto obj_idx = alias_parser::getLastObjectIndex(alias);
-                if (!obj_idx) return;
-
-                auto object0_effect_name = alias_parser::getEffectName(alias);
-                if (!object0_effect_name) return;
-
-                static constexpr const char* EXCLUDE_EFFECTS[6] = {
-                    "オーディオバッファ",
-                    "カメラ制御",
-                    "グループ制御(音声)",
-                    "フィルタ効果",
-                    "音声ファイル",
-                    "時間制御(オブジェクト)",
-                };
-                for (const auto e : EXCLUDE_EFFECTS) {
-                    if (object0_effect_name == e) return;
+                auto effect_handle =edit->create_effect(focus_obj, (std::wstring(EFFECT_NAMES[m_effect_name_index]) + EFFECT_GROUP_NAME).c_str());
+                switch (m_effect_name_index) {
+                    case 0:  // 多色グラデーション
+                        edit->set_effect_item_value(effect_handle, L"角度", "90");  // グラデーションエディタ上のグラデーションと同じ向きにする
+                        edit->set_effect_item_value(effect_handle, L"幅の単位", "%");
+                        break;
+                    case 1:  // グラデーションマップ
+                        break;
+                    default:
+                        break;
                 }
-
-                uint32_t next_index = obj_idx.value() + 1;
-                std::string new_alias{};
-                try {
-                    new_alias = std::vformat(alias_templates::SCRIPT_TAMPLATES[m_effect_name_index], std::make_format_args(next_index));
-                } catch (const std::format_error e) {
-                    m_logger_wrapper->error("{}", e.what());
-                }
-
-                new_alias = alias + new_alias;
-
-                edit->delete_object(focus_obj);
-                auto new_obj = edit->create_object_from_alias(
-                    new_alias.c_str(),
-                    m_layer_frame.layer,
-                    m_layer_frame.start,
-                    m_layer_frame.end - m_layer_frame.start);
-                if (!new_obj) return;
-
-                edit->set_focus_object(new_obj);
 
                 // 選択オブジェクト変更時、UPDATE_OBJECTイベントにより反映ボタンの押下状態が解除されてしまうため
                 // 次フレームで強制的にONにするためのフラグを立てておく

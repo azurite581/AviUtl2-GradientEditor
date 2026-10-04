@@ -3,7 +3,6 @@
 
 #include <atomic>
 
-#include "alias_templates.h"
 #include "config2_wrapper_interface.h"
 #include "gradient_config.h"
 #include "gradient_data.h"
