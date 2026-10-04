@@ -99,3 +99,7 @@ megalinter-reports/
 # Doxygen
 Doxyfile
 out_doxygen
+
+# Shader output files
+pixel_shader.h
+vertex_shader.h
