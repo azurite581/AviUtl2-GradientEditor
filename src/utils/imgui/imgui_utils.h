@@ -44,7 +44,7 @@ inline bool spinScalar(const char* label, ImGuiDataType data_type, void* p_data,
 
     // Disable the MarkItemEdited() call in InputText but keep ImGuiItemStatusFlags_Edited.
     // We call MarkItemEdited() ourselves by comparing the actual data rather than the string.
-    g.NextItemData.ItemFlags |= ImGuiItemFlags_NoMarkEdited;
+    g.NextItemData.ItemFlagsSet |= ImGuiItemFlags_NoMarkEdited;
     flags |= ImGuiInputTextFlags_AutoSelectAll | (ImGuiInputTextFlags)ImGuiInputTextFlags_LocalizeDecimalPoint;
 
     bool value_changed = false;
