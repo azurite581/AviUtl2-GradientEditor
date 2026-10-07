@@ -221,14 +221,19 @@ void App::run(std::promise<HWND>&& hwnd_promise)
 
     bool done = false;
     while (!done) {
+        idleBySleeping(m_idling);
+        bool had_message = false;
+
         MSG msg;
         while (::PeekMessage(&msg, nullptr, 0U, 0U, PM_REMOVE)) {
+            had_message = true;
             ::TranslateMessage(&msg);
             ::DispatchMessage(&msg);
             if (msg.message == WM_QUIT)
                 done = true;
         }
         if (done) break;
+        if (had_message) m_idling.boost_frames = 3;  // メッセージ受け取り直後は待たずに数フレーム描画する
 
         // ウィンドウの表示状態を取得する
         m_is_window_visible = (::IsWindowVisible(m_window_manager.getWindowHandle()) != 0);
