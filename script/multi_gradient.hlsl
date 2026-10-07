@@ -83,7 +83,7 @@ float4 psmain(float4 pos : SV_Position, float2 uv : TEXCOORD) : SV_Target
         case 1:  // 円形
         {
             float2 st = ((pos.xy - center) * 2.0 - resolution.xy) / max(resolution.x, resolution.y);
-            float scale = (is_fit <= 0) ? width / max(resolution.x, resolution.y) : min(resolution.x, resolution.y) / max(resolution.x, resolution.y);
+            float scale = (is_fit <= 0) ? ((width_unit <= 0) ? width / max(resolution.x, resolution.y) : min(resolution.x, resolution.y) * (width / 100.0) / max(resolution.x, resolution.y)) : min(resolution.x, resolution.y) / max(resolution.x, resolution.y);
             st = mul(angle, st);
             x = length(st) / max(scale * 2.0, EPS);
             break;
@@ -91,7 +91,7 @@ float4 psmain(float4 pos : SV_Position, float2 uv : TEXCOORD) : SV_Target
         case 2:  // 矩形
         {
             float2 st = ((pos.xy - center) * 2.0 - resolution.xy) / max(resolution.x, resolution.y);
-            float scale = (is_fit <= 0) ? width / max(resolution.x, resolution.y) : min(resolution.x, resolution.y) / max(resolution.x, resolution.y);
+            float scale = (is_fit <= 0) ? ((width_unit <= 0) ? width / max(resolution.x, resolution.y) : min(resolution.x, resolution.y) * (width / 100.0) / max(resolution.x, resolution.y)) : min(resolution.x, resolution.y) / max(resolution.x, resolution.y);
             st = mul(angle, st);
             x = (abs(st.x) + abs(st.y)) / max(scale * 2.0, EPS);
             break;
@@ -133,8 +133,8 @@ float4 psmain(float4 pos : SV_Position, float2 uv : TEXCOORD) : SV_Target
         case 4:  // 円形ループ
         {
             float2 st = ((pos.xy - center) * 2.0 - resolution.xy) / max(resolution.x, resolution.y);
-            // ループ形状では width が 0 だとモアレがあまりきれいではないので最低でも 1 にする
-            float scale = max(width, 1.0) / max(resolution.x, resolution.y);
+            // ループ形状では width が 0 だとモアレがあまりきれいではないので、最低でも 1 にする
+            float scale = (is_fit <= 0) ? ((width_unit <= 0) ? max(width, 1.0) / max(resolution.x, resolution.y) : max(min(resolution.x, resolution.y) * (width / 100.0), 1.0) / max(resolution.x, resolution.y)) : min(resolution.x, resolution.y) / max(resolution.x, resolution.y);
             st = mul(angle, st);
             float w = length(st) / max(scale * 2.0, EPS);
             float saw = fmod(w, 2.0);
@@ -144,7 +144,7 @@ float4 psmain(float4 pos : SV_Position, float2 uv : TEXCOORD) : SV_Target
         case 5:  // 矩形ループ
         {
             float2 st = ((pos.xy - center) * 2.0 - resolution.xy) / max(resolution.x, resolution.y);
-            float scale = max(width, 1.0) / max(resolution.x, resolution.y);
+            float scale = (is_fit <= 0) ? ((width_unit <= 0) ? max(width, 1.0) / max(resolution.x, resolution.y) : max(min(resolution.x, resolution.y) * (width / 100.0), 1.0) / max(resolution.x, resolution.y)) : min(resolution.x, resolution.y) / max(resolution.x, resolution.y);
             st = mul(angle, st);
             float w = (abs(st.x) + abs(st.y)) / max(scale * 2.0, EPS);
             float saw = fmod(w, 2.0);
@@ -153,22 +153,76 @@ float4 psmain(float4 pos : SV_Position, float2 uv : TEXCOORD) : SV_Target
         }
         case 6:  // 凸形ループ
         {
-            float2 st = ((pos.xy - center) * 2.0 - resolution.xy) / max(resolution.x, resolution.y);
-            float scale = max(width, 1.0) / max(resolution.x, resolution.y);
-            st = mul(angle, st);
-            float w = st.y / max(scale * 2.0, EPS);
-            float saw = w - 2.0 * floor(w / 2.0);  // mod(w, 2.0)
-            x = 1.0 - abs(1.0 - saw);
+            if (is_fit <= 0 && width_unit <= 0) {
+                float2 st = ((pos.xy - center) * 2.0 - resolution.xy) / max(resolution.x, resolution.y);
+                float scale = max(width, 1.0) / max(resolution.x, resolution.y);
+                st = mul(angle, st);
+                float w = st.y / max(scale * 2.0, EPS);
+                float saw = w - 2.0 * floor(w / 2.0);  // mod(w, 2.0)
+                x = 1.0 - abs(1.0 - saw);
+            } else {
+                // 4隅を回転後の軸へ投影
+                float y0 = mul(angle, float2(0.0, 0.0)).y;
+                float y1 = mul(angle, float2(resolution.x, 0.0)).y;
+                float y2 = mul(angle, float2(0.0, resolution.y)).y;
+                float y3 = mul(angle, resolution.xy).y;
+
+                float min_y = min(min(y0, y1), min(y2, y3));
+                float max_y = max(max(y0, y1), max(y2, y3));
+
+                float py = mul(angle, (pos.xy - center)).y;
+                float gradient_range = max_y - min_y;
+
+                if (is_fit <= 0) {
+                    gradient_range *= width / 100.0;
+                }
+
+                float gradient_center = (min_y + max_y) * 0.5;
+                float gradient_min = gradient_center - gradient_range * 0.5;
+
+                float t = (py - gradient_min) / max(gradient_range, EPS);
+                float saw = t - 2.0 * floor(t / 2.0);  // mod(t, 2.0)
+                x = 1.0 - abs(1.0 - saw);
+            }
             break;
         }
         default:  // 線形
         {
-            float2 st = (pos.xy - center) / resolution.y;
-            float scale = width / resolution.y;
-            st -= (resolution.xy / (resolution.y * 2.0));
-            st = mul(angle, st);
-            st += (resolution.xy / (resolution.y * 2.0));
-            x = (st.y - 0.5) / scale + 0.5;
+            if (is_fit <= 0 && width_unit <= 0) {
+                float2 st = (pos.xy - center) / resolution.y;
+                float scale = width / resolution.y;
+
+                st -= resolution.xy / (resolution.y * 2.0);
+                st = mul(angle, st);
+                st += resolution.xy / (resolution.y * 2.0);
+
+                x = (st.y - 0.5) / scale + 0.5;
+            } else {
+                // 4隅を回転後の軸へ投影
+                float y0 = mul(angle, float2(0.0, 0.0)).y;
+                float y1 = mul(angle, float2(resolution.x, 0.0)).y;
+                float y2 = mul(angle, float2(0.0, resolution.y)).y;
+                float y3 = mul(angle, resolution.xy).y;
+
+                float min_y = min(min(y0, y1), min(y2, y3));
+                float max_y = max(max(y0, y1), max(y2, y3));
+
+                float gradient_min;
+                float gradient_range;
+                if (is_fit > 0) {
+                    gradient_min = min_y;
+                    gradient_range = max_y - min_y;
+                } else {
+                    gradient_range = (max_y - min_y) * (width / 100.0);
+
+                    float gradient_center = (min_y + max_y) * 0.5;
+                    gradient_min = gradient_center - gradient_range * 0.5;
+                }
+
+                float py = mul(angle, (pos.xy - center)).y;
+
+                x = (py - gradient_min) / max(gradient_range, EPS);
+            }
             break;
         }
     }
