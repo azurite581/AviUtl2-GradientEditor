@@ -5,6 +5,9 @@
   <a href="https://github.com/azurite581/AviUtl2-GradientEditor/releases/latest" style="text-decoration: none;">
     <img src="https://img.shields.io/github/v/release/azurite581/AviUtl2-GradientEditor">
   </a>
+  <a href="https://aviutl2-catalog-badge.sevenc7c.workers.dev/package/azurite.GradientEditor">
+    <img src="https://aviutl2-catalog-badge.sevenc7c.workers.dev/badge/v/azurite.GradientEditor">
+  </a>
   <a href="https://github.com/azurite581/AviUtl2-GradientEditor/releases/latest" style="text-decoration: none;">
     <img src="https://img.shields.io/github/downloads/azurite581/AviUtl2-GradientEditor/total">
   </a>
