@@ -115,20 +115,17 @@ private:
         if (!idling.enable_idling || idling.fps_idle <= 0.f)
             return;
 
-        // 入力直後は数フレーム待たずに回す（後述）
+        // 入力直後は数フレーム待たずに回す
         if (idling.boost_frames > 0) {
             idling.boost_frames--;
             return;
         }
-
         const double expected = 1.0 / idling.fps_idle;
         const double t0       = clockSeconds();
 
-        // メッセージが届くか、タイムアウトするまでスリープ
+        // メッセージが届くかタイムアウトするまでスリープ
         MsgWaitForMultipleObjectsEx(0, nullptr, (DWORD)(expected * 1000.0),
                                     QS_ALLINPUT, MWMO_INPUTAVAILABLE);
-
-        // 時間いっぱい待ったならアイドル、途中で起きたなら入力あり
         idling.is_idling = (clockSeconds() - t0) > expected * 0.9;
     }
 };
