@@ -93,19 +93,19 @@ private:
     // ウィンドウの表示状態
     bool m_is_window_visible = false;
 
-    struct FpsIdling
-    {
-        float fps_idle      = 9.f;   // アイドル時の FPS
-        bool  enable_idling = true;
-        bool  is_idling     = false;
-        int   boost_frames  = 0;     // 入力直後に待たずに回すフレーム数
+    struct FpsIdling {
+        float fps_idle     = 9.f;  // アイドル時の FPS
+        bool enable_idling = true;
+        bool is_idling     = false;
+        int boost_frames   = 0;  // 入力直後に待たずに回すフレーム数
     };
     FpsIdling m_idling;
 
     static double clockSeconds()
     {
         static LARGE_INTEGER freq = [] { LARGE_INTEGER f; QueryPerformanceFrequency(&f); return f; }();
-        LARGE_INTEGER now; QueryPerformanceCounter(&now);
+        LARGE_INTEGER now;
+        QueryPerformanceCounter(&now);
         return (double)now.QuadPart / (double)freq.QuadPart;
     }
 
@@ -116,10 +116,13 @@ private:
             return;
 
         // 入力直後は数フレーム待たずに回す（後述）
-        if (idling.boost_frames > 0) { idling.boost_frames--; return; }
+        if (idling.boost_frames > 0) {
+            idling.boost_frames--;
+            return;
+        }
 
         const double expected = 1.0 / idling.fps_idle;
-        const double t0 = clockSeconds();
+        const double t0       = clockSeconds();
 
         // メッセージが届くか、タイムアウトするまでスリープ
         MsgWaitForMultipleObjectsEx(0, nullptr, (DWORD)(expected * 1000.0),
